@@ -50,7 +50,7 @@ export default function LeaveRequestsPage() {
       : leaveRequests.filter((req) => req.status === activeFilter);
 
   return (
-    <div className="p-8 min-h-screen bg-white text-black mt-10">
+    <div className="p-8 min-h-screen bg-white text-black mt-8">
       <h2 className="text-2xl font-bold mb-6 ml-2">
         <span className="border-l-4 border-red-600 pl-2">Leave Requests</span>
       </h2>
@@ -61,7 +61,7 @@ export default function LeaveRequestsPage() {
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-4 py-2 rounded-xl shadow-xl font-semibold ${
+            className={`px-4 py-2 rounded-xl cursor-pointer shadow-xl font-semibold ${
               activeFilter === filter
                 ? "bg-[#ADCE8C] text-white"
                 : "bg-white text-black"
@@ -126,16 +126,16 @@ export default function LeaveRequestsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center align-top">
-                    <div className="flex flex-col gap-2 items-center justify-center">
-                      <button className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium">
+                    <div className="flex flex-col gap-2 items-center  justify-center">
+                      <button className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer">
                         <CheckCircle size={18} />
                         APPROVE
                       </button>
-                      <button className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium">
+                      <button className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer">
                         <XCircle size={16} />
                         Reject
                       </button>
-                      <button className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium">
+                      <button className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer">
                         <Mail size={16} />
                         Message
                       </button>
