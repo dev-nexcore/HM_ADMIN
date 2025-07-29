@@ -214,7 +214,7 @@ const HostelNotices = () => {
 
                   {/* Placeholder if no date */}
                   {!form.date && (
-                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[15px] tracking-[0.3em] pointer-events-none select-none">
+                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-semibold text-[15px] tracking-[0.4em] pointer-events-none select-none">
                       d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                     </div>
                   )}
@@ -277,31 +277,33 @@ const HostelNotices = () => {
       </div>
 
       {/* Table */}
-      <h3 className="text-xl font-semibold mb-4">Recent Notices</h3>
+      <h3 className="text-2xl text-black font-semibold mb-4 font-[Poppins] ml-4">
+        Recent Notices
+      </h3>
       <div
-        className="rounded-md p-4 overflow-x-auto"
+        className="rounded-2xl p-4 overflow-x-auto mb-6"
         style={{
           backgroundColor: "#BEC5AD",
-          boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
+          boxShadow: "0px 4px 4px 0px #00000040 inset",
         }}
       >
-        <table className="w-full text-left border-separate border-spacing-y-2">
+        <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] ">
           <thead>
-            <tr>
-              <th>Title</th>
-              <th>Recipient</th>
-              <th>Date Issued</th>
-              <th>Status</th>
-              <th>Actions</th>
+            <tr className="bg-white">
+              <th className="p-3 text-left font-semibold">Title</th>
+              <th className="p-3 text-left font-semibold">Recipient</th>
+              <th className="p-3 text-left font-semibold">Date Issued</th>
+              <th className="p-3 text-left font-semibold">Status</th>
+              <th className="p-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {notices.map((n, i) => (
-              <tr key={i} className="bg-white rounded-md">
-                <td className="p-2">{n.title}</td>
-                <td className="p-2">{n.recipient}</td>
-                <td className="p-2">{n.date}</td>
-                <td className="p-2">
+              <tr key={i} className="bg-[#D9DCCB] rounded-lg">
+                <td className="p-3">{n.title}</td>
+                <td className="p-3">{n.recipient}</td>
+                <td className="p-3">{n.date}</td>
+                <td className="p-3">
                   <span
                     className={`px-3 py-1 rounded text-white text-sm font-medium ${
                       n.status === "Active" ? "bg-green-600" : "bg-gray-600"
@@ -310,9 +312,12 @@ const HostelNotices = () => {
                     {n.status}
                   </span>
                 </td>
-                <td className="p-2 flex gap-2">
-                  <FaEdit className="w-6 h-6 cursor-pointer text-gray-800" />
-                  <FaTrash className="w-6 h-6 cursor-pointer text-gray-800" />
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <FaEdit className="w-4 h-4 text-gray-800 cursor-pointer" />
+                    <span className="text-gray-500">|</span>
+                    <FaTrash className="w-4 h-4 text-gray-800 cursor-pointer" />
+                  </div>
                 </td>
               </tr>
             ))}
