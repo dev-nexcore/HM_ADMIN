@@ -46,9 +46,11 @@ export default function AuditLogsSection() {
 
   return (
     <div className="min-h-screen w-full overflow-hidden bg-white pt-8 pl-6 sm:pl-8 md:pl-12 pr-4 sm:pr-6 md:pr-10">
-      <h2 className="text-3xl sm:text-4xl font-bold text-black border-l-4 border-red-600 pl-2 mb-6">
-        Audit Logs
-      </h2>
+     <div className="flex items-center gap-2 mb-6">
+  <span className="h-7 w-1 bg-[#FF0000]"></span>
+  <h2 className="text-3xl sm:text-3xl font-semibold text-black">Audit Logs</h2>
+</div>
+
 
       <div className="bg-[#A4B494] rounded-xl px-4 sm:px-8 py-6 shadow-md">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -77,22 +79,41 @@ export default function AuditLogsSection() {
 
         <div className="overflow-hidden">
           <table className="w-full text-sm sm:text-base text-left text-black border-separate border-spacing-y-2">
-            <thead>
+
+            <style jsx>{`
+  th {
+    position: relative;
+  }
+  th:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 12px;               /* margin from top */
+    bottom: 12px;            /* margin from bottom */
+    right: 0;
+    width: 0.5px;            /* thin and clean line */
+    background-color: #444;  /* soft black (adjust if needed) */
+  }
+`}</style>
+
+
+
+<thead>
   <tr className="bg-white font-semibold text-black">
-    <th className="px-4 py-3 border-r border-white whitespace-nowrap text-sm sm:text-base">
+    <th className="px-4 py-3 whitespace-nowrap text-sm sm:text-base">
       TimeStamp
     </th>
-    <th className="px-4 py-3 border-r border-white whitespace-nowrap text-sm sm:text-base">
+    <th className="px-4 py-3 whitespace-nowrap text-sm sm:text-base">
       User
     </th>
-    <th className="px-4 py-3 border-r border-white whitespace-nowrap text-center text-sm sm:text-base">
+    <th className="px-4 py-3 text-center whitespace-nowrap text-sm sm:text-base">
       Action Type
     </th>
-    <th className="px-4 py-3 border-r border-white text-center text-sm sm:text-base">
+    <th className="px-4 py-3 text-center whitespace-nowrap text-sm sm:text-base">
       Description
     </th>
   </tr>
 </thead>
+
 <tbody>
   {filteredLogs.length > 0 ? (
     filteredLogs.map((log, index) => (
