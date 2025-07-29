@@ -12,7 +12,7 @@ const StudentManagement = () => {
     admissionDate: "",
     emergencyContactName: "",
     feeStatus: "",
-  });
+  }); 
 
   const dateInputRef = useRef(null);
   const [editingStudent, setEditingStudent] = useState(null);
