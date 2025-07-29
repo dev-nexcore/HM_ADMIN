@@ -44,7 +44,7 @@ export default function Sidebar() {
         : "hover:underline text-black"}`;
 
   return (
-    <div className="bg-[#BEC5AD]">
+    <div className="">
       {/* Hamburger menu (Mobile) */}
       <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#A4B494] rounded-md shadow text-black"
@@ -54,12 +54,12 @@ export default function Sidebar() {
         <Menu size={24} />
       </button>
 
-      {/* Sidebar Panel */}
-      <aside
-        className={`fixed top-0 left-0 z-40 w-60 h-full bg-[#A4B494] py-6 pl-4 flex flex-col justify-between
-        rounded-tr-4xl shadow transform transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
-      >
+     <aside
+  className={`fixed top-0 left-0 z-40 w-60 h-screen bg-[#A4B494] py-6 pl-4 flex flex-col justify-between
+  rounded-tr-4xl shadow transform transition-transform duration-300
+  ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
+>
+
         {/* Close Button (Mobile Only) */}
         <button
           className="md:hidden absolute top-4 right-4 p-2 text-black"
@@ -96,13 +96,13 @@ export default function Sidebar() {
           </ul>
         </div>
 
-        {/* Logout Button */}
+        {/* ✅ Logout Button */}
         <div className="mt-auto mb-4">
           <hr className="border-t border-black mx-6 mb-3" />
           <div className="px-6">
             <button
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-2 bg-[#4A633E] text-white px-4 py-2 rounded-full hover:bg-[#3E522D] w-full"
+              className="flex items-center gap-2  text-black px-4 py-2 rounded-full hover:bg-[#3E522D] w-full"
             >
               <Image src="/photos/logout.png" alt="Logout" width={18} height={18} />
               Logout
@@ -111,7 +111,16 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Logout Confirmation Modal */}
+      {/* Dark Overlay (Mobile only) */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-30 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ✅ Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-[#A4B494]/60 z-50">
           <div className="bg-[#A4B494] p-6 rounded-xl shadow-lg w-80 max-w-full text-black flex flex-col items-center">
