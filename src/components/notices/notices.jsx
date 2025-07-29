@@ -83,7 +83,7 @@ const HostelNotices = () => {
             </label>
             <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
               <select
-                className="w-full appearance-none bg-white text-black px-4 py-2 rounded-lg outline-none border-none text-[12px]"
+                className="w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px]"
                 value={form.template}
                 onChange={(e) => setForm({ ...form, template: e.target.value })}
               >
@@ -114,7 +114,7 @@ const HostelNotices = () => {
               placeholder="Enter Notice Title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+              className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
             />
           </div>
 
@@ -125,7 +125,7 @@ const HostelNotices = () => {
             </label>
             <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
               <select
-                className="w-full appearance-none bg-white text-gray-500 px-4 py-2 rounded-lg outline-none border-none text-[12px] font-medium"
+                className="w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium"
                 value={form.recipient}
                 onChange={(e) =>
                   setForm({ ...form, recipient: e.target.value })
@@ -161,7 +161,7 @@ const HostelNotices = () => {
               onChange={(e) =>
                 setForm({ ...form, individualRecipient: e.target.value })
               }
-              className="w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+              className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
             />
           </div>
         </div>
