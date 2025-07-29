@@ -8,11 +8,22 @@ const HostelNotices = () => {
     template: "",
     title: "",
     recipient: "",
-    individual: "",
+    individualRecipient: "",
     message: "",
     date: "",
   });
   const dateInputRef = useRef(null);
+
+  const handleCancel = () => {
+    setForm({
+      template: "",
+      title: "",
+      recipient: "",
+      individualRecipient: "",
+      message: "",
+      date: "",
+    });
+  };
 
   const notices = [
     {
@@ -50,7 +61,7 @@ const HostelNotices = () => {
             fontFamily: "Inter",
           }}
         >
-          <span className="border-l-4 border-red-500 pl-2 inline-flex items-center h-[25px]">
+          <span className="border-l-4 border-red-500 pl-4 inline-flex items-center h-[26px]">
             Hostel Notices
           </span>
         </h1>
@@ -103,7 +114,7 @@ const HostelNotices = () => {
               placeholder="Enter Notice Title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg bg-white shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+              className="w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
             />
           </div>
 
@@ -150,7 +161,7 @@ const HostelNotices = () => {
               onChange={(e) =>
                 setForm({ ...form, individualRecipient: e.target.value })
               }
-              className="w-full px-4 py-2 rounded-lg bg-white shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+              className="w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
             />
           </div>
         </div>
@@ -214,7 +225,7 @@ const HostelNotices = () => {
 
                   {/* Placeholder if no date */}
                   {!form.date && (
-                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-semibold text-[15px] tracking-[0.4em] pointer-events-none select-none">
+                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.4em] pointer-events-none select-none">
                       d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                     </div>
                   )}
@@ -289,17 +300,18 @@ const HostelNotices = () => {
       >
         <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] ">
           <thead>
-            <tr className="bg-white">
-              <th className="p-3 text-left font-semibold">Title</th>
-              <th className="p-3 text-left font-semibold">Recipient</th>
-              <th className="p-3 text-left font-semibold">Date Issued</th>
-              <th className="p-3 text-left font-semibold">Status</th>
-              <th className="p-3 text-left font-semibold">Actions</th>
+            <tr className="bg-white font-[Poppins] font-semibold">
+              <th className="p-3 text-left rounded-tl-3xl">Title</th>
+              <th className="p-3 text-left">Recipient</th>
+              <th className="p-3 text-left">Date Issued</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-left rounded-tr-3xl">Actions</th>
             </tr>
           </thead>
+        
           <tbody>
             {notices.map((n, i) => (
-              <tr key={i} className="bg-[#D9DCCB] rounded-lg">
+              <tr key={i}>
                 <td className="p-3">{n.title}</td>
                 <td className="p-3">{n.recipient}</td>
                 <td className="p-3">{n.date}</td>
