@@ -256,7 +256,7 @@ const StudentManagement = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Student Name */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>
               Student Name
             </label>
@@ -266,7 +266,7 @@ const StudentManagement = () => {
               value={formData.studentName}
               onChange={handleInputChange}
               placeholder="Enter your Name"
-              className="w-130 px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
               style={inputStyle}
               required
@@ -274,7 +274,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Student ID */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>
               Student ID
             </label>
@@ -293,7 +293,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Contact Number */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>
               Contact Number
             </label>
@@ -303,7 +303,7 @@ const StudentManagement = () => {
               value={formData.contactNumber}
               onChange={handleInputChange}
               placeholder="Enter your Phone Number"
-              className="w-130 px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
               style={inputStyle}
               required
@@ -311,7 +311,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Email */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>
               E-Mail
             </label>
@@ -329,28 +329,24 @@ const StudentManagement = () => {
           </div>
 
           {/* Room/Bed Number */}
-          <div>
-            <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left ml-2">
+          <div className="w-full px-2">
+            <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
               Room/Bed Number
             </label>
 
-            <div
-              className="relative"
-              style={{ width: "530px", height: "40px" }}
-            >
+            <div className="relative w-full sm:max-w-[530px] h-[40px]">
               <select
                 name="roomBed"
                 value={formData.roomBed}
                 onChange={handleInputChange}
-                className={`w-130 h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
-        text-[12px] leading-[22px] font-semibold font-[Poppins] 
-        ${formData.roomBed === "" ? "text-[#0000008A]" : "text-black"}`}
+                className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
+      text-[12px] leading-[22px] font-semibold font-[Poppins]
+      ${formData.roomBed === "" ? "text-[#0000008A]" : "text-black"}`}
                 style={{
-                  WebkitAppearance: "none", // For Safari
-                  MozAppearance: "none", // For Firefox
-                  appearance: "none", // For other modern browsers
-                  boxShadow: "0px 4px 10px 0px #00000040", // Shadow applied
-                  paddingLeft: "1rem",
+                  WebkitAppearance: "none",
+                  MozAppearance: "none",
+                  appearance: "none",
+                  boxShadow: "0px 4px 10px 0px #00000040",
                 }}
               >
                 <option value="" disabled hidden>
@@ -366,7 +362,7 @@ const StudentManagement = () => {
 
               {/* Custom arrow */}
               <svg
-                className="pointer-events-none absolute right-10 top-1/2 transform -translate-y-1/2 w-7 h-6 text-black"
+                className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 xmlns="http://www.w3.org/2000/svg"
@@ -381,7 +377,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Emergency Contact Number */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-2 text-black ml-2" style={labelStyle}>
               Emergency Contact Number
             </label>
@@ -398,7 +394,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Admission Date */}
-          <div>
+          <div className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>
               Admission Date
             </label>
@@ -494,7 +490,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Emergency Contact Name */}
-          <div>
+          <div className="w-full px-2">
             <label
               className="block mb-2 text-black font-[500] text-[10px]  ml-2"
               style={labelStyle}
@@ -514,7 +510,7 @@ const StudentManagement = () => {
           </div>
 
           {/* Fee Status */}
-          <div>
+          <div className="w-full px-2">
             <label
               className="block mb-2 text-black font-[500] text-[10px] ml-2"
               style={labelStyle}
