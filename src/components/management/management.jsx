@@ -12,7 +12,7 @@ const StudentManagement = () => {
     admissionDate: "",
     emergencyContactName: "",
     feeStatus: "",
-  }); 
+  });
 
   const dateInputRef = useRef(null);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -178,7 +178,7 @@ const StudentManagement = () => {
 
   // Fee status style
   const getFeeStatusStyle = (status) => ({
-    width: "100px",
+    width: "120px",
     height: "26px",
     display: "inline-flex",
     alignItems: "center",
@@ -584,9 +584,9 @@ const StudentManagement = () => {
       </div>
 
       {/* Student List Table */}
-      <div className="w-full max-w-7xl mx-auto mt-4">
+      <div className="w-full max-w-7xl mx-auto mt-4 ">
         <div
-          className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8"
+          className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 "
           style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
         >
           <div className="overflow-x-auto">
@@ -637,7 +637,7 @@ const StudentManagement = () => {
               </div>
 
               {/* Table Body */}
-              <div className="bg-[#BEC5AD] text-center text-sm">
+              <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                 {students.map((student, i) => (
                   <div key={student.id} className="text-black flex">
                     <div className="px-0.5 py-1 flex-1">{student.id}</div>
