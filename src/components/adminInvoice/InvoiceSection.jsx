@@ -12,7 +12,7 @@ const statusStyles = {
 export default function InvoiceSection({ title, headers, data }) {
   return (
     <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
-      <h2 className="font-semibold text-black mb-3 text-lg">{title}</h2>
+      <h2 className="font-semibold text-black mb-3 ml-2 text-lg">{title}</h2>
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-black rounded-lg text-sm md:text-base">
