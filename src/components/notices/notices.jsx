@@ -151,9 +151,10 @@ const HostelNotices = () => {
 
           {/* Individual Recipient Input */}
           <div className="w-full">
-            <label className="text-black font-medium mb-1 block ml-2">
+            <label className="text-black font-medium mb-1 block ml-2 whitespace-nowrap">
               Individual Recipient (ID/ name)
             </label>
+
             <input
               type="text"
               placeholder="Enter Resident ID or Warden name"
