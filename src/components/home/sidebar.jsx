@@ -21,7 +21,7 @@ export default function Sidebar() {
     {
       label: "Inventory<br/>Management",
       icon: "/photos/inventory.png",
-      href: "/inventary",
+      href: "/inventory",
     },
     {
       label: "Student<br/>Management",
