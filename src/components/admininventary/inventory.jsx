@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { FaEye, FaPen, FaSearch } from 'react-icons/fa';
+import { FaEye, FaPen } from 'react-icons/fa';
 import { FiUpload, FiFileText, FiPlus } from 'react-icons/fi';
 
 const initialData = [
@@ -20,17 +20,14 @@ const statusColor = {
 
 const InventoryList = () => {
   const [inventory, setInventory] = useState(initialData);
-  const [visibleRows, setVisibleRows] = useState({});
   const [editRows, setEditRows] = useState({});
   const [editData, setEditData] = useState({});
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
-
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', barcode: '', category: '', location: '', status: 'Available' });
-
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -155,11 +152,9 @@ const InventoryList = () => {
                         <td className="px-4 py-2">
                           <span className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]}`}>{item.status}</span>
                         </td>
-                        <td className="px-4 py-2 text-center flex gap-2 justify-center items-center">
-                          <FaEye className="cursor-pointer text-gray-600 hover:text-blue-600" onClick={() => {
-                            setSelectedItem(item);
-                            setShowViewModal(true);
-                          }} />
+                        <td className="px-4 py-2 text-center flex justify-center items-center gap-2">
+                          <FaEye className="cursor-pointer text-gray-600 hover:text-blue-600" onClick={() => { setSelectedItem(item); setShowViewModal(true); }} />
+                          <div className="w-[1px] h-5 bg-gray-400" />
                           <FaPen className="cursor-pointer text-gray-600 hover:text-green-600" onClick={() => handleEditClick(item)} />
                         </td>
                       </>
@@ -171,39 +166,18 @@ const InventoryList = () => {
         </div>
       </div>
 
-      {/* View Modal */}
-      {showViewModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-md w-[90%] max-w-md">
-            <h3 className="text-xl font-bold mb-4">Item Details</h3>
-            <div className="space-y-2 text-sm text-gray-800">
-              <p><strong>Item Name:</strong> {selectedItem.name}</p>
-              <p><strong>Barcode:</strong> {selectedItem.barcode}</p>
-              <p><strong>Category:</strong> {selectedItem.category}</p>
-              <p><strong>Location:</strong> {selectedItem.location}</p>
-              <p>
-                <strong>Status:</strong>{' '}
-                <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusColor[selectedItem.status]}`}>
-                  {selectedItem.status}
-                </span>
-              </p>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button onClick={() => setShowViewModal(false)} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Modal */}
+      {/* Upload Receipt Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md w-[90%] max-w-md">
             <h3 className="text-xl font-bold mb-4">Upload Receipt</h3>
-            <input type="file" onChange={handleUploadReceipt} className="mb-4" />
-            {receiptFile && <p className="text-sm text-green-700">Selected: {receiptFile.name}</p>}
-            <div className="mt-4 flex justify-end gap-3">
-              <button onClick={() => setShowUploadModal(false)} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Close</button>
+            <label htmlFor="receiptUpload" className="block mb-2 text-sm font-medium text-gray-700">
+              Select a receipt file:
+            </label>
+            <input id="receiptUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleUploadReceipt} className="w-full text-sm border rounded px-3 py-2" />
+            {receiptFile && <p className="mt-2 text-green-700 text-sm font-medium">Selected file: {receiptFile.name}</p>}
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => { setReceiptFile(null); setShowUploadModal(false); }} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
             </div>
           </div>
         </div>
@@ -211,22 +185,24 @@ const InventoryList = () => {
 
       {/* Add Item Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md w-[90%] max-w-md">
             <h3 className="text-xl font-bold mb-4">Add New Item</h3>
-            <input type="text" placeholder="Name" className="w-full border p-2 mb-2" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
-            <input type="text" placeholder="Barcode" className="w-full border p-2 mb-2" value={newItem.barcode} onChange={(e) => setNewItem({ ...newItem, barcode: e.target.value })} />
-            <input type="text" placeholder="Category" className="w-full border p-2 mb-2" value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} />
-            <input type="text" placeholder="Location" className="w-full border p-2 mb-2" value={newItem.location} onChange={(e) => setNewItem({ ...newItem, location: e.target.value })} />
-            <select className="w-full border p-2 mb-4" value={newItem.status} onChange={(e) => setNewItem({ ...newItem, status: e.target.value })}>
-              <option>Available</option>
-              <option>In Use</option>
-              <option>In maintenance</option>
-              <option>Damaged</option>
-            </select>
-            <div className="flex justify-end gap-3">
-              <button onClick={handleAddItem} className="px-4 py-2 rounded bg-green-600 text-white">Add</button>
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+            <div className="space-y-3">
+              <input type="text" className="w-full border px-3 py-2 rounded" placeholder="Name" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
+              <input type="text" className="w-full border px-3 py-2 rounded" placeholder="Barcode" value={newItem.barcode} onChange={(e) => setNewItem({ ...newItem, barcode: e.target.value })} />
+              <input type="text" className="w-full border px-3 py-2 rounded" placeholder="Category" value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} />
+              <input type="text" className="w-full border px-3 py-2 rounded" placeholder="Location" value={newItem.location} onChange={(e) => setNewItem({ ...newItem, location: e.target.value })} />
+              <select className="w-full border px-3 py-2 rounded" value={newItem.status} onChange={(e) => setNewItem({ ...newItem, status: e.target.value })}>
+                <option>Available</option>
+                <option>In Use</option>
+                <option>In maintenance</option>
+                <option>Damaged</option>
+              </select>
+            </div>
+            <div className="flex justify-end mt-6 gap-3">
+              <button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Add</button>
+              <button onClick={() => setShowAddModal(false)} className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded">Cancel</button>
             </div>
           </div>
         </div>

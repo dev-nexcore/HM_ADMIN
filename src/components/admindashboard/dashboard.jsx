@@ -8,7 +8,7 @@ import {
 
 const Dashboard = () => {
   return (
-    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-6">
       {/* Header */}
       <h2 className="text-2xl font-bold border-l-4 border-red-600 pl-2 mb-6">
         Dashboard
@@ -16,7 +16,6 @@ const Dashboard = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Card Template */}
         {[
           {
             title: "Total Revenue",
