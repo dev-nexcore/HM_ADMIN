@@ -1,10 +1,6 @@
 "use client";
-import React from 'react';
-import {
-  FaRupeeSign,
-  FaUniversity,
-  FaBed,
-} from 'react-icons/fa';
+import React from "react";
+import { FaRupeeSign, FaUniversity, FaBed } from "react-icons/fa";
 
 const Dashboard = () => {
   return (
@@ -20,62 +16,66 @@ const Dashboard = () => {
           {
             title: "Total Revenue",
             value: "1,25,000",
-            icon: <FaUniversity className="text-black text-lg" />,
+            icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-green-600",
             isCurrency: true,
           },
           {
             title: "Pending Payments",
             value: "15,000",
-            icon: <FaUniversity className="text-black text-lg" />,
+            icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-orange-500",
             isCurrency: true,
           },
           {
             title: "Occupied Beds",
             value: "60 / 70",
-            icon: <FaBed className="text-black text-lg" />,
+            icon: <FaBed className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
           },
           {
             title: "Available Beds",
             value: "15 / 75",
-            icon: <FaBed className="text-black text-lg" />,
+            icon: <FaBed className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
           },
           {
             title: "Today's Check-In",
             value: "3",
-            icon: <FaUniversity className="text-black text-lg" />,
+            icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
           },
           {
             title: "Today's Check-Outs",
             value: "2",
-            icon: <FaUniversity className="text-black text-lg" />,
+            icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
           },
         ].map((card, i) => (
           <button
             key={i}
-            className="bg-white shadow-lg rounded-2xl overflow-hidden border border-white hover:shadow-2xl transition text-center relative"
+            className="bg-white shadow-lg rounded-2xl overflow-hidden border border-white hover:shadow-2xl transition text-center relative min-h-[160px] flex flex-col justify-between"
           >
-            <div className="flex justify-between items-center bg-[#c2c9b0] text-black px-4 py-2 w-full rounded-t-2xl">
-              <span className="font-semibold text-sm">{card.title}</span>
+            {/* Header with icon overlapping the corner */}
+            <div className="relative w-full bg-[#c2c9b0] px-1 py-3 rounded-3xl">
+              <span className="font-semibold text-lg">{card.title}</span>
+              <div className="absolute top-0 right-0 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-md border border-gray-300">
+                {card.icon}
+              </div>
             </div>
 
-            <div className="absolute top-0 right-0 w-9 h-9 flex items-center justify-center bg-white rounded-full shadow-md aspect-square border border-gray-300">
-              {card.icon}
-            </div>
-
-            <div className={`py-4 font-bold text-xl flex justify-center items-center gap-1 ${card.color}`}>
+            {/* Value */}
+            <div
+              className={`py-6 font-bold text-3xl flex justify-center items-center gap-2 ${card.color}`}
+            >
               {card.isCurrency ? (
                 <>
-                  <FaRupeeSign className="text-lg" /> {card.value}
+                  <FaRupeeSign className="text-2xl" />
+                  {card.value}
                 </>
               ) : (
                 card.value
@@ -86,21 +86,21 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activities */}
-      <div className="rounded-t-2xl bg-[#c2c9b0] p-4 font-semibold text-black">
+      <div className="rounded-t-2xl bg-[#c2c9b0] p-4 font-semibold text-black text-base">
         Recent Activities
       </div>
-      <div className="bg-white shadow-md rounded-b-2xl p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between text-sm border-b pb-2">
+      <div className="bg-white shadow-md rounded-b-2xl p-4 space-y-4 text-base">
+        <div className="flex flex-col sm:flex-row justify-between">
           <p>Student Ayesha Ali Khan checked in to Bed 101</p>
-          <p className="text-gray-600 mt-1 sm:mt-0">10:30 AM</p>
+          <p className="text-gray-700 mt-1 sm:mt-0">10:30 AM</p>
         </div>
-        <div className="flex flex-col sm:flex-row justify-between text-sm border-b pb-2">
+        <div className="flex flex-col sm:flex-row justify-between">
           <p>Student Mohammed Shariq Shaikh checked out from Bed 205</p>
-          <p className="text-gray-600 mt-1 sm:mt-0">09:30 AM</p>
+          <p className="text-gray-700 mt-1 sm:mt-0">09:30 AM</p>
         </div>
-        <div className="flex flex-col sm:flex-row justify-between text-sm">
+        <div className="flex flex-col sm:flex-row justify-between">
           <p>Student Nida Fatima Konkan checked in to Bed 310</p>
-          <p className="text-gray-600 mt-1 sm:mt-0">08:45 AM</p>
+          <p className="text-gray-700 mt-1 sm:mt-0">08:45 AM</p>
         </div>
       </div>
     </div>
