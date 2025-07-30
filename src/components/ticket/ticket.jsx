@@ -60,8 +60,8 @@ export default function TicketsSection() {
 
         {/* Responsive table wrapper for both mobile & desktop */}
         <div className="overflow-x-auto">
-          <table className="min-w-full text-base text-left text-black border-separate border-spacing-y-3">
-            <thead className="bg-white text-black">
+          <table className="min-w-full text-base text-left font-semibold text-black border-separate border-spacing-y-3">
+            <thead className="bg-white text-black font-bold">
               <tr>
                 <th className="px-5 py-3 border-r border-[#A4B494]">Ticket ID</th>
                 <th className="px-5 py-3 border-r border-[#A4B494]">Subject</th>
@@ -118,7 +118,7 @@ export default function TicketsSection() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full text-base text-left text-black border-separate border-spacing-y-3">
-            <thead className="bg-white text-black">
+            <thead className="bg-white font-semibold text-black">
               <tr>
                 <th className="px-5 py-3 border-r border-[#A4B494]">Ticket ID</th>
                 <th className="px-5 py-3 border-r border-[#A4B494]">Subject</th>
@@ -142,7 +142,7 @@ export default function TicketsSection() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center py-4 text-gray-700">
+                  <td colSpan={5} className="text-center py-4 text-gray-900 font-semibold">
                     No resolved tickets available.
                   </td>
                 </tr>

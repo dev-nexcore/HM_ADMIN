@@ -83,7 +83,7 @@ export default function Sidebar() {
       </button>
 
      <aside
-  className={`fixed top-0 left-0 z-40 w-60 h-[140vh] md:h-screen bg-[#A4B494] py-6 pl-4 flex flex-col justify-between
+  className={`fixed top-0 left-0 z-40 w-60 h-[160vh] md:h-screen bg-[#A4B494] py-6 pl-4 flex flex-col justify-between
   rounded-tr-4xl shadow transform transition-transform duration-300
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
 >
