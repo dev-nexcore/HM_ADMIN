@@ -266,7 +266,7 @@ const StudentManagement = () => {
               value={formData.studentName}
               onChange={handleInputChange}
               placeholder="Enter your Name"
-              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+              className="w-130 px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
               style={inputStyle}
               required
@@ -303,7 +303,7 @@ const StudentManagement = () => {
               value={formData.contactNumber}
               onChange={handleInputChange}
               placeholder="Enter your Phone Number"
-              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+              className="w-130 px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
               style={inputStyle}
               required
@@ -342,7 +342,7 @@ const StudentManagement = () => {
                 name="roomBed"
                 value={formData.roomBed}
                 onChange={handleInputChange}
-                className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
+                className={`w-130 h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
         text-[12px] leading-[22px] font-semibold font-[Poppins] 
         ${formData.roomBed === "" ? "text-[#0000008A]" : "text-black"}`}
                 style={{
