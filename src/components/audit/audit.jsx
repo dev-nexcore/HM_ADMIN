@@ -10,19 +10,19 @@ export default function AuditLogsSection() {
   const logs = [
     {
       timestamp: "25-10-2025\n14:00:30",
-      user: "Chinmay\nGawade",
+      user: "Chinmay Gawade",
       action: "Student Registered",
       description: "Registered New Student Chinmay Gawade(ID:101)",
     },
     {
       timestamp: "25-10-2025\n14:00:30",
-      user: "Chinmay\nGawade",
+      user: "Chinmay Gawade",
       action: "Notice Issued",
       description: "Issued Notice 'Hotel Maintenance Schedule'",
     },
     {
       timestamp: "25-10-2025\n14:00:30",
-      user: "Chinmay\nGawade",
+      user: "Chinmay Gawade",
       action: "Leave Approved",
       description: "Approved Leave Request For Warden C",
     },
@@ -71,14 +71,14 @@ export default function AuditLogsSection() {
               />
               <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
             </div>
-
+{/* 
             <button
               className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md px-5 py-2 whitespace-nowrap shadow-md"
               onClick={toggleFilterModal}
             >
               <FaFilter />
               <span className="hidden sm:inline">Filter</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -147,8 +147,8 @@ export default function AuditLogsSection() {
         </div>
       </div>
 
-      {/* Filter Modal */}
-      {isFilterModalOpen && (
+     {/* Filter Modal */}
+      {/* {isFilterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] sm:w-[400px]">
             <h3 className="text-xl font-semibold mb-4 text-gray-700">Filter Refunds</h3>
@@ -212,7 +212,7 @@ export default function AuditLogsSection() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

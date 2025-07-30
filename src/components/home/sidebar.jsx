@@ -11,6 +11,11 @@ export default function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [active, setActive] = useState("Dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -62,14 +67,14 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
-    router.push("/login");
+    router.push("/");
   };
 
   const getLinkClass = (href, label) =>
-    `flex items-start gap-3 px-2 py-1.5 transition-all duration-200 rounded-l-full text-[0.86rem] cursor-pointer leading-tight
+    `flex items-center gap-3 px-4 py-2 transition-all duration-200 text-[0.86rem] cursor-pointer leading-tight w-full rounded-r-full
      ${active === label || pathname === href
-        ? "bg-white text-black font-semibold shadow ml-1"
-        : "hover:underline text-black"}`;
+      ? "bg-white text-black font-semibold shadow"
+      : "hover:bg-white/30 text-black"}`;
 
   return (
     <div>
@@ -83,9 +88,9 @@ export default function Sidebar() {
       </button>
 
       <aside
-        className={`fixed top-0 left-0 z-40 w-60 h-screen bg-[#A4B494] py-3 pl-2 flex flex-col justify-between
+        className={`fixed top-0 left-0 z-40 w-60 h-screen items-center justify-center bg-[#A4B494] py-4 pl-3 flex flex-col 
         rounded-tr-4xl shadow transform transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
+        common-classes ${isHydrated && sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
       >
         {/* Close Button (Mobile Only) */}
         <button
@@ -96,50 +101,47 @@ export default function Sidebar() {
           <X size={24} />
         </button>
 
-        <div>
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-2 px-1">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow">
-              <img
-                src="/photos/logo.png"
-                alt="Logo"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+        {/* Logo */}
+<div className="flex items-center justify-center mb-2 px-1">
+  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow">
+    <img
+      src="/photos/logo.png"
+      alt="Logo"
+      className="w-full h-full object-cover"
+    />
+  </div>
+</div>
 
-          {/* Nav Links */}
-          <ul className="space-y-2 font-semibold pr-2">
-            {navItems.map(({ label, icon, href }) => (
-              <li key={label} onClick={() => setActive(label)}>
-                <Link href={href}>
-                  <div className={getLinkClass(href, label)}>
-                    <div className="min-w-[18px] mt-[2px]">
-                      <Image src={icon} alt={`${label} icon`} width={18} height={18} />
-                    </div>
-                    <span
-                      className="break-words"
-                      dangerouslySetInnerHTML={{ __html: label }}
-                    />
+
+        {/* Nav Links */}
+        <ul className="space-y-1 font-semibold pr-2 w-full px-2">
+          {navItems.map(({ label, icon, href }) => (
+            <li key={label} onClick={() => setActive(label)}>
+              <Link href={href}>
+                <div className={getLinkClass(href, label)}>
+                  <div className="min-w-[18px] mt-[2px]">
+                    <Image src={icon} alt={`${label} icon`} width={18} height={18} />
                   </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+                  <span
+                    className="break-words text-[14px] font-bold"
+                    dangerouslySetInnerHTML={{ __html: label }}
+                  />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
         {/* Logout Button */}
-        <div className="mt-3 mb-2">
-          <hr className="border-t border-black mx-4 mb-1" />
-          <div className="px-4">
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-2 text-black px-3 py-1.5 rounded-full hover:bg-[#3E522D] w-full"
-            >
-              <Image src="/photos/logout.png" alt="Logout" width={18} height={18} />
-              Logout
-            </button>
-          </div>
+        <div className="mt-2 mb-1 w-full px-4">
+          <hr className="border-t border-black mb-1" />
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="flex items-center gap-2 text-black px-3 py-1.5 rounded-full hover:bg-[#3E522D] w-full"
+          >
+            <Image src="/photos/logout.png" alt="Logout" width={18} height={18} />
+            Logout
+          </button>
         </div>
       </aside>
 
@@ -156,7 +158,7 @@ export default function Sidebar() {
       {showLogoutConfirm && (
         <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-[#A4B494]/60 z-50">
           <div className="bg-[#A4B494] p-6 rounded-xl shadow-lg w-80 max-w-full text-black flex flex-col items-center">
-            <p className="mb-4 text-center text-lg font-semibold">
+            <p className="mb-4 text-center text-lg font-extrabold">
               Are you sure you want to logout?
             </p>
             <div className="flex gap-4">
