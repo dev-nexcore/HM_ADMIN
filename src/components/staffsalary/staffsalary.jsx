@@ -45,7 +45,7 @@ const staffData = [
 ]
 
 const staffMembers = ["Chimney Gowande", "Sullivan Khan", "John Doe", "Jane Smith", "Mike Johnson"]
-
+  
 export default function StaffSalaryContent() {
   const [selectedMonth, setSelectedMonth] = useState("September 2025")
   const [activeTab, setActiveTab] = useState("payroll")
@@ -79,44 +79,30 @@ export default function StaffSalaryContent() {
     console.log("Processing payment:", formData)
   }
 
-  const handleBackToSalary = () => {
-    setShowProcessSalary(false)
-  }
-
   const renderProcessSalaryForm = () => (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-2xl mx-auto">
-        {/* Header with red line and back button */}
+   <div className="min-h-screen mt-5 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-6 sm:mb-8">
-          <button
-            onClick={handleBackToSalary}
-            className="mr-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-          >
-            ← Back
-          </button>
           <div className="w-1 h-6 bg-red-500"></div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Process Staff Salary</h1>
         </div>
 
-        {/* Form Container */}
-        <div className="rounded-2xl p-6 sm:p-8 shadow-sm" style={{ backgroundColor: "#ADCE8C" }}>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 sm:mb-8">Enter Staff Payment Details</h2>
+        <div className="rounded-2xl p-6 sm:p-8 shadow-sm w-full bg-[#A4B494]">
+          <h2 className="text-lg sm:text-2xl font-semibold text-gray-900 mb-6 sm:mb-8">
+            Enter Staff Payment Details
+          </h2>
+
           <div className="space-y-5 sm:space-y-6">
-            {/* Select Staff Member */}
-            <div className="flex flex-col items-center">
-              <label className="block text-sm font-semibold text-gray-900 mb-2 w-4/5 max-w-md">
+            {/* Staff select dropdown */}
+            <div className="w-full">
+              <label htmlFor="staffMember" className="block text-lg font-semibold text-gray-900 mb-2">
                 Select Staff member
               </label>
               <select
+                id="staffMember"
                 value={formData.staffMember}
                 onChange={(e) => handleInputChange("staffMember", e.target.value)}
-                className="w-4/5 max-w-md mx-auto px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                  backgroundPosition: "right 12px center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "16px",
-                }}
+                className="cursor-pointer w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
               >
                 <option value="">Select Staff</option>
                 {staffMembers.map((member, index) => (
@@ -127,66 +113,78 @@ export default function StaffSalaryContent() {
               </select>
             </div>
 
-            {/* Bank Name */}
-            <div className="flex flex-col items-center">
-              <label className="block text-sm font-semibold text-gray-900 mb-2 w-4/5 max-w-md">Bank Name</label>
-              <input
-                type="text"
-                value={formData.bankName}
-                onChange={(e) => handleInputChange("bankName", e.target.value)}
-                placeholder="Enter Bank Name"
-                className="w-4/5 max-w-md mx-auto px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            {/* ✅ Side-by-side on large screen */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label htmlFor="bankName" className="block text-lg font-semibold text-gray-900 mb-2">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  id="bankName"
+                  value={formData.bankName}
+                  onChange={(e) => handleInputChange("bankName", e.target.value)}
+                  placeholder="Enter Bank Name"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                />
+              </div>
+              <div>
+                <label htmlFor="accountNumber" className="block text-lg font-semibold text-gray-900 mb-2">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  id="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={(e) => handleInputChange("accountNumber", e.target.value)}
+                  placeholder="Enter Account number"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                />
+              </div>
             </div>
 
-            {/* Account Number */}
-            <div className="flex flex-col items-center">
-              <label className="block text-sm font-semibold text-gray-900 mb-2 w-4/5 max-w-md">Account Number</label>
-              <input
-                type="text"
-                value={formData.accountNumber}
-                onChange={(e) => handleInputChange("accountNumber", e.target.value)}
-                placeholder="Enter Account number"
-                className="w-4/5 max-w-md mx-auto px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            {/* IFSC and Amount */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label htmlFor="ifscCode" className="block text-lg font-semibold text-gray-900 mb-2">
+                  IFSC Code
+                </label>
+                <input
+                  type="text"
+                  id="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={(e) => handleInputChange("ifscCode", e.target.value)}
+                  placeholder="Enter IFSC Code"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                />
+              </div>
+              <div>
+                <label htmlFor="amountToPay" className="block text-lg font-semibold text-gray-900 mb-2">
+                  Amount To Pay (₹)
+                </label>
+                <input
+                  type="number"
+                  id="amountToPay"
+                  value={formData.amountToPay}
+                  onChange={(e) => handleInputChange("amountToPay", e.target.value)}
+                  placeholder="Enter Amount To Pay"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                />
+              </div>
             </div>
 
-            {/* IFSC Code */}
-            <div className="flex flex-col items-center">
-              <label className="block text-sm font-semibold text-gray-900 mb-2 w-4/5 max-w-md">IFSC Code</label>
-              <input
-                type="text"
-                value={formData.ifscCode}
-                onChange={(e) => handleInputChange("ifscCode", e.target.value)}
-                placeholder="Enter IFSC Code"
-                className="w-4/5 max-w-md mx-auto px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Amount To Pay */}
-            <div className="flex flex-col items-center">
-              <label className="block text-sm font-semibold text-gray-900 mb-2 w-4/5 max-w-md">Amount To Pay (₹)</label>
-              <input
-                type="number"
-                value={formData.amountToPay}
-                onChange={(e) => handleInputChange("amountToPay", e.target.value)}
-                placeholder="Enter Amount To Pay"
-                className="w-4/5 max-w-md mx-auto px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Action Buttons */}
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
               <button
                 onClick={handleCancel}
-                className="px-8 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg text-base font-semibold hover:bg-blue-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="cursor-pointer px-8 py-3 bg-white text-black rounded-lg text-base font-semibold transition-colors hover:bg-gray-100 duration-200 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleProceedToPay}
-                className="px-8 py-3 text-white rounded-lg text-base font-semibold hover:opacity-90 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                style={{ backgroundColor: "#BEC5AD" }}
+                className="px-8 py-3 bg-white cursor-pointer text-black rounded-lg text-base font-semibold hover:bg-gray-100 hover:opacity-90 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                
               >
                 Proceed To Pay
               </button>
@@ -391,7 +389,7 @@ export default function StaffSalaryContent() {
   }
 
   return (
-    <div className="p-3 sm:p-6 min-h-screen">
+    <div className="p-3 sm:p-6 min-h-screen mt-5">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with red line */}
         <div className="flex items-center gap-2">
