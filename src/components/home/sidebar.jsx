@@ -18,15 +18,43 @@ export default function Sidebar() {
 
   const navItems = [
     { label: "Dashboard", icon: "/photos/dashboard.png", href: "/dashboard" },
-    { label: "Inventory Management", icon: "/photos/inventory.png", href: "/inventory" },
-    { label: "Student Management", icon: "/photos/student.png", href: "/students" },
+    {
+      label: "Inventory Management",
+      icon: "/photos/inventory.png",
+      href: "/inventory",
+    },
+    {
+      label: "Student Management",
+      icon: "/photos/student.png",
+      href: "/management",
+    },
     { label: "Notices", icon: "/photos/notice.png", href: "/notices" },
     { label: "Invoices", icon: "/photos/invoice.png", href: "/invoices" },
-    { label: "Inspection", icon: "/photos/inspection.png", href: "/inspection" },
-    { label: "Leave Requests", icon: "/photos/leave.png", href: "/leave-requests" },
-    { label: "Staff Allotment", icon: "/photos/staff.png", href: "/staffallotment" },
-    { label: "Staff Salary & Deductions", icon: "/photos/salary.png", href: "/staffsalary" },
-    { label: "Tickets and Queries", icon: "/photos/tickets.png", href: "/ticket" },
+    {
+      label: "Inspection",
+      icon: "/photos/inspection.png",
+      href: "/inspection",
+    },
+    {
+      label: "Leave Requests",
+      icon: "/photos/leave.png",
+      href: "/leave-requests",
+    },
+    {
+      label: "Staff Allotment",
+      icon: "/photos/staff.png",
+      href: "/staffallotment",
+    },
+    {
+      label: "Staff Salary & Deductions",
+      icon: "/photos/salary.png",
+      href: "/staffsalary",
+    },
+    {
+      label: "Tickets and Queries",
+      icon: "/photos/tickets.png",
+      href: "/ticket",
+    },
     { label: "Audit Logs", icon: "/photos/audit.png", href: "/audit" },
     { label: "Refunds", icon: "/photos/refund.png", href: "/refunds" },
   ];
