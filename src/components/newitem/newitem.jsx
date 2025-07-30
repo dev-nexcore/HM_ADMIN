@@ -23,6 +23,15 @@ function AddNewItem() {
     }));
   };
 
+  // Function to format date from yyyy-mm-dd to dd-mm-yyyy
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+ 
+
   const handleFileChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -388,10 +397,9 @@ function AddNewItem() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                 <input
                   id="purchaseDate"
-                  ref={dateInputRef}
                   type="text"
                   name="purchaseDate"
-                  value={formData.purchaseDate}
+                  value={formatDateForDisplay(formData.purchaseDate)}
                   onChange={handleInputChange}
                   placeholder="dd - mm - yyyy"
                   readOnly
@@ -419,6 +427,7 @@ function AddNewItem() {
                 <input
                   type="date"
                   ref={dateInputRef}
+                  value={formData.purchaseDate}
                   style={{
                     position: "absolute",
                     top: "50%",
