@@ -1,12 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "@fontsource/inter"; // This loads default weights
-
-import { Poppins } from "next/font/google"; // 🆕 import Poppins
+import { Poppins } from "next/font/google";
 import "./globals.css";
-import LayoutWrapper from "@/components/LayoutWrapper";// NEW
+import LayoutWrapper from "@/components/LayoutWrapper";
 
-
-// Existing fonts
+// Fonts setup
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,11 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// 🆕 Add Poppins config
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"], // You can customize this
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -32,11 +29,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-       
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
+      {/* 👇 Add suppressHydrationWarning here */}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        <LayoutWrapper>{children}</LayoutWrapper>
       </body>
     </html>
   );
