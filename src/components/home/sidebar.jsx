@@ -35,11 +35,7 @@ export default function Sidebar() {
     },
     { label: "Notices", icon: "/photos/notice.png", href: "/notices" },
     { label: "Invoices", icon: "/photos/invoice.png", href: "/invoices" },
-    {
-      label: "Inspection",
-      icon: "/photos/inspection.png",
-      href: "/inspection",
-    },
+    { label: "Inspection", icon: "/photos/inspection.png", href: "/inspection" },
     {
       label: "Leave<br/>Requests",
       icon: "/photos/leave.png",
@@ -71,14 +67,17 @@ export default function Sidebar() {
   };
 
   const getLinkClass = (href, label) =>
-    `flex items-center gap-3 px-4 py-2 transition-all duration-200 text-[0.86rem] cursor-pointer leading-tight w-full rounded-r-full
-     ${active === label || pathname === href
-      ? "bg-white text-black font-semibold shadow"
-      : "hover:bg-white/30 text-black"}`;
+  `flex items-center gap-3 px-2 py-1.5 transition-all duration-200 text-[15px] font-semibold w-full cursor-pointer
+   ${
+     active === label || pathname === href
+       ? "bg-white text-black shadow rounded-l-full pl-6 pr-0"
+       : "hover:bg-white/30 text-black pl-6 pr-0"
+   }`;
+
 
   return (
-    <div>
-      {/* Hamburger menu (Mobile) */}
+    <div className="min-h-screen flex">
+      {/* Mobile hamburger */}
       <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#A4B494] rounded-md shadow text-black"
         onClick={() => setSidebarOpen(true)}
@@ -87,12 +86,12 @@ export default function Sidebar() {
         <Menu size={24} />
       </button>
 
+      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 w-60 h-screen items-center justify-center bg-[#A4B494] py-4 pl-3 flex flex-col 
-        rounded-tr-4xl shadow transform transition-transform duration-300
-        common-classes ${isHydrated && sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
+        className={`fixed top-0 left-0 z-40 w-60 h-full bg-[#A4B494] py-6 shadow rounded-tr-3xl flex flex-col items-center transition-transform duration-300
+        ${isHydrated && sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static`}
       >
-        {/* Close Button (Mobile Only) */}
+        {/* Close button mobile */}
         <button
           className="md:hidden absolute top-4 right-4 p-2 text-black"
           onClick={() => setSidebarOpen(false)}
@@ -102,8 +101,8 @@ export default function Sidebar() {
         </button>
 
         {/* Logo */}
-<div className="flex items-center justify-center mb-2 px-1">
-  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow">
+<div className="flex justify-center items-center mb-6 -mt-3">
+  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow">
     <img
       src="/photos/logo.png"
       alt="Logo"
@@ -113,17 +112,21 @@ export default function Sidebar() {
 </div>
 
 
-        {/* Nav Links */}
-        <ul className="space-y-1 font-semibold pr-2 w-full px-2">
+        {/* Nav items */}
+        <ul className="flex flex-col gap-1 w-full px-2">
           {navItems.map(({ label, icon, href }) => (
             <li key={label} onClick={() => setActive(label)}>
               <Link href={href}>
                 <div className={getLinkClass(href, label)}>
-                  <div className="min-w-[18px] mt-[2px]">
-                    <Image src={icon} alt={`${label} icon`} width={18} height={18} />
-                  </div>
+                  <Image
+                    src={icon}
+                    alt={`${label} icon`}
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
                   <span
-                    className="break-words text-[14px] font-bold"
+                    className="break-words leading-tight"
                     dangerouslySetInnerHTML={{ __html: label }}
                   />
                 </div>
@@ -132,31 +135,30 @@ export default function Sidebar() {
           ))}
         </ul>
 
-        {/* Logout Button */}
-        <div className="mt-2 mb-1 w-full px-4">
-          <hr className="border-t border-black mb-1" />
+        {/* Logout */}
+        <div className="mt-auto mb-6 px-5 w-full">
+          <hr className="border-t border-black mb-3" />
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex items-center gap-2 text-black px-3 py-1.5 rounded-full hover:bg-[#3E522D] w-full"
+            className="flex items-center justify-start gap-3 text-black px-4 -pt-3 rounded-full hover:bg-[#3E522D] w-full font-semibold"
           >
-            <Image src="/photos/logout.png" alt="Logout" width={18} height={18} />
+            <Image src="/photos/logout.png" alt="Logout" width={20} height={20} />
             Logout
           </button>
         </div>
       </aside>
 
-      {/* Dark Overlay (Mobile only) */}
+      {/* Overlay mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black opacity-30 z-30 md:hidden"
           onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
         />
       )}
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout confirmation */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-[#A4B494]/60 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-[#A4B494]/60 backdrop-blur-sm z-50">
           <div className="bg-[#A4B494] p-6 rounded-xl shadow-lg w-80 max-w-full text-black flex flex-col items-center">
             <p className="mb-4 text-center text-lg font-extrabold">
               Are you sure you want to logout?
@@ -164,7 +166,7 @@ export default function Sidebar() {
             <div className="flex gap-4">
               <button
                 onClick={handleLogout}
-                className="bg-white text-[#4A633E] font-semibold px-5 py-2 rounded-full hover:bg-[#D7E3C8]"
+                className="bg-white text-[#4A633E] font-semibold px-5 py-2 rounded-full hover:bg-[#D7E3C8] "
               >
                 Yes
               </button>

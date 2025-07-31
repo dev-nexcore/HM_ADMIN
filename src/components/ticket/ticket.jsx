@@ -50,7 +50,7 @@ export default function TicketsSection() {
 
   return (
     <div className="px-4 md:px-6 py-10 space-y-10 max-w-screen-xl mx-auto">
-      <h2 className="text-2xl font-bold text-black border-l-4 border-red-600 pl-3">
+      <h2 className="text-2xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
         Tickets & Queries
       </h2>
 
@@ -78,7 +78,7 @@ export default function TicketsSection() {
                     <td className="px-5 py-3">{ticket.id}</td>
                     <td className="px-5 py-3">{ticket.subject}</td>
                     <td className="px-5 py-3">{ticket.raisedBy}</td>
-                    <td className="px-5 py-3 font-bold text-orange-500">
+                    <td className="px-5 py-3 font-bold text-[#4F8CCF]">
                       {ticket.status}
                     </td>
                     <td className="px-5 py-3">{ticket.dateRaised}</td>
