@@ -5,7 +5,6 @@ function AdminInventory() {
   return (
     <>
      <InventoryList/>
- 
     </>
   );
 }

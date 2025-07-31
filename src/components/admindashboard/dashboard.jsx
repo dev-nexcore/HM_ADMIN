@@ -86,7 +86,7 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activities */}
-      <div className="rounded-t-2xl bg-[#c2c9b0] p-4 font-semibold text-black text-base">
+      <div className="rounded-t-2xl bg-[#c2c9b0] p-4  font-semibold text-black text-base">
         Recent Activities
       </div>
       <div className="bg-white shadow-md rounded-b-2xl p-4 space-y-4 text-base">

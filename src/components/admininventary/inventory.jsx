@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { FaEye, FaPen } from 'react-icons/fa';
+import { FaEye, FaPen, FaSearch } from 'react-icons/fa';
 import { FiUpload, FiFileText, FiPlus } from 'react-icons/fi';
 
 const initialData = [
@@ -65,54 +65,108 @@ const InventoryList = () => {
   };
 
   return (
-    <div className="bg-[#f0f2f5] min-h-screen py-4 w-full">
-      <div className="w-full bg-white shadow-md p-4 sm:p-6">
-        {/* Header */}
-        <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold text-black border-l-4 border-red-500 pl-2 flex-1">Inventory List</h2>
-          <div className="flex flex-wrap gap-2 flex-1 justify-end">
-            <button onClick={() => setShowUploadModal(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+    <div className="bg-white min-h-screen py-4 w-full mt-6">
+      {/* Header */}
+      <div className="px-4 sm:px-6 mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h2 className="text-2xl font-bold text-black border-l-4 border-red-500 pl-2">
+            Inventory List
+          </h2>
+          <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-15 py-2 rounded shadow w-full sm:w-auto"
+            >
               <FiUpload /> Upload Receipt
             </button>
-            <button className="flex items-center gap-2 bg-white border border-gray-300 text-black px-4 py-2 rounded shadow">
+            <button className="flex items-center gap-2 bg-white border border-gray-300 text-black  px-25 py-2 rounded shadow w-full sm:w-auto font-bold ">
               <FiFileText /> Generate Monthly Stock Report
             </button>
-            <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white  px-15 py-2 rounded shadow w-full sm:w-auto"
+            >
               <FiPlus /> Add New Item
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
-          <input type="text" className="border px-4 py-2 text-sm rounded-md" placeholder="Search..." />
-          <select className="border px-4 py-2 text-sm rounded-md" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option>All Status</option>
-            <option>In Use</option>
-            <option>Available</option>
-            <option>In maintenance</option>
-            <option>Damaged</option>
-          </select>
-          <select className="border px-4 py-2 text-sm rounded-md" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-            <option>All Categories</option>
-            <option>Bedding</option>
-            <option>Furniture</option>
-            <option>Electronics</option>
-            <option>Applications</option>
-          </select>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6 px-4 sm:px-6">
+        <div className="relative flex-1 min-w-[250px]">
+          <FaSearch className="absolute top-3 left-3 text-black" />
+          <input
+            type="text"
+            className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
+            placeholder="Search by Name or Barcode"
+          />
         </div>
+        <select
+          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option>All Status</option>
+          <option>In Use</option>
+          <option>Available</option>
+          <option>In maintenance</option>
+          <option>Damaged</option>
+        </select>
+        <select
+          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option>All Categories</option>
+          <option>Bedding</option>
+          <option>Furniture</option>
+          <option>Electronics</option>
+          <option>Applications</option>
+        </select>
+      </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left border-collapse">
+      {/* Table */}
+      <div className="px-4 m:px-6">
+        <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+          <table className="w-full min-w-[700px] text-center border-collapse">
             <thead>
               <tr className="bg-[#A4B494] text-black text-sm">
-                <th className="px-4 py-2 border-r border-black rounded-tl-lg">Item Name</th>
-                <th className="px-4 py-2 border-r border-black">Barcode ID</th>
-                <th className="px-4 py-2 border-r border-black">Category</th>
-                <th className="px-4 py-2 border-r border-black">Location</th>
-                <th className="px-4 py-2 border-r border-black">Status</th>
-                <th className="px-4 py-2 text-center rounded-tr-lg">Action</th>
+                      <th className="px-0 py-4 rounded-tl-lg">
+        <div className="flex items-center pl-4 pr-4">
+          <span className="flex-1">Item Name</span>
+          <div className="h-6 w-px bg-black ml-4"></div> {/* vertical line with space */}
+        </div>
+      </th>
+
+                <th className="px-0 py-4">
+  <div className="flex items-center pl-4 pr-4">
+    <span className="flex-1">Barcode ID</span>
+    <div className="h-6 w-px bg-black ml-4"></div>
+  </div>
+</th>
+<th className="px-0 py-4">
+  <div className="flex items-center pl-4 pr-4">
+    <span className="flex-1">Category</span>
+    <div className="h-6 w-px bg-black ml-4"></div>
+  </div>
+</th>
+<th className="px-0 py-4">
+  <div className="flex items-center pl-4 pr-4">
+    <span className="flex-1">Location</span>
+    <div className="h-6 w-px bg-black ml-4"></div>
+  </div>
+</th>
+<th className="px-0 py-4">
+  <div className="flex items-center pl-4 pr-4">
+    <span className="flex-1">Status</span>
+    <div className="h-6 w-px bg-black ml-4"></div>
+  </div>
+</th>
+<th className="px-4 py-4 text-center rounded-tr-lg">
+  Action
+</th>
+
               </tr>
             </thead>
             <tbody className="bg-white text-sm">
@@ -154,7 +208,7 @@ const InventoryList = () => {
                         </td>
                         <td className="px-4 py-2 text-center flex justify-center items-center gap-2">
                           <FaEye className="cursor-pointer text-gray-600 hover:text-blue-600" onClick={() => { setSelectedItem(item); setShowViewModal(true); }} />
-                          <div className="w-[1px] h-5 bg-gray-400" />
+                          <div className="w-[1px] h-5 bg-gray-400 my-2" />
                           <FaPen className="cursor-pointer text-gray-600 hover:text-green-600" onClick={() => handleEditClick(item)} />
                         </td>
                       </>
@@ -165,9 +219,6 @@ const InventoryList = () => {
           </table>
         </div>
       </div>
-
-      {/* Modals (unchanged) */}
-      {/* ...Upload Receipt and Add Item Modal Code remains the same... */}
     </div>
   );
 };
