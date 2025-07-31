@@ -24,6 +24,7 @@ const InventoryList = () => {
   const [editData, setEditData] = useState({});
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -98,6 +99,8 @@ const InventoryList = () => {
           <FaSearch className="absolute top-3 left-3 text-black" />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
             placeholder="Search by Name or Barcode"
           />
@@ -170,7 +173,9 @@ const InventoryList = () => {
                 .filter(
                   (item) =>
                     (statusFilter === 'All Status' || item.status === statusFilter) &&
-                    (categoryFilter === 'All Categories' || item.category === categoryFilter)
+                    (categoryFilter === 'All Categories' || item.category === categoryFilter) &&
+                    (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                     item.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
                 )
                 .map((item) => (
                   <tr key={item.barcode} className="hover:bg-gray-100">
