@@ -79,12 +79,12 @@ const InventoryList = () => {
             >
               <FiUpload /> Upload Receipt
             </button>
-            <button className="flex items-center gap-2 bg-white border border-gray-300 text-black  px-25 py-2 rounded shadow w-full sm:w-auto font-bold ">
+            <button className="flex items-center gap-2 bg-white border border-gray-300 text-black px-25 py-2 rounded shadow w-full sm:w-auto font-bold">
               <FiFileText /> Generate Monthly Stock Report
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white  px-15 py-2 rounded shadow w-full sm:w-auto"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-15 py-2 rounded shadow w-full sm:w-auto"
             >
               <FiPlus /> Add New Item
             </button>
@@ -132,41 +132,37 @@ const InventoryList = () => {
           <table className="w-full min-w-[700px] text-center border-collapse">
             <thead>
               <tr className="bg-[#A4B494] text-black text-sm">
-                      <th className="px-0 py-4 rounded-tl-lg">
-        <div className="flex items-center pl-4 pr-4">
-          <span className="flex-1">Item Name</span>
-          <div className="h-6 w-px bg-black ml-4"></div> {/* vertical line with space */}
-        </div>
-      </th>
-
+                <th className="px-0 py-4 rounded-tl-lg">
+                  <div className="flex items-center pl-4 pr-4">
+                    <span className="flex-1">Item Name</span>
+                    <div className="h-6 w-px bg-black ml-4"></div>
+                  </div>
+                </th>
                 <th className="px-0 py-4">
-  <div className="flex items-center pl-4 pr-4">
-    <span className="flex-1">Barcode ID</span>
-    <div className="h-6 w-px bg-black ml-4"></div>
-  </div>
-</th>
-<th className="px-0 py-4">
-  <div className="flex items-center pl-4 pr-4">
-    <span className="flex-1">Category</span>
-    <div className="h-6 w-px bg-black ml-4"></div>
-  </div>
-</th>
-<th className="px-0 py-4">
-  <div className="flex items-center pl-4 pr-4">
-    <span className="flex-1">Location</span>
-    <div className="h-6 w-px bg-black ml-4"></div>
-  </div>
-</th>
-<th className="px-0 py-4">
-  <div className="flex items-center pl-4 pr-4">
-    <span className="flex-1">Status</span>
-    <div className="h-6 w-px bg-black ml-4"></div>
-  </div>
-</th>
-<th className="px-4 py-4 text-center rounded-tr-lg">
-  Action
-</th>
-
+                  <div className="flex items-center pl-4 pr-4">
+                    <span className="flex-1">Barcode ID</span>
+                    <div className="h-6 w-px bg-black ml-4"></div>
+                  </div>
+                </th>
+                <th className="px-0 py-4">
+                  <div className="flex items-center pl-4 pr-4">
+                    <span className="flex-1">Category</span>
+                    <div className="h-6 w-px bg-black ml-4"></div>
+                  </div>
+                </th>
+                <th className="px-0 py-4">
+                  <div className="flex items-center pl-4 pr-4">
+                    <span className="flex-1">Location</span>
+                    <div className="h-6 w-px bg-black ml-4"></div>
+                  </div>
+                </th>
+                <th className="px-0 py-4">
+                  <div className="flex items-center pl-4 pr-4">
+                    <span className="flex-1">Status</span>
+                    <div className="h-6 w-px bg-black ml-4"></div>
+                  </div>
+                </th>
+                <th className="px-4 py-4 text-center rounded-tr-lg">Action</th>
               </tr>
             </thead>
             <tbody className="bg-white text-sm">
@@ -219,6 +215,51 @@ const InventoryList = () => {
           </table>
         </div>
       </div>
+
+      {/* Upload Receipt Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-xl font-bold mb-4">Upload Receipt</h3>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleUploadReceipt}
+              className="mb-4 w-full"
+            />
+            {receiptFile && (
+              <p className="text-sm text-gray-700 mb-2">
+                Selected: <strong>{receiptFile.name}</strong>
+              </p>
+            )}
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setReceiptFile(null);
+                }}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (receiptFile) {
+                    alert(`Uploaded: ${receiptFile.name}`);
+                    setShowUploadModal(false);
+                    setReceiptFile(null);
+                  } else {
+                    alert("Please select a file to upload.");
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

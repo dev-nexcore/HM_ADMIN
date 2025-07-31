@@ -11,7 +11,7 @@ const AdminLogin = () => {
             Welcome Back!
           </h2>
           <img
-            src="/logo.png"
+            src="/photos/logo.png"
             alt="Kokan Global Foundation Logo"
             className="w-[180px] h-[160px] bg-white p-4 rounded-md mb-6 object-contain"
           />
