@@ -6,7 +6,7 @@ const AdminLogin = () => {
     <div className="h-screen w-screen flex items-center justify-center bg-gray-100">
       <div className="flex flex-col lg:flex-row w-full h-full bg-white shadow-2xl overflow-hidden">
         {/* Left Panel */}
-        <div className="w-full lg:w-2/3 bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16 lg:py-0 rounded-none lg:rounded-r-[50px]">
+        <div className="w-full lg:w-2.5/3 bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16 lg:py-0 rounded-none lg:rounded-r-[50px]">
           <h2 className="text-3xl sm:text-4xl font-bold text-black mb-6">
             Welcome Back!
           </h2>
@@ -21,7 +21,7 @@ const AdminLogin = () => {
         </div>
 
         {/* Right Panel */}
-        <div className="w-full lg:w-1/3 flex flex-col justify-center items-center px-6 py-10 sm:px-10 lg:px-16 bg-white">
+        <div className="w-full lg:w-2/3 flex flex-col justify-center items-center px-6 py-10 sm:px-10 lg:px-16 bg-white">
           <h2 className="text-3xl font-bold text-black mb-8">Admin Login</h2>
 
           <form className="space-y-6 w-full max-w-sm">
