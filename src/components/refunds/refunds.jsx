@@ -1,6 +1,7 @@
 "use client"
-import { useState } from "react"
-import { Search, Filter, X } from 'lucide-react'
+
+import { useState } from "react" // Explicitly import React for types and JSX
+import { Search, Filter, X } from "lucide-react"
 
 const Refunds = () => {
   const [formData, setFormData] = useState({
@@ -62,11 +63,13 @@ const Refunds = () => {
     },
   ]
 
+  // Use React.ChangeEvent for type annotation
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Use React.ChangeEvent for type annotation
   const handleFilterChange = (e) => {
     const { name, value } = e.target
     setFilters((prev) => ({ ...prev, [name]: value }))
@@ -83,6 +86,7 @@ const Refunds = () => {
 
   const handleProceedToPay = () => {
     console.log("Processing refund:", formData)
+    // Add logic to process refund
   }
 
   const clearFilters = () => {
@@ -109,10 +113,16 @@ const Refunds = () => {
     }
   }
 
+  // Helper to parse DD-MM-YYYY to Date object for consistent comparison
+  const parseDate = (dateString) => {
+    const [day, month, year] = dateString.split("-").map(Number)
+    return new Date(year, month - 1, day) // Month is 0-indexed
+  }
+
   // Filter and search functionality
   const filteredRefunds = refundHistory.filter((refund) => {
     // Search functionality
-    const matchesSearch = 
+    const matchesSearch =
       refund.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,13 +132,13 @@ const Refunds = () => {
 
     // Filter functionality
     const matchesStatus = !filters.status || refund.status === filters.status
-    
-    const matchesDateFrom = !filters.dateFrom || new Date(refund.date) >= new Date(filters.dateFrom)
-    const matchesDateTo = !filters.dateTo || new Date(refund.date) <= new Date(filters.dateTo)
-    
-    const refundAmount = parseInt(refund.amount.replace('₹', '').replace(',', ''))
-    const matchesAmountMin = !filters.amountMin || refundAmount >= parseInt(filters.amountMin)
-    const matchesAmountMax = !filters.amountMax || refundAmount <= parseInt(filters.amountMax)
+
+    const matchesDateFrom = !filters.dateFrom || parseDate(refund.date) >= new Date(filters.dateFrom)
+    const matchesDateTo = !filters.dateTo || parseDate(refund.date) <= new Date(filters.dateTo)
+
+    const refundAmount = Number.parseInt(refund.amount.replace("₹", "").replace(",", ""))
+    const matchesAmountMin = !filters.amountMin || refundAmount >= Number.parseInt(filters.amountMin)
+    const matchesAmountMax = !filters.amountMax || refundAmount <= Number.parseInt(filters.amountMax)
 
     return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountMin && matchesAmountMax
   })
@@ -143,7 +153,7 @@ const Refunds = () => {
 
       {/* Initiate New Refund */}
       <div
-        className="ml-0 sm:ml-8 rounded-lg w-270 max-w-none px-4 sm:px-8 lg:px-16 py-6"
+        className="rounded-lg w-full px-4 sm:px-8 lg:px-16 py-6" // Adjusted for responsiveness
         style={{
           backgroundColor: "#A4B494",
           boxShadow: "0px 4px 20px 0px #00000040 inset",
@@ -152,8 +162,11 @@ const Refunds = () => {
         <h2 className="text-lg sm:text-xl lg:text-2xl pt-3 font-bold text-black mb-6">Initiate New Refund</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div>
-            <label className="text-sm sm:text-md font-bold text-black mb-2 block">Student / Resident ID</label>
+            <label htmlFor="studentId" className="text-sm sm:text-md font-bold text-black mb-2 block">
+              Student / Resident ID
+            </label>
             <input
+              id="studentId"
               type="text"
               name="studentId"
               value={formData.studentId}
@@ -163,8 +176,11 @@ const Refunds = () => {
             />
           </div>
           <div>
-            <label className="text-sm sm:text-md font-bold text-black mb-2 block">Refund Amount</label>
+            <label htmlFor="refundAmount" className="text-sm sm:text-md font-bold text-black mb-2 block">
+              Refund Amount
+            </label>
             <input
+              id="refundAmount"
               type="text"
               name="refundAmount"
               value={formData.refundAmount}
@@ -174,8 +190,11 @@ const Refunds = () => {
             />
           </div>
           <div>
-            <label className="text-sm sm:text-md font-bold text-black mb-2 block">Reason For Refund</label>
+            <label htmlFor="reason" className="text-sm sm:text-md font-bold text-black mb-2 block">
+              Reason For Refund
+            </label>
             <input
+              id="reason"
               type="text"
               name="reason"
               value={formData.reason}
@@ -185,8 +204,11 @@ const Refunds = () => {
             />
           </div>
           <div>
-            <label className="text-sm sm:text-md font-bold text-black mb-2 block">Payment Method</label>
+            <label htmlFor="paymentMethod" className="text-sm sm:text-md font-bold text-black mb-2 block">
+              Payment Method
+            </label>
             <select
+              id="paymentMethod"
               name="paymentMethod"
               value={formData.paymentMethod}
               onChange={handleInputChange}
@@ -237,7 +259,7 @@ const Refunds = () => {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-4 h-4" />
             </div>
-            <button 
+            <button
               onClick={() => setShowFilterModal(true)}
               className="flex items-center justify-center gap-2 sm:gap-4 bg-[#28C404] text-white px-4 sm:px-6 py-2 cursor-pointer rounded-md text-sm sm:text-base hover:bg-[#22A803] transition-colors"
             >
@@ -263,9 +285,7 @@ const Refunds = () => {
                 </span>
               )}
               {filters.dateTo && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  To: {filters.dateTo}
-                </span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">To: {filters.dateTo}</span>
               )}
               {filters.amountMin && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -329,7 +349,7 @@ const Refunds = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-gray-600">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-600">
                     No refunds found matching your search criteria.
                   </td>
                 </tr>
@@ -348,15 +368,18 @@ const Refunds = () => {
               <button
                 onClick={() => setShowFilterModal(false)}
                 className="text-gray-500 hover:text-gray-700"
+                aria-label="Close filter modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-black mb-2">Status</label>
+                <label htmlFor="filterStatus" className="block text-sm font-bold text-black mb-2">
+                  Status
+                </label>
                 <select
+                  id="filterStatus"
                   name="status"
                   value={filters.status}
                   onChange={handleFilterChange}
@@ -368,10 +391,12 @@ const Refunds = () => {
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-bold text-black mb-2">Date From</label>
+                <label htmlFor="dateFrom" className="block text-sm font-bold text-black mb-2">
+                  Date From
+                </label>
                 <input
+                  id="dateFrom"
                   type="date"
                   name="dateFrom"
                   value={filters.dateFrom}
@@ -379,10 +404,12 @@ const Refunds = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-bold text-black mb-2">Date To</label>
+                <label htmlFor="dateTo" className="block text-sm font-bold text-black mb-2">
+                  Date To
+                </label>
                 <input
+                  id="dateTo"
                   type="date"
                   name="dateTo"
                   value={filters.dateTo}
@@ -390,10 +417,11 @@ const Refunds = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-bold text-black mb-2">Amount Range</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label htmlFor="amountRange" className="block text-sm font-bold text-black mb-2">
+                  Amount Range
+                </label>
+                <div id="amountRange" className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     name="amountMin"
@@ -413,7 +441,6 @@ const Refunds = () => {
                 </div>
               </div>
             </div>
-
             <div className="flex gap-3 mt-6">
               <button
                 onClick={clearFilters}

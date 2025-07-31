@@ -1,4 +1,5 @@
 "use client"
+
 import { useState } from "react"
 
 const staffData = [
@@ -45,7 +46,7 @@ const staffData = [
 ]
 
 const staffMembers = ["Chimney Gowande", "Sullivan Khan", "John Doe", "Jane Smith", "Mike Johnson"]
-  
+
 export default function StaffSalaryContent() {
   const [selectedMonth, setSelectedMonth] = useState("September 2025")
   const [activeTab, setActiveTab] = useState("payroll")
@@ -77,21 +78,18 @@ export default function StaffSalaryContent() {
 
   const handleProceedToPay = () => {
     console.log("Processing payment:", formData)
+    // Add actual payment processing logic here
   }
 
   const renderProcessSalaryForm = () => (
-   <div className="min-h-screen mt-5 p-4 sm:p-6">
+    <div className="min-h-screen mt-5 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-6 sm:mb-8">
           <div className="w-1 h-6 bg-red-500"></div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Process Staff Salary</h1>
         </div>
-
         <div className="rounded-2xl p-6 sm:p-8 shadow-sm w-full bg-[#A4B494]">
-          <h2 className="text-lg sm:text-2xl font-semibold text-gray-900 mb-6 sm:mb-8">
-            Enter Staff Payment Details
-          </h2>
-
+          <h2 className="text-lg sm:text-2xl font-semibold text-gray-900 mb-6 sm:mb-8">Enter Staff Payment Details</h2>
           <div className="space-y-5 sm:space-y-6">
             {/* Staff select dropdown */}
             <div className="w-full">
@@ -112,8 +110,7 @@ export default function StaffSalaryContent() {
                 ))}
               </select>
             </div>
-
-            {/* ✅ Side-by-side on large screen */}
+            {/* Side-by-side on large screen */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label htmlFor="bankName" className="block text-lg font-semibold text-gray-900 mb-2">
@@ -142,7 +139,6 @@ export default function StaffSalaryContent() {
                 />
               </div>
             </div>
-
             {/* IFSC and Amount */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
@@ -172,7 +168,6 @@ export default function StaffSalaryContent() {
                 />
               </div>
             </div>
-
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
               <button
@@ -184,7 +179,6 @@ export default function StaffSalaryContent() {
               <button
                 onClick={handleProceedToPay}
                 className="px-8 py-3 bg-white cursor-pointer text-black rounded-lg text-base font-semibold hover:bg-gray-100 hover:opacity-90 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                
               >
                 Proceed To Pay
               </button>
@@ -383,7 +377,6 @@ export default function StaffSalaryContent() {
     </div>
   )
 
-  // If showing process salary form, render that instead
   if (showProcessSalary) {
     return renderProcessSalaryForm()
   }
@@ -441,7 +434,11 @@ export default function StaffSalaryContent() {
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
+            <label htmlFor="monthSelect" className="sr-only">
+              Select Month
+            </label>
             <select
+              id="monthSelect"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="w-full sm:w-48 px-3 py-3 border border-gray-300 rounded-md font-semibold text-xs sm:text-sm cursor-pointer shadow-lg"
