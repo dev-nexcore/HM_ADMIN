@@ -23,39 +23,15 @@ export default function Sidebar() {
 
   const navItems = [
     { label: "Dashboard", icon: "/photos/dashboard.png", href: "/dashboard" },
-    {
-      label: "Inventory<br/>Management",
-      icon: "/photos/inventory.png",
-      href: "/inventory",
-    },
-    {
-      label: "Student<br/>Management",
-      icon: "/photos/student.png",
-      href: "/management",
-    },
+    { label: "Inventory<br/>Management", icon: "/photos/inventory.png", href: "/inventory" },
+    { label: "Student<br/>Management", icon: "/photos/student.png", href: "/management" },
     { label: "Notices", icon: "/photos/notice.png", href: "/notices" },
     { label: "Invoices", icon: "/photos/invoice.png", href: "/invoices" },
     { label: "Inspection", icon: "/photos/inspection.png", href: "/inspection" },
-    {
-      label: "Leave<br/>Requests",
-      icon: "/photos/leave.png",
-      href: "/leave-requests",
-    },
-    {
-      label: "Staff<br/>Allotment",
-      icon: "/photos/staff.png",
-      href: "/staffallotment",
-    },
-    {
-      label: "Staff Salary<br/>& Deductions",
-      icon: "/photos/salary.png",
-      href: "/staffsalary",
-    },
-    {
-      label: "Tickets<br/>and Queries",
-      icon: "/photos/tickets.png",
-      href: "/ticket",
-    },
+    { label: "Leave<br/>Requests", icon: "/photos/leave.png", href: "/leave-requests" },
+    { label: "Staff<br/>Allotment", icon: "/photos/staff.png", href: "/staffallotment" },
+    { label: "Staff Salary<br/>& Deductions", icon: "/photos/salary.png", href: "/staffsalary" },
+    { label: "Tickets<br/>and Queries", icon: "/photos/tickets.png", href: "/ticket" },
     { label: "Audit Logs", icon: "/photos/audit.png", href: "/audit" },
     { label: "Refunds", icon: "/photos/refund.png", href: "/refunds" },
   ];
@@ -66,13 +42,17 @@ export default function Sidebar() {
     router.push("/");
   };
 
-  const getLinkClass = (href, label) =>
-  `flex items-center gap-3 px-2 py-1.5 transition-all duration-200 text-[15px] font-semibold w-full cursor-pointer
+  // ✅ Full width, left rounded, right touching sidebar
+const getLinkClass = (href, label) =>
+  `flex items-center gap-3 px-2 py-1.5 transition-all duration-200 text-[15px] font-semibold cursor-pointer
    ${
      active === label || pathname === href
-       ? "bg-white text-black shadow rounded-l-full pl-6 pr-0"
-       : "hover:bg-white/30 text-black pl-6 pr-0"
+       ? "bg-white text-black rounded-l-full pl-6 w-[calc(100%-8px)] ml-2 shadow-[inset_0_6px_12px_-2px_rgba(100,100,100,0.6)]"
+       : "hover:bg-white/30 text-black pl-6 w-full"
    }`;
+
+
+
 
 
   return (
@@ -101,22 +81,22 @@ export default function Sidebar() {
         </button>
 
         {/* Logo */}
-<div className="flex justify-center items-center mb-6 -mt-3">
-  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow">
-    <img
-      src="/photos/logo.png"
-      alt="Logo"
-      className="w-full h-full object-cover"
-    />
-  </div>
-</div>
-
+        <div className="flex justify-center items-center mb-6 -mt-3">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow">
+            <img
+              src="/photos/logo.png"
+              alt="Logo"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
 
         {/* Nav items */}
-        <ul className="flex flex-col gap-1 w-full px-2">
+        {/* ✅ Removed px-2 to remove right gap */}
+        <ul className="flex flex-col gap-1 w-full px-0">
           {navItems.map(({ label, icon, href }) => (
-            <li key={label} onClick={() => setActive(label)}>
-              <Link href={href}>
+            <li key={label} className="w-full" onClick={() => setActive(label)}>
+              <Link href={href} className="block w-full">
                 <div className={getLinkClass(href, label)}>
                   <Image
                     src={icon}
@@ -125,8 +105,10 @@ export default function Sidebar() {
                     height={20}
                     className="shrink-0"
                   />
+                  {/* ✅ Text shifted up */}
                   <span
-                    className="break-words leading-tight"
+                    className="break-words leading-tight -mt-0.5"
+                    style={{ lineHeight: "1.1rem" }}
                     dangerouslySetInnerHTML={{ __html: label }}
                   />
                 </div>
@@ -140,7 +122,7 @@ export default function Sidebar() {
           <hr className="border-t border-black mb-3" />
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex items-center justify-start gap-3 text-black px-4 -pt-3 rounded-full hover:bg-[#3E522D] w-full font-semibold"
+            className="flex items-center justify-start gap-3 text-black px-4 rounded-full hover:bg-[#3E522D] w-full font-semibold"
           >
             <Image src="/photos/logout.png" alt="Logout" width={20} height={20} />
             Logout
@@ -166,14 +148,13 @@ export default function Sidebar() {
             <div className="flex gap-4">
               <button
                 onClick={handleLogout}
-                className="bg-white text-[#4A633E] font-semibold px-5 py-2 rounded-full hover:bg-[#D7E3C8] "
+                className="bg-white text-[#4A633E] font-semibold px-5 py-2 rounded-full hover:bg-[#D7E3C8]"
               >
                 Yes
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="bg-[#4A633E] text-white font-semibold px-5 py-2 rounded-full hover:bg-[#3E522D]"
-              >
+                className="bg-[#4A633E] text-white font-semibold px-5 py-2 rounded-full hover:bg-[#3E522D]">
                 No
               </button>
             </div>
