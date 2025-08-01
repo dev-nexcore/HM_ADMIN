@@ -1,8 +1,26 @@
 "use client";
-import React from "react";
+import React,{useState,useEffect} from "react";
 import { FaRupeeSign, FaUniversity, FaBed } from "react-icons/fa";
-
+import axios from 'axios'
 const Dashboard = () => {
+   const [checkInOutData, setCheckInOutData] = useState({
+    checkIns: 0,
+    checkOuts: 0,
+  });
+
+  useEffect(() => {
+    const fetchCheckInOutStatus = async () => {
+      try {
+        const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/todays-checkin-checkout`);
+        setCheckInOutData(data);
+      } catch (error) {
+        console.error("Failed to fetch check-in/out status:", error);
+      }
+    };
+
+    fetchCheckInOutStatus();
+  }, []);
+
   return (
     <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-6">
       {/* Header */}
@@ -43,14 +61,14 @@ const Dashboard = () => {
           },
           {
             title: "Today's Check-In",
-            value: "3",
+            value: checkInOutData.checkIns,
             icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
           },
           {
             title: "Today's Check-Outs",
-            value: "2",
+            value: checkInOutData.checkOuts,
             icon: <FaUniversity className="text-black text-3xl" />,
             color: "text-black",
             isCurrency: false,
