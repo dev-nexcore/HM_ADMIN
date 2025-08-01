@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import InvoiceSection from "./InvoiceSection";
-// import axios from "axios"; // Uncomment when switching to real API
+import axios from "axios";
 
 export default function InvoicePage() {
   const [studentFees, setStudentFees] = useState([]);
@@ -10,11 +10,10 @@ export default function InvoicePage() {
   const [purchaseReceipts, setPurchaseReceipts] = useState([]);
 
   useEffect(() => {
-    // Simulate future API fetching
+    // Simulated API data — replace with axios requests
     // Example:
     // axios.get("/api/student-fees").then((res) => setStudentFees(res.data));
 
-    // Dummy data (replace with fetched data)
     setStudentFees([
       ["Ayesha Ali Khan", "101", "₹35,000", "07-05-2025", "Paid"],
       ["Ayesha Ali Khan", "101", "₹35,000", "07-05-2025", "Paid"],
@@ -30,15 +29,27 @@ export default function InvoicePage() {
     ]);
 
     setPurchaseReceipts([
-      ["Ayesha Ali Khan", "Clean Co.", "₹35,000", "07-05-2025", "Approved"],
-      ["Ayesha Ali Khan", "Awab Fakih", "₹35,000", "07-05-2025", "Pending"],
+      ["Cleaning supplies", "Clean Co.", "₹35,000", "07-05-2025", "Approved"],
+      ["Uniforms", "Awab Fakih", "₹35,000", "07-05-2025", "Pending"],
     ]);
   }, []);
 
+  // Handlers
+  const handleView = (row) => {
+    console.log("View clicked for:", row);
+    alert(`Viewing invoice for: ${row[0]}`);
+  };
+
+  const handleDownload = (row) => {
+    console.log("Download clicked for:", row);
+    alert(`Downloading invoice for: ${row[0]}`);
+    // In production, trigger file download here
+  };
+
   return (
     <main className="p-6 bg-white min-h-screen mt-8">
-      <h1 className="text-2xl font-bold mb-4 text-black ">
-        <span className="border-l-4 border-blue-600 pl-2 ml-2 ">
+      <h1 className="text-2xl font-bold mb-4 text-black">
+        <span className="border-l-4 border-blue-600 pl-2 ml-2">
           Hostel Invoices
         </span>
       </h1>
@@ -55,6 +66,8 @@ export default function InvoicePage() {
             "Actions",
           ]}
           data={studentFees}
+          onView={handleView}
+          onDownload={handleDownload}
         />
 
         <InvoiceSection
@@ -68,6 +81,8 @@ export default function InvoicePage() {
             "Actions",
           ]}
           data={managementInvoices}
+          onView={handleView}
+          onDownload={handleDownload}
         />
 
         <InvoiceSection
@@ -81,6 +96,8 @@ export default function InvoicePage() {
             "Actions",
           ]}
           data={purchaseReceipts}
+          onView={handleView}
+          onDownload={handleDownload}
         />
       </div>
     </main>
