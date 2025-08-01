@@ -70,7 +70,7 @@ const InventoryList = () => {
       {/* Header */}
       <div className="px-4 sm:px-6 mb-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <h2 className="text-2xl font-bold text-black border-l-4 border-red-500 pl-2">
+          <h2 className="text-2xl font-bold text-black border-l-4 border-blue-600 pl-2">
             Inventory List
           </h2>
           <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
@@ -85,7 +85,7 @@ const InventoryList = () => {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-15 py-2 rounded shadow w-full sm:w-auto"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-10 py-2 rounded shadow w-full sm:w-auto"
             >
               <FiPlus /> Add New Item
             </button>
