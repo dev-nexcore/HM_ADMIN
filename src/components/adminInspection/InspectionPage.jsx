@@ -58,7 +58,7 @@ export default function InspectionPage() {
   return (
     <div className="bg-white text-black min-w-full mx-auto p-6 space-y-8 min-h-screen my-10">
       <h2 className="text-2xl font-bold mb-4 text-black">
-        <span className="border-l-4 border-red-600 pl-2 ml-2">
+        <span className="border-l-4 border-blue-600 pl-2 ml-2">
           Hostel Inspections
         </span>
       </h2>
