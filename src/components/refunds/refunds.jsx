@@ -1,15 +1,26 @@
 "use client"
 
-import { useState } from "react" // Explicitly import React for types and JSX
+import { useState } from "react"
 import { Search, Filter, X } from "lucide-react"
 
 const Refunds = () => {
+  // Form state
   const [formData, setFormData] = useState({
     studentId: "",
     refundAmount: "",
     reason: "",
     paymentMethod: "",
   })
+
+  // Form errors state
+  const [formErrors, setFormErrors] = useState({
+    studentId: "",
+    refundAmount: "",
+    reason: "",
+    paymentMethod: "",
+  })
+
+  // Search and filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [filters, setFilters] = useState({
@@ -20,6 +31,7 @@ const Refunds = () => {
     amountMax: "",
   })
 
+  // Sample refund history data
   const refundHistory = [
     {
       date: "25-10-2025",
@@ -63,18 +75,56 @@ const Refunds = () => {
     },
   ]
 
-  // Use React.ChangeEvent for type annotation
+  // Form validation
+  const validateForm = () => {
+    const errors = {}
+    let isValid = true
+
+    if (!formData.studentId.trim()) {
+      errors.studentId = "Student ID is required"
+      isValid = false
+    }
+
+    if (!formData.refundAmount.trim()) {
+      errors.refundAmount = "Amount is required"
+      isValid = false
+    } else if (!/^₹?\d+(,\d{3})*(\.\d{2})?$/.test(formData.refundAmount)) {
+      errors.refundAmount = "Enter a valid amount"
+      isValid = false
+    }
+
+    if (!formData.reason.trim()) {
+      errors.reason = "Reason is required"
+      isValid = false
+    }
+
+    if (!formData.paymentMethod) {
+      errors.paymentMethod = "Payment method is required"
+      isValid = false
+    }
+
+    setFormErrors(errors)
+    return isValid
+  }
+
+  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    
+    // Clear error when field is changed
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: "" }))
+    }
   }
 
-  // Use React.ChangeEvent for type annotation
+  // Handle filter changes
   const handleFilterChange = (e) => {
     const { name, value } = e.target
     setFilters((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Cancel form
   const handleCancel = () => {
     setFormData({
       studentId: "",
@@ -82,13 +132,23 @@ const Refunds = () => {
       reason: "",
       paymentMethod: "",
     })
+    setFormErrors({
+      studentId: "",
+      refundAmount: "",
+      reason: "",
+      paymentMethod: "",
+    })
   }
 
+  // Submit form
   const handleProceedToPay = () => {
-    console.log("Processing refund:", formData)
-    // Add logic to process refund
+    if (validateForm()) {
+      console.log("Processing refund:", formData)
+      // Add logic to process refund
+    }
   }
 
+  // Clear all filters
   const clearFilters = () => {
     setFilters({
       status: "",
@@ -99,6 +159,7 @@ const Refunds = () => {
     })
   }
 
+  // Status badge styling
   const getStatusBadge = (status) => {
     const baseClasses = "px-2 sm:px-3 py-1 rounded-md text-xs font-semibold"
     switch (status) {
@@ -113,15 +174,14 @@ const Refunds = () => {
     }
   }
 
-  // Helper to parse DD-MM-YYYY to Date object for consistent comparison
+  // Date parsing helper
   const parseDate = (dateString) => {
     const [day, month, year] = dateString.split("-").map(Number)
-    return new Date(year, month - 1, day) // Month is 0-indexed
+    return new Date(year, month - 1, day)
   }
 
   // Filter and search functionality
   const filteredRefunds = refundHistory.filter((refund) => {
-    // Search functionality
     const matchesSearch =
       refund.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,9 +190,7 @@ const Refunds = () => {
       refund.date.includes(searchTerm) ||
       refund.amount.includes(searchTerm)
 
-    // Filter functionality
     const matchesStatus = !filters.status || refund.status === filters.status
-
     const matchesDateFrom = !filters.dateFrom || parseDate(refund.date) >= new Date(filters.dateFrom)
     const matchesDateTo = !filters.dateTo || parseDate(refund.date) <= new Date(filters.dateTo)
 
@@ -144,16 +202,16 @@ const Refunds = () => {
   })
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 bg-white min-h-screen w-full ">
-      {/* Header with red line */}
+    <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 bg-white min-h-screen w-full">
+      {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="w-1 h-6 bg-red-500"></div>
+        <div className="w-1 h-6 bg-blue-600"></div>
         <h1 className="text-xl sm:text-2xl font-bold text-black">Refunds</h1>
       </div>
 
-      {/* Initiate New Refund */}
+      {/* Initiate New Refund Form */}
       <div
-        className="rounded-lg w-full px-4 sm:px-8 lg:px-16 py-6" // Adjusted for responsiveness
+        className="rounded-lg w-full px-4 sm:px-8 lg:px-16 py-6"
         style={{
           backgroundColor: "#A4B494",
           boxShadow: "0px 4px 20px 0px #00000040 inset",
@@ -161,6 +219,7 @@ const Refunds = () => {
       >
         <h2 className="text-lg sm:text-xl lg:text-2xl pt-3 font-bold text-black mb-6">Initiate New Refund</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Student ID Input */}
           <div>
             <label htmlFor="studentId" className="text-sm sm:text-md font-bold text-black mb-2 block">
               Student / Resident ID
@@ -172,9 +231,12 @@ const Refunds = () => {
               value={formData.studentId}
               onChange={handleInputChange}
               placeholder="Enter Student ID/ Resident ID"
-              className="w-full bg-white px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.studentId ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
             />
+            {formErrors.studentId && <p className="text-red-500 text-xs mt-1">{formErrors.studentId}</p>}
           </div>
+
+          {/* Refund Amount Input */}
           <div>
             <label htmlFor="refundAmount" className="text-sm sm:text-md font-bold text-black mb-2 block">
               Refund Amount
@@ -186,9 +248,12 @@ const Refunds = () => {
               value={formData.refundAmount}
               onChange={handleInputChange}
               placeholder="Enter Amount"
-              className="w-full bg-white px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.refundAmount ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
             />
+            {formErrors.refundAmount && <p className="text-red-500 text-xs mt-1">{formErrors.refundAmount}</p>}
           </div>
+
+          {/* Reason Input */}
           <div>
             <label htmlFor="reason" className="text-sm sm:text-md font-bold text-black mb-2 block">
               Reason For Refund
@@ -200,9 +265,12 @@ const Refunds = () => {
               value={formData.reason}
               onChange={handleInputChange}
               placeholder="Enter Reason"
-              className="w-full bg-white px-3 sm:px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.reason ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
             />
+            {formErrors.reason && <p className="text-red-500 text-xs mt-1">{formErrors.reason}</p>}
           </div>
+
+          {/* Payment Method Select */}
           <div>
             <label htmlFor="paymentMethod" className="text-sm sm:text-md font-bold text-black mb-2 block">
               Payment Method
@@ -212,7 +280,7 @@ const Refunds = () => {
               name="paymentMethod"
               value={formData.paymentMethod}
               onChange={handleInputChange}
-              className="w-full text-gray-500 bg-white px-3 sm:px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+              className={`w-full text-gray-500 bg-white px-3 sm:px-4 py-2.5 rounded-lg border ${formErrors.paymentMethod ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
             >
               <option value="">Select Method</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -220,25 +288,26 @@ const Refunds = () => {
               <option value="cash">Cash</option>
               <option value="cheque">Cheque</option>
             </select>
+            {formErrors.paymentMethod && <p className="text-red-500 text-xs mt-1">{formErrors.paymentMethod}</p>}
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-5 mb-5">
           <button
             onClick={handleCancel}
-            className="bg-white border border-gray-400 px-6 sm:px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 text-sm sm:text-base"
+            className="bg-white cursor-pointer border border-gray-400 px-6 sm:px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
             onClick={handleProceedToPay}
-            className="bg-white text-black px-6 sm:px-8 py-2 rounded-xl font-bold hover:bg-gray-100 text-sm sm:text-base"
+            className="bg-white cursor-pointer text-black px-6 sm:px-8 py-2 rounded-xl font-bold hover:bg-gray-100 text-sm sm:text-base"
           >
             Proceed To Pay
           </button>
         </div>
       </div>
 
-      {/* Refund History */}
+      {/* Refund History Section */}
       <div
         className="rounded-lg px-4 sm:px-6 py-4"
         style={{
@@ -307,6 +376,7 @@ const Refunds = () => {
           </div>
         )}
 
+        {/* Refunds Table */}
         <div className="overflow-x-auto">
           <style jsx>{`
             .refund-table th {
@@ -361,7 +431,7 @@ const Refunds = () => {
 
       {/* Filter Modal */}
       {showFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-black">Filter Refunds</h3>

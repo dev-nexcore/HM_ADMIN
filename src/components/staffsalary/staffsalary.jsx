@@ -2,69 +2,104 @@
 
 import { useState } from "react"
 
-const staffData = [
-  {
-    name: "Chinmay Gawade",
-    role: "Warden",
-    basicSalary: "₹25,000",
-    tax: "₹25,000",
-    pf: "₹25,000",
-    loanDeduction: "₹25,000",
-    netSalary: "₹25,000",
-    status: "Paid",
-  },
-  {
-    name: "Sullivan Khan",
-    role: "Warden",
-    basicSalary: "₹25,000",
-    tax: "₹25,000",
-    pf: "₹25,000",
-    loanDeduction: "₹25,000",
-    netSalary: "₹25,000",
-    status: "Pending",
-  },
-  {
-    name: "Chinmay Gawade",
-    role: "Warden",
-    basicSalary: "₹25,000",
-    tax: "₹25,000",
-    pf: "₹25,000",
-    loanDeduction: "₹25,000",
-    netSalary: "₹25,000",
-    status: "Paid",
-  },
-  {
-    name: "Chinmay Gawade",
-    role: "Warden",
-    basicSalary: "₹25,000",
-    tax: "₹25,000",
-    pf: "₹25,000",
-    loanDeduction: "₹25,000",
-    netSalary: "₹25,000",
-    status: "Paid",
-  },
-]
-
-const staffMembers = ["Chimney Gowande", "Sullivan Khan", "John Doe", "Jane Smith", "Mike Johnson"]
-
 export default function StaffSalaryContent() {
-  const [selectedMonth, setSelectedMonth] = useState("September 2025")
-  const [activeTab, setActiveTab] = useState("payroll")
-  const [showProcessSalary, setShowProcessSalary] = useState(false)
+  // Staff data 
+  const [staffData, setStaffData] = useState([
+    {
+      id: 1,
+      name: "Chinmay Gawade",
+      role: "Warden",
+      basicSalary: "₹25,000",
+      tax: "₹2,500",
+      pf: "₹1,500",
+      loanDeduction: "₹1,000",
+      netSalary: "₹20,000",
+      status: "Paid",
+    },
+    {
+      id: 2,
+      name: "Sullivan Khan",
+      role: "Warden",
+      basicSalary: "₹25,000",
+      tax: "₹2,500",
+      pf: "₹1,500",
+      loanDeduction: "₹1,000",
+      netSalary: "₹20,000",
+      status: "Pending",
+    },
+    {
+      id: 3,
+      name: "Chinmay Gawade",
+      role: "Warden",
+      basicSalary: "₹25,000",
+      tax: "₹2,500",
+      pf: "₹1,500",
+      loanDeduction: "₹1,000",
+      netSalary: "₹20,000",
+      status: "Paid",
+    },
+    {
+      id: 4,
+      name: "Chinmay Gawade",
+      role: "Warden",
+      basicSalary: "₹25,000",
+      tax: "₹2,500",
+      pf: "₹1,500",
+      loanDeduction: "₹1,000",
+      netSalary: "₹20,000",
+      status: "Paid",
+    },
+  ]);
+
+  const staffMembers = ["Chimney Gowande", "Sullivan Khan", "John Doe", "Jane Smith", "Mike Johnson"];
+  const [selectedMonth, setSelectedMonth] = useState("September 2025");
+  const [activeTab, setActiveTab] = useState("payroll");
+  const [showProcessSalary, setShowProcessSalary] = useState(false);
+  const [showPayslipModal, setShowPayslipModal] = useState(false);
+  const [showEditDeductionModal, setShowEditDeductionModal] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  
+  // Process Salary Form State
   const [formData, setFormData] = useState({
     staffMember: "",
     bankName: "",
     accountNumber: "",
     ifscCode: "",
     amountToPay: "",
-  })
+  });
+
+  // Edit Form State
+  const [editFormData, setEditFormData] = useState({
+    basicSalary: "",
+    tax: "",
+    pf: "",
+    loanDeduction: "",
+    netSalary: ""
+  });
+
+  // Validate Process Salary Form
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.staffMember) errors.staffMember = "Staff member is required";
+    if (!formData.bankName) errors.bankName = "Bank name is required";
+    if (!formData.accountNumber) errors.accountNumber = "Account number is required";
+    if (!formData.ifscCode) errors.ifscCode = "IFSC code is required";
+    if (!formData.amountToPay) errors.amountToPay = "Amount is required";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+    // Clear error when field is filled
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
 
   const handleCancel = () => {
     setFormData({
@@ -73,14 +108,83 @@ export default function StaffSalaryContent() {
       accountNumber: "",
       ifscCode: "",
       amountToPay: "",
-    })
-  }
+    });
+    setFormErrors({});
+    setShowProcessSalary(false);
+  };
 
   const handleProceedToPay = () => {
-    console.log("Processing payment:", formData)
-    // Add actual payment processing logic here
-  }
+    if (validateForm()) {
+      console.log("Processing payment:", formData);
+      setShowProcessSalary(false);
+    }
+  };
 
+  const handleViewPayslip = (staff) => {
+    setSelectedStaff(staff);
+    setShowPayslipModal(true);
+  };
+
+  // Handle Edit Deduction - Initialize form with staff data
+  const handleEditDeduction = (staff) => {
+    setSelectedStaff(staff);
+    setEditFormData({
+      basicSalary: staff.basicSalary,
+      tax: staff.tax,
+      pf: staff.pf,
+      loanDeduction: staff.loanDeduction,
+      netSalary: staff.netSalary
+    });
+    setShowEditDeductionModal(true);
+  };
+
+  // Handle Edit Form Changes
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Auto-calculate net salary when other fields change
+    if (name !== 'netSalary') {
+      const basic = parseInt(editFormData.basicSalary.replace(/[^0-9]/g, '')) || 0;
+      const tax = parseInt(editFormData.tax.replace(/[^0-9]/g, '')) || 0;
+      const pf = parseInt(editFormData.pf.replace(/[^0-9]/g, '')) || 0;
+      const loan = parseInt(editFormData.loanDeduction.replace(/[^0-9]/g, '')) || 0;
+      
+      const net = basic - (tax + pf + loan);
+      setEditFormData(prev => ({
+        ...prev,
+        netSalary: `₹${net.toLocaleString('en-IN')}`
+      }));
+    }
+  };
+  // Save Edited Deductions
+  const handleSaveDeductions = () => {
+    setStaffData(prev => 
+      prev.map(staff => 
+        staff.id === selectedStaff.id 
+          ? { 
+              ...staff, 
+              basicSalary: editFormData.basicSalary,
+              tax: editFormData.tax,
+              pf: editFormData.pf,
+              loanDeduction: editFormData.loanDeduction,
+              netSalary: editFormData.netSalary
+            } 
+          : staff
+      )
+    );
+    setShowEditDeductionModal(false);
+  };
+
+  // Convert currency string to number
+  const currencyToNumber = (currency) => {
+    return parseInt(currency.replace(/[^0-9]/g, '')) || 0;
+  };
+
+  // Render Process Salary Form
   const renderProcessSalaryForm = () => (
     <div className="min-h-screen mt-5 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto w-full">
@@ -100,7 +204,7 @@ export default function StaffSalaryContent() {
                 id="staffMember"
                 value={formData.staffMember}
                 onChange={(e) => handleInputChange("staffMember", e.target.value)}
-                className="cursor-pointer w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                className={`cursor-pointer w-full px-4 py-3 bg-white border ${formErrors.staffMember ? 'border-red-500' : 'border-gray-200'} rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#8a9079]`}
               >
                 <option value="">Select Staff</option>
                 {staffMembers.map((member, index) => (
@@ -109,7 +213,9 @@ export default function StaffSalaryContent() {
                   </option>
                 ))}
               </select>
+              {formErrors.staffMember && <p className="text-red-500 text-sm mt-1">{formErrors.staffMember}</p>}
             </div>
+            
             {/* Side-by-side on large screen */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
@@ -122,8 +228,9 @@ export default function StaffSalaryContent() {
                   value={formData.bankName}
                   onChange={(e) => handleInputChange("bankName", e.target.value)}
                   placeholder="Enter Bank Name"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  className={`w-full px-4 py-3 bg-white border ${formErrors.bankName ? 'border-red-500' : 'border-gray-200'} rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]`}
                 />
+                {formErrors.bankName && <p className="text-red-500 text-sm mt-1">{formErrors.bankName}</p>}
               </div>
               <div>
                 <label htmlFor="accountNumber" className="block text-lg font-semibold text-gray-900 mb-2">
@@ -135,10 +242,12 @@ export default function StaffSalaryContent() {
                   value={formData.accountNumber}
                   onChange={(e) => handleInputChange("accountNumber", e.target.value)}
                   placeholder="Enter Account number"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  className={`w-full px-4 py-3 bg-white border ${formErrors.accountNumber ? 'border-red-500' : 'border-gray-200'} rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]`}
                 />
+                {formErrors.accountNumber && <p className="text-red-500 text-sm mt-1">{formErrors.accountNumber}</p>}
               </div>
             </div>
+            
             {/* IFSC and Amount */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
@@ -151,8 +260,9 @@ export default function StaffSalaryContent() {
                   value={formData.ifscCode}
                   onChange={(e) => handleInputChange("ifscCode", e.target.value)}
                   placeholder="Enter IFSC Code"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  className={`w-full px-4 py-3 bg-white border ${formErrors.ifscCode ? 'border-red-500' : 'border-gray-200'} rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]`}
                 />
+                {formErrors.ifscCode && <p className="text-red-500 text-sm mt-1">{formErrors.ifscCode}</p>}
               </div>
               <div>
                 <label htmlFor="amountToPay" className="block text-lg font-semibold text-gray-900 mb-2">
@@ -164,10 +274,12 @@ export default function StaffSalaryContent() {
                   value={formData.amountToPay}
                   onChange={(e) => handleInputChange("amountToPay", e.target.value)}
                   placeholder="Enter Amount To Pay"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  className={`w-full px-4 py-3 bg-white border ${formErrors.amountToPay ? 'border-red-500' : 'border-gray-200'} rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8a9079]`}
                 />
+                {formErrors.amountToPay && <p className="text-red-500 text-sm mt-1">{formErrors.amountToPay}</p>}
               </div>
             </div>
+            
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
               <button
@@ -187,8 +299,9 @@ export default function StaffSalaryContent() {
         </div>
       </div>
     </div>
-  )
+  );
 
+  // Render Payroll Table
   const renderPayrollTable = () => (
     <div className="w-full overflow-x-auto">
       <div
@@ -277,7 +390,10 @@ export default function StaffSalaryContent() {
                   </span>
                 </td>
                 <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
-                  <button className="bg-transparent border-none text-blue-600 cursor-pointer text-xs sm:text-sm hover:text-blue-800">
+                  <button 
+                    onClick={() => handleViewPayslip(staff)}
+                    className="bg-transparent border-none text-blue-600 cursor-pointer text-xs sm:text-sm hover:text-blue-800"
+                  >
                     View pay slip
                   </button>
                 </td>
@@ -287,9 +403,10 @@ export default function StaffSalaryContent() {
         </table>
       </div>
     </div>
-  )
+  );
 
-  const renderTaxPfTable = () => (
+  // Render Tax/PF Table
+ const renderTaxPfTable = () => (
     <div className="w-full overflow-x-auto">
       <div
         className="rounded-lg overflow-hidden border border-gray-300 min-w-[700px]"
@@ -365,7 +482,10 @@ export default function StaffSalaryContent() {
                 <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.loanDeduction}</td>
                 <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.netSalary}</td>
                 <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
-                  <button className="bg-transparent border-none text-[#1109FF] cursor-pointer text-xs sm:text-sm hover:text-blue-800">
+                  <button 
+                    onClick={() => handleEditDeduction(staff)}
+                    className="bg-transparent border-none text-[#1109FF] cursor-pointer text-xs sm:text-sm hover:text-blue-800"
+                  >
                     Edit
                   </button>
                 </td>
@@ -378,15 +498,183 @@ export default function StaffSalaryContent() {
   )
 
   if (showProcessSalary) {
-    return renderProcessSalaryForm()
+    return renderProcessSalaryForm();
   }
 
   return (
     <div className="p-3 sm:p-6 min-h-screen mt-5">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+      {/* Payslip Modal */}
+       {showPayslipModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">{selectedStaff?.name}'s Payslip</h2>
+              <button 
+                onClick={() => setShowPayslipModal(false)}
+                className="text-gray-500 cursor-pointer hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="border rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="font-semibold">Employee Name:</p>
+                  <p>{selectedStaff?.name}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Designation:</p>
+                  <p>{selectedStaff?.role}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Month:</p>
+                  <p>{selectedMonth}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Status:</p>
+                  <p className={`inline-block px-2 py-1 rounded text-xs font-medium text-white ${
+                    selectedStaff?.status === "Paid" ? "bg-[#28C404]" : "bg-[#FF7700]"
+                  }`}>
+                    {selectedStaff?.status}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h3 className="font-bold mb-2">Earnings</h3>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div>
+                    <p>Basic Salary:</p>
+                    <p>{selectedStaff?.basicSalary}</p>
+                  </div>
+                </div>
+                
+                <h3 className="font-bold mb-2">Deductions</h3>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div>
+                    <p>Tax:</p>
+                    <p>{selectedStaff?.tax}</p>
+                  </div>
+                  <div>
+                    <p>PF:</p>
+                    <p>{selectedStaff?.pf}</p>
+                  </div>
+                  <div>
+                    <p>Loan Deduction:</p>
+                    <p>{selectedStaff?.loanDeduction}</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-2">
+                  <div className="flex justify-between font-bold">
+                    <p>Net Salary:</p>
+                    <p>{selectedStaff?.netSalary}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button 
+                onClick={() => setShowPayslipModal(false)}
+                className="px-4 py-2 cursor-pointer bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Deduction Modal */}
+      {showEditDeductionModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Salary Details for {selectedStaff?.name}</h2>
+              <button 
+                onClick={() => setShowEditDeductionModal(false)}
+                className="text-gray-500 cursor-pointer hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-medium mb-1">Basic Salary</label>
+                  <input
+                    type="text"
+                    name="basicSalary"
+                    value={editFormData.basicSalary}
+                    onChange={handleEditInputChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">Tax Deduction</label>
+                  <input
+                    type="text"
+                    name="tax"
+                    value={editFormData.tax}
+                    onChange={handleEditInputChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">PF Deduction</label>
+                  <input
+                    type="text"
+                    name="pf"
+                    value={editFormData.pf}
+                    onChange={handleEditInputChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">Loan Deduction</label>
+                  <input
+                    type="text"
+                    name="loanDeduction"
+                    value={editFormData.loanDeduction}
+                    onChange={handleEditInputChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block font-medium mb-1">Net Salary (Calculated)</label>
+                  <input
+                    type="text"
+                    name="netSalary"
+                    value={editFormData.netSalary}
+                    readOnly
+                    className="w-full p-2 border rounded bg-gray-100"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <button 
+                  onClick={() => setShowEditDeductionModal(false)}
+                  className="px-4 py-2 cursor-pointer bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveDeductions}
+                  className="px-4 py-2 bg-green-600 cursor-pointer text-white rounded hover:bg-green-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with red line */}
         <div className="flex items-center gap-2">
-          <div className="w-1 h-6 bg-[#FF0000]"></div>
+          <div className="w-1 h-6 bg-blue-600"></div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff Salary</h1>
         </div>
 
@@ -452,12 +740,12 @@ export default function StaffSalaryContent() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5">
             {activeTab === "payroll" ? (
               <>
-                <button className="px-3 sm:px-4 py-2 text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
+                {/* <button className="px-3 sm:px-4 py-2 text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
                   Generate Pay Slips
                 </button>
                 <button className="px-3 sm:px-4 py-2 bg-transparent text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
                   Export Report
-                </button>
+                </button> */}
                 <button
                   onClick={() => setShowProcessSalary(true)}
                   className="px-3 sm:px-4 py-2 bg-[#ADCE8C] text-black shadow-lg font-semibold border-none rounded-md text-xs sm:text-sm cursor-pointer hover:bg-[#9CAF88] transition-colors"
@@ -477,5 +765,5 @@ export default function StaffSalaryContent() {
         {activeTab === "payroll" ? renderPayrollTable() : renderTaxPfTable()}
       </div>
     </div>
-  )
+  );
 }
