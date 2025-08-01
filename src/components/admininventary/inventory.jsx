@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { FaEye, FaPen, FaSearch } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaPen, FaSearch } from 'react-icons/fa';
 import { FiUpload, FiFileText, FiPlus } from 'react-icons/fi';
 
 const initialData = [
@@ -20,49 +20,37 @@ const statusColor = {
 
 const InventoryList = () => {
   const [inventory, setInventory] = useState(initialData);
-  const [editRows, setEditRows] = useState({});
-  const [editData, setEditData] = useState({});
+  const [editData, setEditData] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', barcode: '', category: '', location: '', status: 'Available' });
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [hiddenRows, setHiddenRows] = useState({});
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false); // NEW
 
-  const handleEditClick = (item) => {
-    setEditRows((prev) => ({ ...prev, [item.barcode]: true }));
-    setEditData((prev) => ({ ...prev, [item.barcode]: { ...item } }));
-  };
-
-  const handleEditChange = (barcode, field, value) => {
-    setEditData((prev) => ({
+  const toggleVisibility = (barcode) => {
+    setHiddenRows((prev) => ({
       ...prev,
-      [barcode]: { ...prev[barcode], [field]: value },
+      [barcode]: !prev[barcode],
     }));
-  };
-
-  const handleEditSave = (barcode) => {
-    setInventory((prev) =>
-      prev.map((item) => (item.barcode === barcode ? editData[barcode] : item))
-    );
-    setEditRows((prev) => ({ ...prev, [barcode]: false }));
-  };
-
-  const handleEditCancel = (barcode) => {
-    setEditRows((prev) => ({ ...prev, [barcode]: false }));
-  };
-
-  const handleAddItem = () => {
-    setInventory((prev) => [...prev, newItem]);
-    setNewItem({ name: '', barcode: '', category: '', location: '', status: 'Available' });
-    setShowAddModal(false);
   };
 
   const handleUploadReceipt = (e) => {
     setReceiptFile(e.target.files[0]);
+  };
+
+  const handleEditClick = (item) => {
+    setEditData({ ...item });
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = () => {
+    setInventory((prev) =>
+      prev.map((item) => (item.barcode === editData.barcode ? editData : item))
+    );
+    setShowEditModal(false);
   };
 
   return (
@@ -76,16 +64,18 @@ const InventoryList = () => {
           <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
             <button
               onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-15 py-2 rounded shadow w-full sm:w-auto"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow w-full sm:w-auto"
             >
               <FiUpload /> Upload Receipt
             </button>
-            <button className="flex items-center gap-2 bg-white border border-gray-300 text-black px-25 py-2 rounded shadow w-full sm:w-auto font-bold">
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="flex items-center gap-2 bg-white border border-gray-300 text-black px-4 py-2 rounded shadow w-full sm:w-auto font-bold"
+            >
               <FiFileText /> Generate Monthly Stock Report
             </button>
             <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-10 py-2 rounded shadow w-full sm:w-auto"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow w-full sm:w-auto"
             >
               <FiPlus /> Add New Item
             </button>
@@ -130,7 +120,7 @@ const InventoryList = () => {
       </div>
 
       {/* Table */}
-      <div className="px-4 m:px-6">
+      <div className="px-4 sm:px-6">
         <div className="overflow-x-auto bg-white shadow-md rounded-lg">
           <table className="w-full min-w-[700px] text-center border-collapse">
             <thead>
@@ -175,27 +165,18 @@ const InventoryList = () => {
                     (statusFilter === 'All Status' || item.status === statusFilter) &&
                     (categoryFilter === 'All Categories' || item.category === categoryFilter) &&
                     (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                     item.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
+                      item.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
                 )
                 .map((item) => (
                   <tr key={item.barcode} className="hover:bg-gray-100">
-                    {editRows[item.barcode] ? (
+                    {hiddenRows[item.barcode] ? (
                       <>
-                        <td><input className="border px-2 py-1 w-full" value={editData[item.barcode].name} onChange={(e) => handleEditChange(item.barcode, 'name', e.target.value)} /></td>
-                        <td><input className="border px-2 py-1 w-full" value={editData[item.barcode].barcode} onChange={(e) => handleEditChange(item.barcode, 'barcode', e.target.value)} /></td>
-                        <td><input className="border px-2 py-1 w-full" value={editData[item.barcode].category} onChange={(e) => handleEditChange(item.barcode, 'category', e.target.value)} /></td>
-                        <td><input className="border px-2 py-1 w-full" value={editData[item.barcode].location} onChange={(e) => handleEditChange(item.barcode, 'location', e.target.value)} /></td>
-                        <td>
-                          <select className={`w-[100px] text-xs py-[6px] rounded-lg text-center font-semibold shadow-sm ${statusColor[editData[item.barcode].status]}`} value={editData[item.barcode].status} onChange={(e) => handleEditChange(item.barcode, 'status', e.target.value)}>
-                            <option>Available</option>
-                            <option>In Use</option>
-                            <option>In maintenance</option>
-                            <option>Damaged</option>
-                          </select>
-                        </td>
-                        <td className="text-center">
-                          <button onClick={() => handleEditSave(item.barcode)} className="text-green-600 font-semibold mr-2">Save</button>
-                          <button onClick={() => handleEditCancel(item.barcode)} className="text-red-600 font-semibold">Cancel</button>
+                        <td colSpan={5} className="italic text-gray-400 py-4">Hidden</td>
+                        <td className="px-4 py-2 flex justify-center gap-2">
+                          <FaEyeSlash
+                            className="cursor-pointer text-gray-600 hover:text-red-600"
+                            onClick={() => toggleVisibility(item.barcode)}
+                          />
                         </td>
                       </>
                     ) : (
@@ -207,10 +188,16 @@ const InventoryList = () => {
                         <td className="px-4 py-2">
                           <span className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]}`}>{item.status}</span>
                         </td>
-                        <td className="px-4 py-2 text-center flex justify-center items-center gap-2">
-                          <FaEye className="cursor-pointer text-gray-600 hover:text-blue-600" onClick={() => { setSelectedItem(item); setShowViewModal(true); }} />
-                          <div className="w-[1px] h-5 bg-gray-400 my-2" />
-                          <FaPen className="cursor-pointer text-gray-600 hover:text-green-600" onClick={() => handleEditClick(item)} />
+                        <td className="px-4 py-2 flex justify-center gap-2">
+                          <FaEye
+                            className="cursor-pointer text-gray-600 hover:text-blue-600"
+                            onClick={() => toggleVisibility(item.barcode)}
+                          />
+                          <div className="w-[1px] h-5 bg-gray-400" />
+                          <FaPen
+                            className="cursor-pointer text-gray-600 hover:text-green-600"
+                            onClick={() => handleEditClick(item)}
+                          />
                         </td>
                       </>
                     )}
@@ -221,7 +208,7 @@ const InventoryList = () => {
         </div>
       </div>
 
-      {/* Upload Receipt Modal */}
+      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
@@ -262,6 +249,95 @@ const InventoryList = () => {
                 Upload
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/20">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-xl font-bold mb-4">Edit Item</h3>
+            {['name', 'barcode', 'category', 'location'].map((field) => (
+              <input
+                key={field}
+                className="border px-3 py-2 w-full mb-3 rounded"
+                value={editData[field]}
+                onChange={(e) => setEditData({ ...editData, [field]: e.target.value })}
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              />
+            ))}
+            <select
+              value={editData.status}
+              onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+              className="w-full border px-3 py-2 mb-4 rounded"
+            >
+              <option>Available</option>
+              <option>In Use</option>
+              <option>In maintenance</option>
+              <option>Damaged</option>
+            </select>
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                onClick={handleEditSave}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-lg max-w-4xl w-full h-[80%] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Monthly Stock Report</h3>
+              <button
+                className="text-gray-600 hover:text-red-600 text-xl"
+                onClick={() => setShowReportModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="bg-[#A4B494] text-black text-sm">
+                  <th className="py-2 px-4 border-b">Item Name</th>
+                  <th className="py-2 px-4 border-b">Barcode ID</th>
+                  <th className="py-2 px-4 border-b">Category</th>
+                  <th className="py-2 px-4 border-b">Location</th>
+                  <th className="py-2 px-4 border-b">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory
+                  .filter(
+                    (item) =>
+                      (statusFilter === 'All Status' || item.status === statusFilter) &&
+                      (categoryFilter === 'All Categories' || item.category === categoryFilter) &&
+                      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        item.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
+                  )
+                  .map((item) => (
+                    <tr key={item.barcode} className="hover:bg-gray-100">
+                      <td className="py-2 px-4 border-b">{item.name}</td>
+                      <td className="py-2 px-4 border-b">{item.barcode}</td>
+                      <td className="py-2 px-4 border-b">{item.category}</td>
+                      <td className="py-2 px-4 border-b">{item.location}</td>
+                      <td className="py-2 px-4 border-b">{item.status}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
