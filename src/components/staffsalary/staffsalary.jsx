@@ -189,7 +189,7 @@ export default function StaffSalaryContent() {
     <div className="min-h-screen mt-5 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-6 sm:mb-8">
-          <div className="w-1 h-6 bg-red-500"></div>
+          <div className="w-1 h-6 bg-blue-600"></div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Process Staff Salary</h1>
         </div>
         <div className="rounded-2xl p-6 sm:p-8 shadow-sm w-full bg-[#A4B494]">
