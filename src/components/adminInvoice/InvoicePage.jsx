@@ -49,7 +49,7 @@ export default function InvoicePage() {
   return (
     <main className="p-6 bg-white min-h-screen mt-8">
       <h1 className="text-2xl font-bold mb-4 text-black">
-        <span className="border-l-4 border-blue-600 pl-2 ml-2">
+        <span className="border-l-4 border-[#4F8CCF] pl-2 ml-2">
           Hostel Invoices
         </span>
       </h1>

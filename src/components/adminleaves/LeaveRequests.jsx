@@ -93,7 +93,7 @@ export default function LeaveRequestsPage() {
   return (
     <div className="p-8 min-h-screen bg-white text-black mt-8">
       <h2 className="text-2xl font-bold mb-6 ml-2">
-        <span className="border-l-4 border-blue-600 pl-2">Leave Requests</span>
+        <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
       </h2>
 
       <div className="flex flex-wrap gap-4 mb-6 ml-5">
@@ -101,7 +101,7 @@ export default function LeaveRequestsPage() {
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-4 py-2 rounded-xl cursor-pointer shadow-xl font-semibold ${
+            className={`px-4 py-2 rounded-xl cursor-pointer shadow-xl font-bold ${
               activeFilter === filter
                 ? "bg-[#ADCE8C] text-white"
                 : "bg-white text-black"
