@@ -112,19 +112,23 @@ const HostelNotices = () => {
   };
 
   return (
-    <div className="min-h-screen p-10" style={{ fontFamily: "Poppins" }}>
-      <div className="w-full max-w-7xl mx-auto mt-4 mb-10 px-4">
+    <div className="min-h-screen bg-white" style={{ fontFamily: "Poppins" }}>
+      {/* Header */}
+      <div className="w-full px-4 sm:px-12 py-4 -mb-6 mt-8">
         <h1
           className="text-[25px] leading-[25px] font-extrabold text-[#000000] text-left"
           style={{
             fontFamily: "Inter",
           }}
         >
-          <span className="border-l-4 border-[#4F8CCF] pl-4 inline-flex items-center h-[26px]">
+          <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex items-center h-[25px]">
             Hostel Notices
           </span>
         </h1>
       </div>
+
+      {/* Content Container */}
+      <div className="p-4 sm:p-6 lg:p-10">
 
       {/* Form Box */}
       <div
@@ -764,6 +768,7 @@ const HostelNotices = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

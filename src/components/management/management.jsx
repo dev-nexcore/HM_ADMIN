@@ -417,8 +417,8 @@ const StudentManagement = () => {
             Admission Date
           </label>
           <div className="relative flex items-center">
-            <div className="relative w-full">
-              <div className="relative w-full">
+            <div className="relative w-[300px] max-w-full">
+              <div className="relative w-[300px]">
                 {/* Hidden native date input */}
                 <input
                   ref={dateInputRef}
@@ -446,24 +446,19 @@ const StudentManagement = () => {
                       setFormData((prev) => ({ ...prev, admissionDate: "" }));
                     }
                   }}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20" // Removed cursor-pointer from invisible input
                   style={{ colorScheme: "light" }}
                 />
                 {/* Styled fake input that displays the selected date */}
-                <div 
-                  className="bg-white rounded-[10px] px-4 flex items-center font-[Poppins] font-semibold text-[12px] tracking-normal text-gray-800 select-none z-10"
-                  style={{
-                    ...inputStyle,
-                    height: "40px",
-                    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.25)"
-                  }}
-                >
+                <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]">
                   {formData.admissionDate || ""}
                 </div>
                 {/* Placeholder spacing */}
                 {!formData.admissionDate && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[12px] tracking-[0.1em] pointer-events-none select-none">
-                    dd-mm-yyyy
+                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[15px] tracking-[0.3em] pointer-events-none select-none">
+                    {
+                      "d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"
+                    }
                   </div>
                 )}
               </div>
@@ -471,7 +466,7 @@ const StudentManagement = () => {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center flex-shrink-0 cursor-pointer"
+              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center cursor-pointer relative z-30" // Added z-30 to ensure it's on top
               title="Open Calendar"
             >
               <svg
@@ -482,7 +477,7 @@ const StudentManagement = () => {
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <mask
-                  id="mask0_370_4_calendar"
+                  id="mask0_370_4"
                   style={{ maskType: "alpha" }}
                   maskUnits="userSpaceOnUse"
                   x="0"
@@ -492,9 +487,9 @@ const StudentManagement = () => {
                 >
                   <rect width="30" height="30" fill="#D9D9D9" />
                 </mask>
-                <g mask="url(#mask0_370_4_calendar)">
+                <g mask="url(#mask0_370_4)">
                   <path
-                    d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 16.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
+                    d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 16.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 16.6042 21.1302 16.901 20.8906 17.1406C20.651 22.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
                     fill="#1C1B1F"
                   />
                 </g>
@@ -568,232 +563,241 @@ const StudentManagement = () => {
 
   return (
     <div
-      className="p-4 sm:p-6 lg:p-10 bg-white min-h-screen"
+      className="bg-white min-h-screen"
       style={{ fontFamily: "Poppins", fontWeight: "500" }}
     >
-      {/* Header */}
-      <div className="w-full max-w-7xl mx-auto mb-8 px-4">
-        <h1
-          className="text-[25px] leading-[25px] font-extrabold text-[#000000] text-left"
-          style={{
-            fontFamily: "Inter",
-          }}
-        >
-          <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex items-center h-[25px]">
-            Student Management
-          </span>
-        </h1>
-      </div>
-
-      {/* Registration Form (conditionally rendered when not editing) */}
-      {!editingStudent && (
-        <div
-          className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto"
-          style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-        >
-          {formContent(false)}
+      {/* Content Container */}
+      <div className="p-4 sm:p-6 lg:p-10">
+        {/* Header */}
+        <div className="w-full max-w-7xl mx-auto mb-8 px-4">
+          <h1
+            className="text-[25px] leading-[25px] font-extrabold text-[#000000] text-left"
+            style={{
+              fontFamily: "Inter",
+            }}
+          >
+            <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex items-center h-[25px]">
+              Student Management
+            </span>
+          </h1>
         </div>
-      )}
-
-      {/* Edit Student Modal (conditionally rendered when editing) */}
-      {showEditModal && editingStudent && (
-        <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        {/* Registration Form (conditionally rendered when not editing) */}
+        {!editingStudent && (
           <div
-            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative"
+            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto"
             style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
           >
-            {/* Close button for the modal */}
-            <button
-              onClick={resetForm}
-              className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
-              aria-label="Close"  
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-            {formContent(true)}
+            {formContent(false)}
           </div>
-        </div>
-      )}
-
-      {/* Student List Header */}
-      <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">
-        <h2
-          className="text-xl sm:text-2xl lg:text-3xl font-bold text-black mb-4 px-4 sm:px-0"
-          style={{
-            fontFamily: "Inter",
-            fontWeight: "700",
-            lineHeight: "100%",
-            letterSpacing: "0%",
-            color: "#000000",
-            opacity: 1,
-          }}
-        >
-          Student List & Fee status
-        </h2>
-      </div>
-
-      {/* Student List Table */}
-      <div className="w-full max-w-7xl mx-auto mt-4 ">
-        <div
-          className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 "
-          style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
-        >
-          <div className="overflow-x-auto">
+        )}
+        {/* Edit Student Modal (conditionally rendered when editing) */}
+        {showEditModal && editingStudent && (
+          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
-              className="border border-black rounded-[19.6px] overflow-hidden"
-              style={{
-                borderWidth: "0.98px",
-                width: "100%",
-                minWidth: "900px",
-              }}
+              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative"
+              style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
             >
-              {/* Table Header */}
-              <div className="bg-white text-black flex text-center">
-                {[
-                  "Student ID",
-                  "Name",
-                  "Room/Bed",
-                  "Contact",
-                  "Fees Status",
-                  "Dues",
-                  "Action",
-                ].map((header, index) => (
-                  <div
-                    key={header}
-                    className="px-0.5 py-2 relative flex-1"
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: "600",
-                      fontSize: "14px",
-                      lineHeight: "100%",
-                      letterSpacing: "0%",
-                      textAlign: "center",
-                    }}
-                  >
-                    {header}
-                    {index < 6 && (
-                      <div
-                        className="absolute right-0 top-1/2 transform -translate-y-1/2"
-                        style={{
-                          width: "0px",
-                          height: "20px",
-                          border: "0.981623px solid #000000",
-                        }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-              {/* Table Body */}
-              <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
-                {students.map((student, i) => (
-                  <div key={student.id} className="text-black flex">
-                    <div className="px-0.5 py-1 flex-1">
-                      {hiddenStudents.has(student.id) ? "***" : student.id}
-                    </div>
-                    <div className="px-0.5 py-1 flex-1">
-                      {hiddenStudents.has(student.id) ? "***" : student.name}
-                    </div>
-                    <div className="px-0.5 py-1 flex-1">
-                      {hiddenStudents.has(student.id) ? "***" : student.room}
-                    </div>
-                    <div className="px-0.5 py-1 text-xs flex-1">
-                      {hiddenStudents.has(student.id) ? "***" : student.contact}
-                    </div>
-                    <div className="px-0.5 py-1 flex-1">
-                      <span
-                        className="font-semibold"
-                        style={getFeeStatusStyle(student.feeStatus)}
-                      >
-                        {hiddenStudents.has(student.id)
-                          ? "***"
-                          : student.feeStatus}
-                      </span>
-                    </div>
-                    <div className="px-0.5 py-1 flex-1">
-                      {hiddenStudents.has(student.id) ? "***" : student.dues}
-                    </div>
-                    <div className="px-0.5 py-1 flex items-center justify-center flex-1">
-                      <div className="flex items-center justify-center gap-4 relative">
-                        {/* View/Hide Button with Lucide Icons */}
-                        <button
-                          onClick={() => handleToggleVisibility(student.id)}
-                          className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
-                          title={
-                            hiddenStudents.has(student.id)
-                              ? "Show Student"
-                              : "Hide Student"
-                          }
-                        >
-                          {hiddenStudents.has(student.id) ? (
-                            <EyeOff size={24} strokeWidth={2.5} color="#000000" />
-                          ) : (
-                            <Eye size={24} strokeWidth={2.5} color="#000000" />
-                          )}
-                        </button>
+              {/* Close button for the modal */}
+              <button
+                onClick={resetForm}
+                className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
+                aria-label="Close"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              {formContent(true)}
+            </div>
+          </div>
+        )}
+        {/* Student List Header */}
+        <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">
+          <h2
+            className="text-xl sm:text-2xl lg:text-3xl font-bold text-black mb-4 px-4 sm:px-0"
+            style={{
+              fontFamily: "Inter",
+              fontWeight: "700",
+              lineHeight: "100%",
+              letterSpacing: "0%",
+              color: "#000000",
+              opacity: 1,
+            }}
+          >
+            Student List & Fee status
+          </h2>
+        </div>
+        {/* Student List Table */}
+        <div className="w-full max-w-7xl mx-auto mt-4 ">
+          <div
+            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 "
+            style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
+          >
+            <div className="overflow-x-auto">
+              <div
+                className="border border-black rounded-[19.6px] overflow-hidden"
+                style={{
+                  borderWidth: "0.98px",
+                  width: "100%",
+                  minWidth: "900px",
+                }}
+              >
+                {/* Table Header */}
+                <div className="bg-white text-black flex text-center">
+                  {[
+                    "Student ID",
+                    "Name",
+                    "Room/Bed",
+                    "Contact",
+                    "Fees Status",
+                    "Dues",
+                    "Action",
+                  ].map((header, index) => (
+                    <div
+                      key={header}
+                      className="px-0.5 py-2 relative flex-1"
+                      style={{
+                        fontFamily: "Poppins",
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        lineHeight: "100%",
+                        letterSpacing: "0%",
+                        textAlign: "center",
+                      }}
+                    >
+                      {header}
+                      {index < 6 && (
                         <div
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2"
                           style={{
-                            width: "1px",
+                            width: "0px",
                             height: "20px",
-                            backgroundColor: "#000000",
-                            margin: "0 8px",
+                            border: "0.981623px solid #000000",
                           }}
                         />
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleEdit(student.id)}
-                          className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer"
-                          title="Edit Student"
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {/* Table Body */}
+                <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
+                  {students.map((student, i) => (
+                    <div key={student.id} className="text-black flex">
+                      <div className="px-0.5 py-1 flex-1">
+                        {hiddenStudents.has(student.id) ? "***" : student.id}
+                      </div>
+                      <div className="px-0.5 py-1 flex-1">
+                        {hiddenStudents.has(student.id) ? "***" : student.name}
+                      </div>
+                      <div className="px-0.5 py-1 flex-1">
+                        {hiddenStudents.has(student.id) ? "***" : student.room}
+                      </div>
+                      <div className="px-0.5 py-1 text-xs flex-1">
+                        {hiddenStudents.has(student.id)
+                          ? "***"
+                          : student.contact}
+                      </div>
+                      <div className="px-0.5 py-1 flex-1">
+                        <span
+                          className="font-semibold"
+                          style={getFeeStatusStyle(student.feeStatus)}
                         >
-                          <svg
-                            width="27"
-                            height="26"
-                            viewBox="0 0 27 26"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                          {hiddenStudents.has(student.id)
+                            ? "***"
+                            : student.feeStatus}
+                        </span>
+                      </div>
+                      <div className="px-0.5 py-1 flex-1">
+                        {hiddenStudents.has(student.id) ? "***" : student.dues}
+                      </div>
+                      <div className="px-0.5 py-1 flex items-center justify-center flex-1">
+                        <div className="flex items-center justify-center gap-4 relative">
+                          {/* View/Hide Button with Lucide Icons */}
+                          <button
+                            onClick={() => handleToggleVisibility(student.id)}
+                            className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
+                            title={
+                              hiddenStudents.has(student.id)
+                                ? "Show Student"
+                                : "Hide Student"
+                            }
                           >
-                            <mask
-                              id={`mask0_221_285_${i}`}
-                              style={{ maskType: "alpha" }}
-                              maskUnits="userSpaceOnUse"
-                              x="0"
-                              y="0"
+                            {hiddenStudents.has(student.id) ? (
+                              <EyeOff
+                                size={24}
+                                strokeWidth={2.5}
+                                color="#000000"
+                              />
+                            ) : (
+                              <Eye
+                                size={24}
+                                strokeWidth={2.5}
+                                color="#000000"
+                              />
+                            )}
+                          </button>
+                          <div
+                            style={{
+                              width: "1px",
+                              height: "20px",
+                              backgroundColor: "#000000",
+                              margin: "0 8px",
+                            }}
+                          />
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => handleEdit(student.id)}
+                            className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer"
+                            title="Edit Student"
+                          >
+                            <svg
                               width="27"
                               height="26"
+                              viewBox="0 0 27 26"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
                             >
-                              <rect
-                                x="0.678223"
-                                y="0.0253906"
-                                width="25.7356"
-                                height="25.7356"
-                                fill="#D9D9D9"
-                              />
-                            </mask>
-                            <g mask={`url(#mask0_221_285_${i})`}>
-                              <path
-                                d="M2.82373 25.7609V21.4717H24.2701V25.7609H2.82373ZM7.113 17.1824H8.61425L16.9783 8.8451L15.4503 7.31705L7.113 15.6811V17.1824ZM4.96837 19.327V14.7697L16.9783 2.78651C17.1749 2.58991 17.4028 2.438 17.6619 2.33077C17.9211 2.22354 18.1936 2.16992 18.4796 2.16992C18.7655 2.16992 19.0425 2.22354 19.3106 2.33077C19.5787 2.438 19.82 2.59885 20.0344 2.81331L21.5089 4.31456C21.7233 4.51115 21.8797 4.74349 21.978 5.01157C22.0763 5.27965 22.1255 5.55666 22.1255 5.84261C22.1255 6.11069 22.0763 6.3743 21.978 6.63345C21.8797 6.89259 21.7233 7.1294 21.5089 7.34386L9.52572 19.327H4.96837Z"
-                                fill="#1C1B1F"
-                              />
-                            </g>
-                          </svg>
-                        </button>
+                              <mask
+                                id={`mask0_221_285_${i}`}
+                                style={{ maskType: "alpha" }}
+                                maskUnits="userSpaceOnUse"
+                                x="0"
+                                y="0"
+                                width="27"
+                                height="26"
+                              >
+                                <rect
+                                  x="0.678223"
+                                  y="0.0253906"
+                                  width="25.7356"
+                                  height="25.7356"
+                                  fill="#D9D9D9"
+                                />
+                              </mask>
+                              <g mask={`url(#mask0_221_285_${i})`}>
+                                <path
+                                  d="M2.82373 25.7609V21.4717H24.2701V25.7609H2.82373ZM7.113 17.1824H8.61425L16.9783 8.8451L15.4503 7.31705L7.113 15.6811V17.1824ZM4.96837 19.327V14.7697L16.9783 2.78651C17.1749 2.58991 17.4028 2.438 17.6619 2.33077C17.9211 2.22354 18.1936 2.16992 18.4796 2.16992C18.7655 2.16992 19.0425 2.22354 19.3106 2.33077C19.5787 2.438 19.82 2.59885 20.0344 2.81331L21.5089 4.31456C21.7233 4.51115 21.8797 4.74349 21.978 5.01157C22.0763 5.27965 22.1255 5.55666 22.1255 5.84261C22.1255 6.11069 22.0763 6.3743 21.978 6.63345C21.8797 6.89259 21.7233 7.1294 21.5089 7.34386L9.52572 19.327H4.96837Z"
+                                  fill="#1C1B1F"
+                                />
+                              </g>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -803,4 +807,4 @@ const StudentManagement = () => {
   );
 };
 
-export default StudentManagement;
+export default StudentManagement; 
