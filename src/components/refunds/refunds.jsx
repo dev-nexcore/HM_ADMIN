@@ -205,7 +205,7 @@ const Refunds = () => {
     <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 bg-white min-h-screen w-full">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="w-1 h-6 bg-blue-600"></div>
+        <div className="w-1 h-6 bg-[#4F8CCF]"></div>
         <h1 className="text-xl sm:text-2xl font-bold text-black">Refunds</h1>
       </div>
 

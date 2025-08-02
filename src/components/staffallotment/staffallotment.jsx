@@ -316,7 +316,7 @@ const StaffAllotment = () => {
 
       <div className="mb-6">
         <div className="flex items-center mb-4">
-          <div className="w-[4px] h-6 bg-blue-600 mr-3" />
+          <div className="w-[4px] h-6 bg-[#4F8CCF] mr-3" />
           <h1 className="text-2xl font-semibold text-gray-900">
             Staff Allotment
           </h1>
