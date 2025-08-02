@@ -14,6 +14,7 @@ function AddNewItem() {
     purchaseCost: "",
     receipt: null,
   });
+  const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,6 +22,41 @@ function AddNewItem() {
       ...prev,
       [name]: value,
     }));
+    // Clear error for the field being typed into
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.itemName.trim()) {
+      newErrors.itemName = "Item Name is required.";
+    }
+    
+    if (!formData.location.trim()) {
+      newErrors.location = "Location is required.";
+    }
+    
+    if (!formData.barcodeId.trim()) {
+      newErrors.barcodeId = "Barcode ID is required.";
+    }
+    
+    if (!formData.status) {
+      newErrors.status = "Status is required.";
+    }
+    
+    if (!formData.category) {
+      newErrors.category = "Category is required.";
+    }
+    
+    return newErrors;
   };
 
   // Function to format date from yyyy-mm-dd to dd-mm-yyyy
@@ -49,16 +85,42 @@ function AddNewItem() {
       purchaseCost: "",
       receipt: null,
     });
+    setErrors({});
   };
 
   const handleGenerateQR = () => {
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     console.log("Generate QR Code for:", formData.itemName);
     // QR code generation logic here
   };
 
   const handleSaveItem = () => {
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
     console.log("Saving item:", formData);
     // Save item logic here
+    
+    // Reset form after successful save
+    setFormData({
+      itemName: "",
+      location: "",
+      barcodeId: "",
+      status: "",
+      category: "",
+      description: "",
+      purchaseDate: "",
+      purchaseCost: "",
+      receipt: null,
+    });
+    setErrors({});
   };
 
   // Calendar click handler
@@ -129,11 +191,16 @@ function AddNewItem() {
               value={formData.itemName}
               onChange={handleInputChange}
               placeholder="Enter Item Name"
-              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
-             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
+              className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+               errors.itemName ? "border-2 border-red-500" : ""
+             }`}
               style={inputStyle}
               required
             />
+            {errors.itemName && (
+              <p className="text-red-500 text-xs mt-1 ml-2">{errors.itemName}</p>
+            )}
           </div>
 
           {/* Location */}
@@ -147,11 +214,16 @@ function AddNewItem() {
               value={formData.location}
               onChange={handleInputChange}
               placeholder="Enter Location"
-              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
-             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
+              className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+               errors.location ? "border-2 border-red-500" : ""
+             }`}
               style={inputStyle}
               required
             />
+            {errors.location && (
+              <p className="text-red-500 text-xs mt-1 ml-2">{errors.location}</p>
+            )}
           </div>
 
           {/* Barcode ID */}
@@ -165,11 +237,16 @@ function AddNewItem() {
               value={formData.barcodeId}
               onChange={handleInputChange}
               placeholder="Enter Barcode ID"
-              className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
-             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
+              className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black 
+             font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+               errors.barcodeId ? "border-2 border-red-500" : ""
+             }`}
               style={inputStyle}
               required
             />
+            {errors.barcodeId && (
+              <p className="text-red-500 text-xs mt-1 ml-2">{errors.barcodeId}</p>
+            )}
           </div>
 
           {/* Status */}
@@ -185,7 +262,9 @@ function AddNewItem() {
                 onChange={handleInputChange}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
       text-[12px] leading-[22px] font-semibold font-[Poppins]
-      ${formData.status === "" ? "text-[#0000008A]" : "text-black"}`}
+      ${formData.status === "" ? "text-[#0000008A]" : "text-black"} ${
+                  errors.status ? "border-2 border-red-500" : ""
+                }`}
                 style={{
                   WebkitAppearance: "none",
                   MozAppearance: "none",
@@ -216,6 +295,9 @@ function AddNewItem() {
                 />
               </svg>
             </div>
+            {errors.status && (
+              <p className="text-red-500 text-xs mt-1 ml-2">{errors.status}</p>
+            )}
           </div>
 
           {/* Category */}
@@ -231,7 +313,9 @@ function AddNewItem() {
                 onChange={handleInputChange}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
       text-[12px] leading-[22px] font-semibold font-[Poppins]
-      ${formData.category === "" ? "text-[#0000008A]" : "text-black"}`}
+      ${formData.category === "" ? "text-[#0000008A]" : "text-black"} ${
+                  errors.category ? "border-2 border-red-500" : ""
+                }`}
                 style={{
                   WebkitAppearance: "none",
                   MozAppearance: "none",
@@ -263,6 +347,9 @@ function AddNewItem() {
                 />
               </svg>
             </div>
+            {errors.category && (
+              <p className="text-red-500 text-xs mt-1 ml-2">{errors.category}</p>
+            )}
           </div>
 
           {/* Purchase Cost */}
