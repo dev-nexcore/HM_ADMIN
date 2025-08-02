@@ -120,7 +120,7 @@ const HostelNotices = () => {
             fontFamily: "Inter",
           }}
         >
-          <span className="border-l-4 border-blue-600 pl-4 inline-flex items-center h-[26px]">
+          <span className="border-l-4 border-[#4F8CCF] pl-4 inline-flex items-center h-[26px]">
             Hostel Notices
           </span>
         </h1>
@@ -438,7 +438,7 @@ const HostelNotices = () => {
                 </td>
               </tr>
             ))}
-          </tbody> 
+          </tbody>
         </table>
       </div>
 
