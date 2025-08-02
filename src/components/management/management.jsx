@@ -471,7 +471,7 @@ const StudentManagement = () => {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center flex-shrink-0"
+              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center flex-shrink-0 cursor-pointer"
               title="Open Calendar"
             >
               <svg
@@ -545,7 +545,7 @@ const StudentManagement = () => {
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         <button
           onClick={isEditMode ? handleUpdate : handleSubmit}
-          className="mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
+          className="mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
           style={{
             fontWeight: "600",
             fontSize: "15px",
@@ -557,7 +557,7 @@ const StudentManagement = () => {
           <button
             type="button"
             onClick={resetForm}
-            className="mt-6 px-6 py-2 bg-gray-400 text-white rounded-[10px] shadow font-medium hover:bg-gray-500 transition-colors"
+            className="mt-6 px-6 py-2 bg-gray-400 text-white rounded-[10px] shadow font-medium hover:bg-gray-500 transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -605,7 +605,7 @@ const StudentManagement = () => {
             {/* Close button for the modal */}
             <button
               onClick={resetForm}
-              className="absolute top-4 right-4 text-black hover:text-gray-700"
+              className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
               aria-label="Close"  
             >
               <svg
@@ -731,7 +731,7 @@ const StudentManagement = () => {
                         {/* View/Hide Button with Lucide Icons */}
                         <button
                           onClick={() => handleToggleVisibility(student.id)}
-                          className="text-black hover:text-gray-700 flex items-center justify-center transition-colors"
+                          className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
                           title={
                             hiddenStudents.has(student.id)
                               ? "Show Student"
@@ -755,7 +755,7 @@ const StudentManagement = () => {
                         {/* Edit Button */}
                         <button
                           onClick={() => handleEdit(student.id)}
-                          className="text-gray-800 hover:text-black flex items-center justify-center transition-colors"
+                          className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer"
                           title="Edit Student"
                         >
                           <svg
