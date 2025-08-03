@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
-import { Eye, EyeOff } from "lucide-react"; // Import Lucide icons
+import { Eye } from "lucide-react"; // Only Eye is needed for viewing details
 
 const StudentManagement = () => {
   const [formData, setFormData] = useState({
@@ -22,6 +22,10 @@ const StudentManagement = () => {
       name: "Shahid Ansari",
       room: "Room-A-101",
       contact: "+91 8888888888",
+      email: "shahid.ansari@example.com", // Added for details view
+      emergencyContact: "+91 9999999999", // Added for details view
+      admissionDate: "15-08-2023", // Added for details view
+      emergencyContactName: "Parent A", // Added for details view
       feeStatus: "In Use",
       dues: "₹ 2,000/-",
     },
@@ -30,6 +34,10 @@ const StudentManagement = () => {
       name: "Ayesha Khan",
       room: "Room-A-101",
       contact: "+91 8888888888",
+      email: "ayesha.khan@example.com", // Added for details view
+      emergencyContact: "+91 9999999998", // Added for details view
+      admissionDate: "20-09-2023", // Added for details view
+      emergencyContactName: "Parent B", // Added for details view
       feeStatus: "Available",
       dues: "₹ 2,000/-",
     },
@@ -38,6 +46,10 @@ const StudentManagement = () => {
       name: "Awab Fakih",
       room: "Room-A-101",
       contact: "+91 8888888888",
+      email: "awab.fakih@example.com", // Added for details view
+      emergencyContact: "+91 9999999997", // Added for details view
+      admissionDate: "01-10-2023", // Added for details view
+      emergencyContactName: "Parent C", // Added for details view
       feeStatus: "In maintenance",
       dues: "₹ 2,000/-",
     },
@@ -46,6 +58,10 @@ const StudentManagement = () => {
       name: "Fatima Zahira",
       room: "Room-A-101",
       contact: "+91 8888888888",
+      email: "fatima.zahira@example.com", // Added for details view
+      emergencyContact: "+91 9999999996", // Added for details view
+      admissionDate: "05-11-2023", // Added for details view
+      emergencyContactName: "Parent D", // Added for details view
       feeStatus: "In Use",
       dues: "₹ 2,000/-",
     },
@@ -54,13 +70,20 @@ const StudentManagement = () => {
       name: "Fatima Zahira",
       room: "Room-A-101",
       contact: "+91 8888888888",
+      email: "fatima.zahira2@example.com", // Added for details view
+      emergencyContact: "+91 9999999995", // Added for details view
+      admissionDate: "10-12-2023", // Added for details view
+      emergencyContactName: "Parent E", // Added for details view
       feeStatus: "In Use",
       dues: "₹ 2,000/-",
     },
   ]);
-  const [hiddenStudents, setHiddenStudents] = useState(new Set());
   const [errors, setErrors] = useState({}); // State for validation errors
-  const [showEditModal, setShowEditModal] = useState(false); // New state for modal visibility
+  const [showEditModal, setShowEditModal] = useState(false); // State for edit modal visibility
+
+  // New states for details modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [studentDetailsData, setStudentDetailsData] = useState(null);
 
   // Simple input change handler
   const handleInputChange = (e) => {
@@ -130,6 +153,10 @@ const StudentManagement = () => {
       name: formData.studentName,
       room: formData.roomBed || "Not Assigned",
       contact: formData.contactNumber,
+      email: formData.email, // Include email
+      emergencyContact: formData.emergencyContact, // Include emergency contact
+      admissionDate: formData.admissionDate, // Include admission date
+      emergencyContactName: formData.emergencyContactName, // Include emergency contact name
       feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
       dues: "₹ 0/-",
     };
@@ -146,11 +173,11 @@ const StudentManagement = () => {
         studentName: student.name,
         studentId: student.id,
         contactNumber: student.contact,
-        email: "", // Email is not in student object, keep as empty or fetch if available
+        email: student.email || "", // Use existing email or empty
         roomBed: student.room,
-        emergencyContact: "", // Not in student object
-        admissionDate: "", // Not in student object
-        emergencyContactName: "", // Not in student object
+        emergencyContact: student.emergencyContact || "", // Use existing or empty
+        admissionDate: student.admissionDate || "", // Use existing or empty
+        emergencyContactName: student.emergencyContactName || "", // Use existing or empty
         feeStatus: student.feeStatus === "Available" ? "Paid" : "Unpaid", // Map back to form value
       });
       setEditingStudent(studentId);
@@ -173,7 +200,11 @@ const StudentManagement = () => {
               ...student,
               name: formData.studentName,
               contact: formData.contactNumber,
+              email: formData.email, // Update email
               room: formData.roomBed || student.room,
+              emergencyContact: formData.emergencyContact, // Update emergency contact
+              admissionDate: formData.admissionDate, // Update admission date
+              emergencyContactName: formData.emergencyContactName, // Update emergency contact name
               feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
             }
           : student
@@ -183,17 +214,13 @@ const StudentManagement = () => {
     alert("Student updated successfully!");
   };
 
-  // Toggle visibility handler for table rows
-  const handleToggleVisibility = (studentId) => {
-    setHiddenStudents((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(studentId)) {
-        newSet.delete(studentId);
-      } else {
-        newSet.add(studentId);
-      }
-      return newSet;
-    });
+  // New handler for viewing student details (replaces handleToggleVisibility)
+  const handleViewDetails = (studentId) => {
+    const student = students.find((s) => s.id === studentId);
+    if (student) {
+      setStudentDetailsData(student);
+      setShowDetailsModal(true);
+    }
   };
 
   // Calendar click handler
@@ -413,12 +440,12 @@ const StudentManagement = () => {
         </div>
         {/* Admission Date */}
         <div className="w-full px-2">
-          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          <label className="block mb-2 text-black ml-2" style={labelStyle}>
             Admission Date
           </label>
           <div className="relative flex items-center">
             <div className="relative w-[300px] max-w-full">
-              <div className="relative w-[300px]">
+              <div className="relative w-full">
                 {/* Hidden native date input */}
                 <input
                   ref={dateInputRef}
@@ -622,6 +649,130 @@ const StudentManagement = () => {
             </div>
           </div>
         )}
+
+        {/* Student Details Modal (New) */}
+        {showDetailsModal && studentDetailsData && (
+          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div
+              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative"
+              style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+            >
+              <button
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setStudentDetailsData(null);
+                }}
+                className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
+                aria-label="Close"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"   
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <h2
+                className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
+                style={{ fontFamily: "Inter", fontWeight: "700" }}
+              >
+                Student Details
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-black">
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Student ID:
+                  </p>
+                  <p>{studentDetailsData.id}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Student Name:
+                  </p>
+                  <p>{studentDetailsData.name}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Contact Number:
+                  </p>
+                  <p>{studentDetailsData.contact}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Email:
+                  </p>
+                  <p>{studentDetailsData.email || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Room/Bed:
+                  </p>
+                  <p>{studentDetailsData.room}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Emergency Contact:
+                  </p>
+                  <p>{studentDetailsData.emergencyContact || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Admission Date:
+                  </p>
+                  <p>{studentDetailsData.admissionDate || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Emergency Contact Name:
+                  </p>
+                  <p>{studentDetailsData.emergencyContactName || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Fee Status:
+                  </p>
+                  <span
+                    className="font-semibold"
+                    style={getFeeStatusStyle(studentDetailsData.feeStatus)}
+                  >
+                    {studentDetailsData.feeStatus}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold" style={labelStyle}>
+                    Dues:
+                  </p>
+                  <p>{studentDetailsData.dues}</p>
+                </div>
+              </div>
+              {/* New Edit Button in Details Modal */}
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false); // Close details modal
+                    handleEdit(studentDetailsData.id); // Open edit modal with student data
+                  }}
+                  className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
+                  style={{
+                    fontWeight: "600",
+                    fontSize: "15px",
+                  }}
+                >
+                  Edit Student
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Student List Header */}
         <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">
           <h2
@@ -694,58 +845,30 @@ const StudentManagement = () => {
                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                   {students.map((student, i) => (
                     <div key={student.id} className="text-black flex">
-                      <div className="px-0.5 py-1 flex-1">
-                        {hiddenStudents.has(student.id) ? "***" : student.id}
-                      </div>
-                      <div className="px-0.5 py-1 flex-1">
-                        {hiddenStudents.has(student.id) ? "***" : student.name}
-                      </div>
-                      <div className="px-0.5 py-1 flex-1">
-                        {hiddenStudents.has(student.id) ? "***" : student.room}
-                      </div>
+                      <div className="px-0.5 py-1 flex-1">{student.id}</div>
+                      <div className="px-0.5 py-1 flex-1">{student.name}</div>
+                      <div className="px-0.5 py-1 flex-1">{student.room}</div>
                       <div className="px-0.5 py-1 text-xs flex-1">
-                        {hiddenStudents.has(student.id)
-                          ? "***"
-                          : student.contact}
+                        {student.contact}
                       </div>
                       <div className="px-0.5 py-1 flex-1">
                         <span
                           className="font-semibold"
                           style={getFeeStatusStyle(student.feeStatus)}
                         >
-                          {hiddenStudents.has(student.id)
-                            ? "***"
-                            : student.feeStatus}
+                          {student.feeStatus}
                         </span>
                       </div>
-                      <div className="px-0.5 py-1 flex-1">
-                        {hiddenStudents.has(student.id) ? "***" : student.dues}
-                      </div>
+                      <div className="px-0.5 py-1 flex-1">{student.dues}</div>
                       <div className="px-0.5 py-1 flex items-center justify-center flex-1">
                         <div className="flex items-center justify-center gap-4 relative">
-                          {/* View/Hide Button with Lucide Icons */}
+                          {/* View Details Button with Lucide Eye Icon */}
                           <button
-                            onClick={() => handleToggleVisibility(student.id)}
+                            onClick={() => handleViewDetails(student.id)}
                             className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
-                            title={
-                              hiddenStudents.has(student.id)
-                                ? "Show Student"
-                                : "Hide Student"
-                            }
+                            title="View Student Details"
                           >
-                            {hiddenStudents.has(student.id) ? (
-                              <EyeOff
-                                size={24}
-                                strokeWidth={2.5}
-                                color="#000000"
-                              />
-                            ) : (
-                              <Eye
-                                size={24}
-                                strokeWidth={2.5}
-                                color="#000000"
-                              />
-                            )}
+                            <Eye size={24} strokeWidth={2.5} color="#000000" />
                           </button>
                           <div
                             style={{
@@ -807,4 +930,4 @@ const StudentManagement = () => {
   );
 };
 
-export default StudentManagement; 
+export default StudentManagement;
