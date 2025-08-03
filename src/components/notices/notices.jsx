@@ -348,7 +348,7 @@ const[formErrors,setFormErrors] = useState(null);
               <button
                 type="button"
                 onClick={handleCalendarClick}
-                className="ml-3 p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                className="ml-3 p-2 cursor-pointer  rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform"
                 title="Open Calendar"
               >
                 <svg
@@ -467,7 +467,7 @@ const[formErrors,setFormErrors] = useState(null);
                       viewBox="0 0 26 26"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
-                      className="cursor-pointer hover:opacity-70 transition-opacity"
+                      className="cursor-pointer hover:opacity-70 transition-opacity hover:scale-110 transition-transform"
                       onClick={() => handleEdit(n)}
                     >
                       <mask
@@ -496,7 +496,7 @@ const[formErrors,setFormErrors] = useState(null);
                       viewBox="0 0 26 26"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
-                      className="cursor-pointer hover:opacity-70 transition-opacity"
+                      className="cursor-pointer hover:opacity-70 transition-opacity hover:scale-110 transition-transform"
                       onClick={() => handleDelete(n.id)}
                     >
                       <mask
@@ -749,7 +749,7 @@ const[formErrors,setFormErrors] = useState(null);
                   <button
                     type="button"
                     onClick={handleEditCalendarClick}
-                    className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                    className="ml-3 p-2  rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform"
                     title="Open Calendar"
                   >
                     <svg

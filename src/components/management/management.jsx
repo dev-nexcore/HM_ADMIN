@@ -865,7 +865,7 @@ const StudentManagement = () => {
                           {/* View Details Button with Lucide Eye Icon */}
                           <button
                             onClick={() => handleViewDetails(student.id)}
-                            className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
+                            className="text-black hover:text-gray-700 flex items-center justify-center transition-colors cursor-pointer hover:scale-110 transition-transform"
                             title="View Student Details"
                           >
                             <Eye size={24} strokeWidth={2.5} color="#000000" />
@@ -881,7 +881,7 @@ const StudentManagement = () => {
                           {/* Edit Button */}
                           <button
                             onClick={() => handleEdit(student.id)}
-                            className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer"
+                            className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer hover:scale-110 transition-transform"
                             title="Edit Student"
                           >
                             <svg
