@@ -84,78 +84,102 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
   return (
     <div className="bg-white min-h-screen py-4 w-full mt-6">
-      {/* Header */}
-      <div className="px-4 sm:px-6 mb-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <h2 className="text-2xl font-bold text-black border-l-4 border-blue-600 pl-2">
-            Inventory List
-          </h2>
-          <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow w-full sm:w-auto"
-            >
-              <FiUpload /> Upload Receipt
-            </button>
-            <button
-              onClick={() => setShowReportModal(true)}
-              className="flex items-center gap-2 bg-white border border-gray-300 text-black px-4 py-2 rounded shadow w-full sm:w-auto font-bold"
-            >
-              <FiFileText /> Generate Monthly Stock Report
-            </button>
-            <button
-              onClick={onAddNewItem}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow w-full sm:w-auto"
-            >
-              <FiPlus /> Add New Item
-            </button>
-          </div>
-        </div>
-      </div>
+     <div className="px-4 sm:px-6 mb-8">
+    {/* Header */}
+  <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="flex items-center gap-3">
+  <div className="w-1 h-6 bg-[#4F8CCF]"></div>
+  <h2 className="text-2xl font-bold text-black">Inventory List</h2>
+</div>
+
+
+    <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
+      {/* Upload Receipt */}
+      <button
+        onClick={() => setShowUploadModal(true)}
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
+      >
+        <svg width="16" height="15" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.05147 14.783V4.82777L5.87557 8.00367L4.16547 6.23249L10.273 0.125L16.3805 6.23249L14.6704 8.00367L11.4945 4.82777V14.783H9.05147ZM2.94397 19.669C2.27215 19.669 1.69703 19.4298 1.21861 18.9513C0.740187 18.4729 0.500977 17.8978 0.500977 17.226V13.5615H2.94397V17.226H17.602V13.5615H20.045V17.226C20.045 17.8978 19.8057 18.4729 19.3273 18.9513C18.8489 19.4298 18.2738 19.669 17.602 19.669H2.94397Z" fill="white" />
+        </svg>
+        Upload Receipt
+      </button>
+
+      {/* Generate Monthly Stock Report */}
+      <button
+        onClick={() => setShowReportModal(true)}
+        className="flex items-center gap-2 bg-white border border-gray-300 text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
+      >
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.5 18.925L8.25 14.675L9.65 13.275L12.5 16.125L18.15 10.475L19.55 11.875L12.5 18.925ZM18 9H16V4H14V7H4V4H2V18H8V20H2C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V4C0 3.45 0.195833 2.97917 0.5875 2.5875C0.979167 2.19583 1.45 2 2 2H6.175C6.35833 1.41667 6.71667 0.9375 7.25 0.5625C7.78333 0.1875 8.36667 0 9 0C9.66667 0 10.2625 0.1875 10.7875 0.5625C11.3125 0.9375 11.6667 1.41667 11.85 2H16C16.55 2 17.0208 2.19583 17.4125 2.5875C17.8042 2.97917 18 3.45 18 4V9ZM9 4C9.28333 4 9.52083 3.90417 9.7125 3.7125C9.90417 3.52083 10 3.28333 10 3C10 2.71667 9.90417 2.47917 9.7125 2.2875C9.52083 2.09583 9.28333 2 9 2C8.71667 2 8.47917 2.09583 8.2875 2.2875C8.09583 2.47917 8 2.71667 8 3C8 3.28333 8.09583 3.52083 8.2875 3.7125C8.47917 3.90417 8.71667 4 9 4Z" fill="black"/>
+        </svg>
+        Generate Monthly Stock Report
+      </button>
+
+      {/* Add New Item */}
+      <button
+        onClick={onAddNewItem}
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py- rounded shadow-md w-full sm:w-auto"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+          <path d="M13 11V5h-2v6H5v2h6v6h2v-6h6v-2z" />
+        </svg>
+        Add New Item
+      </button>
+    </div>
+  </div>
+</div>
+
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6 px-4 sm:px-6">
-        <div className="relative flex-1 min-w-[250px]">
-          <FaSearch className="absolute top-3 left-3 text-black" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
-            placeholder="Search by Name or Barcode"
-          />
-        </div>
-        <select
-          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option>All Status</option>
-          <option>In Use</option>
-          <option>Available</option>
-          <option>In maintenance</option>
-          <option>Damaged</option>
-        </select>
-        <select
-          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-        >
-          <option>All Categories</option>
-          <option>Bedding</option>
-          <option>Furniture</option>
-          <option>Electronics</option>
-          <option>Applications</option>
-        </select>
-      </div>
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8 px-4 sm:px-6">
+  {/* Search Box */}
+  <div className="relative flex-1 min-w-[250px] shadow-[0px_2px_4px_0px_#00000040] rounded-md">
+    <FaSearch className="absolute top-3 left-3 text-black" />
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
+      placeholder="Search by Item Name or Barcode ID"
+    />
+  </div>
+
+  {/* Status Dropdown */}
+  <select
+    className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+  >
+    <option>All Status</option>
+    <option>In Use</option>
+    <option>Available</option>
+    <option>In maintenance</option>
+    <option>Damaged</option>
+  </select>
+
+  {/* Category Dropdown */}
+  <select
+    className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
+    value={categoryFilter}
+    onChange={(e) => setCategoryFilter(e.target.value)}
+  >
+    <option>All Categories</option>
+    <option>Bedding</option>
+    <option>Furniture</option>
+    <option>Electronics</option>
+    <option>Applications</option>
+  </select>
+</div>
+
 
       {/* Table */}
       <div className="px-4 sm:px-6">
-        <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+        <div className="overflow-x-auto bg-white shadow-[0_4px_20px_rgba(0,0,0,0.2)] rounded-xl">
           <table className="w-full min-w-[700px] text-center border-collapse">
             <thead>
               <tr className="bg-[#A4B494] text-black text-sm">
-                <th className="px-0 py-4 rounded-tl-lg">
+                <th className="px-0 py-2 rounded-tl-lg">
                   <div className="flex items-center pl-4 pr-4">
                     <span className="flex-1">Item Name</span>
                     <div className="h-6 w-px bg-black ml-4"></div>

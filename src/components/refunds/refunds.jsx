@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, Filter, X } from "lucide-react"
+import { useState } from "react";
+import { Search, Filter, X } from "lucide-react";
 
 const Refunds = () => {
   // Form state
@@ -10,7 +10,7 @@ const Refunds = () => {
     refundAmount: "",
     reason: "",
     paymentMethod: "",
-  })
+  });
 
   // Form errors state
   const [formErrors, setFormErrors] = useState({
@@ -18,18 +18,18 @@ const Refunds = () => {
     refundAmount: "",
     reason: "",
     paymentMethod: "",
-  })
+  });
 
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState({
     status: "",
     dateFrom: "",
     dateTo: "",
     amountMin: "",
     amountMax: "",
-  })
+  });
 
   // Sample refund history data
   const refundHistory = [
@@ -73,56 +73,56 @@ const Refunds = () => {
       status: "Pending",
       processedBy: "Admin B",
     },
-  ]
+  ];
 
   // Form validation
   const validateForm = () => {
-    const errors = {}
-    let isValid = true
+    const errors = {};
+    let isValid = true;
 
     if (!formData.studentId.trim()) {
-      errors.studentId = "Student ID is required"
-      isValid = false
+      errors.studentId = "Student ID is required";
+      isValid = false;
     }
 
     if (!formData.refundAmount.trim()) {
-      errors.refundAmount = "Amount is required"
-      isValid = false
+      errors.refundAmount = "Amount is required";
+      isValid = false;
     } else if (!/^₹?\d+(,\d{3})*(\.\d{2})?$/.test(formData.refundAmount)) {
-      errors.refundAmount = "Enter a valid amount"
-      isValid = false
+      errors.refundAmount = "Enter a valid amount";
+      isValid = false;
     }
 
     if (!formData.reason.trim()) {
-      errors.reason = "Reason is required"
-      isValid = false
+      errors.reason = "Reason is required";
+      isValid = false;
     }
 
     if (!formData.paymentMethod) {
-      errors.paymentMethod = "Payment method is required"
-      isValid = false
+      errors.paymentMethod = "Payment method is required";
+      isValid = false;
     }
 
-    setFormErrors(errors)
-    return isValid
-  }
+    setFormErrors(errors);
+    return isValid;
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Clear error when field is changed
     if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: "" }))
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
     }
-  }
+  };
 
   // Handle filter changes
   const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilters((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Cancel form
   const handleCancel = () => {
@@ -131,22 +131,22 @@ const Refunds = () => {
       refundAmount: "",
       reason: "",
       paymentMethod: "",
-    })
+    });
     setFormErrors({
       studentId: "",
       refundAmount: "",
       reason: "",
       paymentMethod: "",
-    })
-  }
+    });
+  };
 
   // Submit form
   const handleProceedToPay = () => {
     if (validateForm()) {
-      console.log("Processing refund:", formData)
+      console.log("Processing refund:", formData);
       // Add logic to process refund
     }
-  }
+  };
 
   // Clear all filters
   const clearFilters = () => {
@@ -156,29 +156,29 @@ const Refunds = () => {
       dateTo: "",
       amountMin: "",
       amountMax: "",
-    })
-  }
+    });
+  };
 
   // Status badge styling
   const getStatusBadge = (status) => {
-    const baseClasses = "px-2 sm:px-3 py-1 rounded-md text-xs font-semibold"
+    const baseClasses = "px-2 sm:px-3 py-1 rounded-md text-xs font-semibold";
     switch (status) {
       case "Completed":
-        return `${baseClasses} bg-[#28C404] text-white`
+        return `${baseClasses} bg-[#28C404] text-white`;
       case "Pending":
-        return `${baseClasses} bg-[#FF0000] text-white`
+        return `${baseClasses} bg-[#FF0000] text-white`;
       case "Rejected":
-        return `${baseClasses} bg-[#FF7700] text-white`
+        return `${baseClasses} bg-[#FF7700] text-white`;
       default:
-        return `${baseClasses} bg-gray-500 text-white`
+        return `${baseClasses} bg-gray-500 text-white`;
     }
-  }
+  };
 
   // Date parsing helper
   const parseDate = (dateString) => {
-    const [day, month, year] = dateString.split("-").map(Number)
-    return new Date(year, month - 1, day)
-  }
+    const [day, month, year] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
 
   // Filter and search functionality
   const filteredRefunds = refundHistory.filter((refund) => {
@@ -188,124 +188,172 @@ const Refunds = () => {
       refund.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.processedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.date.includes(searchTerm) ||
-      refund.amount.includes(searchTerm)
+      refund.amount.includes(searchTerm);
 
-    const matchesStatus = !filters.status || refund.status === filters.status
-    const matchesDateFrom = !filters.dateFrom || parseDate(refund.date) >= new Date(filters.dateFrom)
-    const matchesDateTo = !filters.dateTo || parseDate(refund.date) <= new Date(filters.dateTo)
+    const matchesStatus = !filters.status || refund.status === filters.status;
+    const matchesDateFrom =
+      !filters.dateFrom || parseDate(refund.date) >= new Date(filters.dateFrom);
+    const matchesDateTo =
+      !filters.dateTo || parseDate(refund.date) <= new Date(filters.dateTo);
 
-    const refundAmount = Number.parseInt(refund.amount.replace("₹", "").replace(",", ""))
-    const matchesAmountMin = !filters.amountMin || refundAmount >= Number.parseInt(filters.amountMin)
-    const matchesAmountMax = !filters.amountMax || refundAmount <= Number.parseInt(filters.amountMax)
+    const refundAmount = Number.parseInt(
+      refund.amount.replace("₹", "").replace(",", "")
+    );
+    const matchesAmountMin =
+      !filters.amountMin || refundAmount >= Number.parseInt(filters.amountMin);
+    const matchesAmountMax =
+      !filters.amountMax || refundAmount <= Number.parseInt(filters.amountMax);
 
-    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountMin && matchesAmountMax
-  })
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesDateFrom &&
+      matchesDateTo &&
+      matchesAmountMin &&
+      matchesAmountMax
+    );
+  });
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 bg-white min-h-screen w-full">
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-6 bg-[#4F8CCF]"></div>
+      <div className="flex items-center gap-2 mt-1">
+        <div className=" w-1 h-6 bg-[#4F8CCF]"></div>
         <h1 className="text-xl sm:text-2xl font-bold text-black">Refunds</h1>
       </div>
 
       {/* Initiate New Refund Form */}
-      <div
-        className="rounded-lg w-full px-4 sm:px-8 lg:px-16 py-6"
-        style={{
-          backgroundColor: "#A4B494",
-          boxShadow: "0px 4px 20px 0px #00000040 inset",
-        }}
+    <div
+  className="rounded-lg px-4 sm:px-6 py-6 mx-auto"
+  style={{
+    backgroundColor: "#A4B494",
+    boxShadow: "0px 4px 20px 0px #00000040 inset",
+    width: "95%",
+    maxWidth: "1000px", // Adjusted container width
+  }}
+>
+  <h2 className="text-lg sm:text-xl lg:text-2xl pt-3 font-bold text-black mb-6 pl-10">
+    Initiate New Refund
+  </h2>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 justify-items-center">
+    <div className="w-full max-w-[370px]"> 
+      <label
+        htmlFor="studentId"
+        className="text-sm sm:text-md font-bold text-black mb-2 block"
       >
-        <h2 className="text-lg sm:text-xl lg:text-2xl pt-3 font-bold text-black mb-6">Initiate New Refund</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Student ID Input */}
-          <div>
-            <label htmlFor="studentId" className="text-sm sm:text-md font-bold text-black mb-2 block">
-              Student / Resident ID
-            </label>
-            <input
-              id="studentId"
-              type="text"
-              name="studentId"
-              value={formData.studentId}
-              onChange={handleInputChange}
-              placeholder="Enter Student ID/ Resident ID"
-              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.studentId ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-            />
-            {formErrors.studentId && <p className="text-red-500 text-xs mt-1">{formErrors.studentId}</p>}
-          </div>
+        Student / Resident ID
+      </label>
+      <input
+        id="studentId"
+        type="text"
+        name="studentId"
+        value={formData.studentId}
+        onChange={handleInputChange}
+        placeholder="Enter Student ID/ Resident ID"
+        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
+          formErrors.studentId ? "border-red-500" : "border-gray-300"
+        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
+      />
+      {formErrors.studentId && (
+        <p className="text-red-500 text-xs mt-1">
+          {formErrors.studentId}
+        </p>
+      )}
+    </div>
+    <div className="w-full max-w-[370px]"> 
+      <label
+        htmlFor="refundAmount"
+        className="text-sm sm:text-md font-bold text-black mb-2 block"
+      >
+        Refund Amount
+      </label>
+      <input
+        id="refundAmount"
+        type="text"
+        name="refundAmount"
+        value={formData.refundAmount}
+        onChange={handleInputChange}
+        placeholder="Enter Amount"
+        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
+          formErrors.refundAmount ? "border-red-500" : "border-gray-300"
+        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
+      />
+      {formErrors.refundAmount && (
+        <p className="text-red-500 text-xs mt-1">
+          {formErrors.refundAmount}
+        </p>
+      )}
+    </div>
 
-          {/* Refund Amount Input */}
-          <div>
-            <label htmlFor="refundAmount" className="text-sm sm:text-md font-bold text-black mb-2 block">
-              Refund Amount
-            </label>
-            <input
-              id="refundAmount"
-              type="text"
-              name="refundAmount"
-              value={formData.refundAmount}
-              onChange={handleInputChange}
-              placeholder="Enter Amount"
-              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.refundAmount ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-            />
-            {formErrors.refundAmount && <p className="text-red-500 text-xs mt-1">{formErrors.refundAmount}</p>}
-          </div>
+    {/* Reason Input */}
+    <div className="w-full max-w-[370px]"> 
+      <label
+        htmlFor="reason"
+        className="text-sm sm:text-md font-bold text-black mb-2 block"
+      >
+        Reason For Refund
+      </label>
+      <input
+        id="reason"
+        type="text"
+        name="reason"
+        value={formData.reason}
+        onChange={handleInputChange}
+        placeholder="Enter Reason"
+        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
+          formErrors.reason ? "border-red-500" : "border-gray-300"
+        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
+      />
+      {formErrors.reason && (
+        <p className="text-red-500 text-xs mt-1">{formErrors.reason}</p>
+      )}
+    </div>
 
-          {/* Reason Input */}
-          <div>
-            <label htmlFor="reason" className="text-sm sm:text-md font-bold text-black mb-2 block">
-              Reason For Refund
-            </label>
-            <input
-              id="reason"
-              type="text"
-              name="reason"
-              value={formData.reason}
-              onChange={handleInputChange}
-              placeholder="Enter Reason"
-              className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${formErrors.reason ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-            />
-            {formErrors.reason && <p className="text-red-500 text-xs mt-1">{formErrors.reason}</p>}
-          </div>
-
-          {/* Payment Method Select */}
-          <div>
-            <label htmlFor="paymentMethod" className="text-sm sm:text-md font-bold text-black mb-2 block">
-              Payment Method
-            </label>
-            <select
-              id="paymentMethod"
-              name="paymentMethod"
-              value={formData.paymentMethod}
-              onChange={handleInputChange}
-              className={`w-full text-gray-500 bg-white px-3 sm:px-4 py-2.5 rounded-lg border ${formErrors.paymentMethod ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-            >
-              <option value="">Select Method</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="upi">UPI</option>
-              <option value="cash">Cash</option>
-              <option value="cheque">Cheque</option>
-            </select>
-            {formErrors.paymentMethod && <p className="text-red-500 text-xs mt-1">{formErrors.paymentMethod}</p>}
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-5 mb-5">
-          <button
-            onClick={handleCancel}
-            className="bg-white cursor-pointer border border-gray-400 px-6 sm:px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 text-sm sm:text-base"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleProceedToPay}
-            className="bg-white cursor-pointer text-black px-6 sm:px-8 py-2 rounded-xl font-bold hover:bg-gray-100 text-sm sm:text-base"
-          >
-            Proceed To Pay
-          </button>
-        </div>
-      </div>
+    {/* Payment Method Select */}
+    <div className="w-full max-w-[370px]"> 
+      <label
+        htmlFor="paymentMethod"
+        className="text-sm sm:text-md font-bold text-black mb-2 block"
+      >
+        Payment Method
+      </label>
+      <select
+        id="paymentMethod"
+        name="paymentMethod"
+        value={formData.paymentMethod}
+        onChange={handleInputChange}
+        className={`w-full text-gray-500 bg-white px-3 sm:px-4 py-2.5 rounded-lg border ${
+          formErrors.paymentMethod ? "border-red-500" : "border-gray-300"
+        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
+      >
+        <option value="">Select Method</option>
+        <option value="bank_transfer">Bank Transfer</option>
+        <option value="upi">UPI</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+      </select>
+      {formErrors.paymentMethod && (
+        <p className="text-red-500 text-xs mt-1">
+          {formErrors.paymentMethod}
+        </p>
+      )}
+    </div>
+  </div>
+  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-5 mb-5">
+    <button
+      onClick={handleCancel}
+      className="bg-white cursor-pointer border border-gray-400 px-6 sm:px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 text-sm sm:text-base shadow-[0px_4px_20px_0px_#0000001A]"
+    >
+      Cancel
+    </button>
+    <button
+      onClick={handleProceedToPay}
+      className="bg-white cursor-pointer text-black px-6 sm:px-8 py-2 rounded-xl font-bold hover:bg-gray-100 text-sm sm:text-base shadow-[0px_4px_20px_0px_#0000001A]"
+    >
+      Proceed To Pay
+    </button>
+  </div>
+</div>
 
       {/* Refund History Section */}
       <div
@@ -315,8 +363,10 @@ const Refunds = () => {
           boxShadow: "0px 4px 20px 0px #00000040 inset",
         }}
       >
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-3">
-          <h2 className="text-lg sm:text-xl font-semibold pl-0 sm:pl-5 text-black">Refund History</h2>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-3">
+          <h2 className="text-lg sm:text-xl font-semibold pl-0 sm:pl-10 text-black">
+            Refund History
+          </h2>
           <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
             <div className="relative flex-1 sm:flex-initial">
               <input
@@ -324,25 +374,42 @@ const Refunds = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search For Refunds"
-                className="w-full sm:w-64 lg:w-80 pl-10 pr-4 sm:pr-28 py-2 rounded-md bg-white border border-[#BAC2A7] text-black focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+                className="w-full sm:w-64 lg:w-80 pl-3 pr-4 py-1.5 rounded-md bg-white border border-[#BAC2A7] text-black focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-4 h-4" />
+              <Search className="absolute right-8 top-1/2 transform -translate-y-1/2 text-black w-4 h-4" />
             </div>
             <button
               onClick={() => setShowFilterModal(true)}
-              className="flex items-center justify-center gap-2 sm:gap-4 bg-[#28C404] text-white px-4 sm:px-6 py-2 cursor-pointer rounded-md text-sm sm:text-base hover:bg-[#22A803] transition-colors"
+              className="ml-2 mr-7 flex items-center justify-center gap-2 sm:gap-4 bg-[#28C404] text-white px-4 sm:px-6 py-1.5 cursor-pointer rounded-md font-semibold text-sm sm:text-base hover:bg-[#22A803] transition-colors shadow-[0px_4px_20px_0px_#00000040]"
             >
-              <Filter className="w-4 h-4" />
+              <svg
+                width="18"
+                height="12"
+                viewBox="0 0 24 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9.5 15.5V13H14.5V15.5H9.5ZM4.5 9.25V6.75H19.5V9.25H4.5ZM0.75 3V0.5H23.25V3H0.75Z"
+                  fill="white"
+                />
+              </svg>
               Filter
             </button>
           </div>
         </div>
 
         {/* Active Filters Display */}
-        {(filters.status || filters.dateFrom || filters.dateTo || filters.amountMin || filters.amountMax) && (
+        {(filters.status ||
+          filters.dateFrom ||
+          filters.dateTo ||
+          filters.amountMin ||
+          filters.amountMax) && (
           <div className="mb-4 p-3 bg-white rounded-md">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">Active Filters:</span>
+              <span className="text-sm font-semibold text-gray-700">
+                Active Filters:
+              </span>
               {filters.status && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                   Status: {filters.status}
@@ -354,7 +421,9 @@ const Refunds = () => {
                 </span>
               )}
               {filters.dateTo && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">To: {filters.dateTo}</span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  To: {filters.dateTo}
+                </span>
               )}
               {filters.amountMin && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -396,30 +465,44 @@ const Refunds = () => {
             <thead>
               <tr className="text-black">
                 <th className="px-2 sm:px-4 py-2 bg-white font-bold">Date</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Recipient Name</th>
+                <th className="px-2 sm:px-4 py-2 bg-white font-bold">
+                  Recipient Name
+                </th>
                 <th className="px-2 sm:px-4 py-2 bg-white font-bold">Amount</th>
                 <th className="px-2 sm:px-4 py-2 bg-white font-bold">Reason</th>
                 <th className="px-2 sm:px-4 py-2 bg-white font-bold">Status</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Processed By</th>
+                <th className="px-2 sm:px-4 py-2 bg-white font-bold">
+                  Processed By
+                </th>
               </tr>
             </thead>
             <tbody className="text-black">
               {filteredRefunds.length > 0 ? (
                 filteredRefunds.map((refund, idx) => (
-                  <tr key={idx} className="hover:bg-[#9BA085] transition-colors duration-200">
+                  <tr
+                    key={idx}
+                    className="hover:bg-[#9BA085] transition-colors duration-200"
+                  >
                     <td className="px-2 sm:px-4 py-2">{refund.date}</td>
-                    <td className="px-2 sm:px-4 py-2">{refund.recipientName}</td>
+                    <td className="px-2 sm:px-4 py-2">
+                      {refund.recipientName}
+                    </td>
                     <td className="px-2 sm:px-4 py-2">{refund.amount}</td>
                     <td className="px-2 sm:px-4 py-2">{refund.reason}</td>
                     <td className="px-2 sm:px-4 py-2">
-                      <span className={getStatusBadge(refund.status)}>{refund.status}</span>
+                      <span className={getStatusBadge(refund.status)}>
+                        {refund.status}
+                      </span>
                     </td>
                     <td className="px-2 sm:px-4 py-2">{refund.processedBy}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-600">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-gray-600"
+                  >
                     No refunds found matching your search criteria.
                   </td>
                 </tr>
@@ -445,7 +528,10 @@ const Refunds = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label htmlFor="filterStatus" className="block text-sm font-bold text-black mb-2">
+                <label
+                  htmlFor="filterStatus"
+                  className="block text-sm font-bold text-black mb-2"
+                >
                   Status
                 </label>
                 <select
@@ -462,7 +548,10 @@ const Refunds = () => {
                 </select>
               </div>
               <div>
-                <label htmlFor="dateFrom" className="block text-sm font-bold text-black mb-2">
+                <label
+                  htmlFor="dateFrom"
+                  className="block text-sm font-bold text-black mb-2"
+                >
                   Date From
                 </label>
                 <input
@@ -475,7 +564,10 @@ const Refunds = () => {
                 />
               </div>
               <div>
-                <label htmlFor="dateTo" className="block text-sm font-bold text-black mb-2">
+                <label
+                  htmlFor="dateTo"
+                  className="block text-sm font-bold text-black mb-2"
+                >
                   Date To
                 </label>
                 <input
@@ -488,7 +580,10 @@ const Refunds = () => {
                 />
               </div>
               <div>
-                <label htmlFor="amountRange" className="block text-sm font-bold text-black mb-2">
+                <label
+                  htmlFor="amountRange"
+                  className="block text-sm font-bold text-black mb-2"
+                >
                   Amount Range
                 </label>
                 <div id="amountRange" className="grid grid-cols-2 gap-2">
@@ -529,7 +624,7 @@ const Refunds = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Refunds
+export default Refunds;

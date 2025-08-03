@@ -82,11 +82,10 @@ const StaffAllotment = () => {
   };
 
   const handleBlur = (fieldName) => {
-  if (formData[fieldName]?.trim()) {
-    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
-  }
-};
-
+    if (formData[fieldName]?.trim()) {
+      setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
 
   const convertTime = (timeStr) => {
     const [hour, minute] = timeStr.split(":");
@@ -455,9 +454,7 @@ const StaffAllotment = () => {
               </div>
             </div>
             {formErrors.shiftEnd && (
-              <p className="text-sm text-red-600 mt-2">
-                {formErrors.shiftEnd}
-              </p>
+              <p className="text-sm text-red-600 mt-2">{formErrors.shiftEnd}</p>
             )}
           </div>
           <div className="md:col-start-1">
@@ -483,18 +480,17 @@ const StaffAllotment = () => {
         <div className="mt-7 text-center">
           <button
             onClick={handleRegisterWarden}
-            className="bg-white border border-gray-300 py-3 px-9 cursor-pointer rounded-2xl font-bold hover:bg-gray-50 transition-colors shadow-sm"
+            className="bg-white border border-gray-300 py-3 px-12 cursor-pointer rounded-2xl font-bold hover:bg-gray-50 transition-colors shadow-2xl"
           >
             Register Warden
           </button>
         </div>
       </div>
-     {successMsg && (
-  <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 w-fit max-w-[90vw] animate-fadeInDown">
-    {successMsg}
-  </div>
-)}
-
+      {successMsg && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 w-fit max-w-[90vw] animate-fadeInDown">
+          {successMsg}
+        </div>
+      )}
 
       {/* Manage Warden Shifts Section */}
       <div
@@ -549,16 +545,49 @@ const StaffAllotment = () => {
               <div className="flex justify-center items-center space-x-4">
                 <button
                   onClick={() => handleEditWarden(warden.id)}
-                  className="text-black hover:text-gray-700 cursor-pointer"
+                  className="text-black hover:text-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Edit Warden"
                 >
-                  <Edit2 className="w-5 h-5" strokeWidth={2.2} />
+                  <svg
+                    width="27"
+                    height="26"
+                    viewBox="0 0 27 26"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <mask
+                      id={`mask0_221_285_${warden.id}`} // unique per row
+                      style={{ maskType: "alpha" }}
+                      maskUnits="userSpaceOnUse"
+                      x="0"
+                      y="0"
+                      width="27"
+                      height="26"
+                    >
+                      <rect
+                        x="0.678223"
+                        y="0.0253906"
+                        width="25.7356"
+                        height="25.7356"
+                        fill="#D9D9D9"
+                      />
+                    </mask>
+                    <g mask={`url(#mask0_221_285_${warden.id})`}>
+                      <path
+                        d="M2.82373 25.7609V21.4717H24.2701V25.7609H2.82373ZM7.113 17.1824H8.61425L16.9783 8.8451L15.4503 7.31705L7.113 15.6811V17.1824ZM4.96837 19.327V14.7697L16.9783 2.78651C17.1749 2.58991 17.4028 2.438 17.6619 2.33077C17.9211 2.22354 18.1936 2.16992 18.4796 2.16992C18.7655 2.16992 19.0425 2.22354 19.3106 2.33077C19.5787 2.438 19.82 2.59885 20.0344 2.81331L21.5089 4.31456C21.7233 4.51115 21.8797 4.74349 21.978 5.01157C22.0763 5.27965 22.1255 5.55666 22.1255 5.84261C22.1255 6.11069 22.0763 6.3743 21.978 6.63345C21.8797 6.89259 21.7233 7.1294 21.5089 7.34386L9.52572 19.327H4.96837Z"
+                        fill="currentColor"
+                      />
+                    </g>
+                  </svg>
                 </button>
+
                 <div className="h-6 w-[1px] bg-black" />
+
                 <button
                   onClick={() => handleDeleteWarden(warden.id)}
                   className="text-black hover:text-gray-700 cursor-pointer"
                 >
-                  <Trash2 className="w-5 h-5" strokeWidth={2.2} />
+                  <Trash2 className="w-5 h-5" strokeWidth={2.7} />
                 </button>
               </div>
             </div>

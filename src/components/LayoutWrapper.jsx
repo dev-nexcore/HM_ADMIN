@@ -8,7 +8,7 @@ export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
 
   // Pages without layout
-  const noLayoutPages = ["/"];
+  const noLayoutPages = ["/","/forgetpassword"];
 
   const hideLayout = noLayoutPages.includes(pathname);
 

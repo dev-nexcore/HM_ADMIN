@@ -681,19 +681,19 @@ export default function StaffSalaryContent() {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           <div className="rounded-xl shadow-xl p-4 sm:p-8 border-none" style={{ backgroundColor: "#ADCE8C" }}>
-            <div className="text-lg sm:text-xl text-center font-semibold text-black mb-3">Total PAYROLL COST</div>
+            <div className="text-lg sm:text-2xl text-center font-semibold text-black mb-3">Total PAYROLL COST</div>
             <hr className="border-gray-600 mb-4" />
-            <div className="text-xl sm:text-2xl text-center font-bold text-gray-900">₹ 1,20,000</div>
+            <div className="text-xl sm:text-3xl text-center font-bold text-gray-900">₹ 1,20,000</div>
           </div>
           <div className="rounded-lg p-4 sm:p-8 shadow-xl border-none" style={{ backgroundColor: "#ADCE8C" }}>
-            <div className="text-lg sm:text-xl text-center font-semibold text-black mb-3">Total DEDUCTIONS</div>
+            <div className="text-lg sm:text-2xl text-center font-semibold text-black mb-3">Total DEDUCTIONS</div>
             <hr className="border-gray-600 mb-4" />
-            <div className="text-xl sm:text-2xl text-center font-bold text-gray-900">₹ 15,000</div>
+            <div className="text-xl sm:text-3xl text-center font-bold text-gray-900">₹ 15,000</div>
           </div>
           <div className="rounded-lg p-4 sm:p-8 shadow-xl border-none" style={{ backgroundColor: "#ADCE8C" }}>
-            <div className="text-lg sm:text-xl text-center font-semibold text-black mb-3">Total PAYOUT</div>
+            <div className="text-lg sm:text-2xl text-center font-semibold text-black mb-3">Total PAYOUT</div>
             <hr className="border-gray-600 mb-4" />
-            <div className="text-xl sm:text-2xl text-center font-bold text-gray-900">₹ 1,05,000</div>
+            <div className="text-xl sm:text-3xl text-center font-bold text-gray-900">₹ 1,05,000</div>
           </div>
         </div>
 
@@ -740,12 +740,12 @@ export default function StaffSalaryContent() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5">
             {activeTab === "payroll" ? (
               <>
-                {/* <button className="px-3 sm:px-4 py-2 text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
+                <button className="px-3 sm:px-4 py-2 text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
                   Generate Pay Slips
                 </button>
                 <button className="px-3 sm:px-4 py-2 bg-transparent text-[#7BAC4A] font-semibold shadow-lg rounded-md text-xs sm:text-sm cursor-pointer">
                   Export Report
-                </button> */}
+                </button>
                 <button
                   onClick={() => setShowProcessSalary(true)}
                   className="px-3 sm:px-4 py-2 bg-[#ADCE8C] text-black shadow-lg font-semibold border-none rounded-md text-xs sm:text-sm cursor-pointer hover:bg-[#9CAF88] transition-colors"
