@@ -97,7 +97,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       {/* Upload Receipt */}
       <button
         onClick={() => setShowUploadModal(true)}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
+        className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
       >
         <svg width="16" height="15" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9.05147 14.783V4.82777L5.87557 8.00367L4.16547 6.23249L10.273 0.125L16.3805 6.23249L14.6704 8.00367L11.4945 4.82777V14.783H9.05147ZM2.94397 19.669C2.27215 19.669 1.69703 19.4298 1.21861 18.9513C0.740187 18.4729 0.500977 17.8978 0.500977 17.226V13.5615H2.94397V17.226H17.602V13.5615H20.045V17.226C20.045 17.8978 19.8057 18.4729 19.3273 18.9513C18.8489 19.4298 18.2738 19.669 17.602 19.669H2.94397Z" fill="white" />
@@ -108,7 +108,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       {/* Generate Monthly Stock Report */}
       <button
         onClick={() => setShowReportModal(true)}
-        className="flex items-center gap-2 bg-white border border-gray-300 text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
+        className="flex items-center gap-2 bg-white border border-gray-300 cursor-pointer text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
       >
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12.5 18.925L8.25 14.675L9.65 13.275L12.5 16.125L18.15 10.475L19.55 11.875L12.5 18.925ZM18 9H16V4H14V7H4V4H2V18H8V20H2C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V4C0 3.45 0.195833 2.97917 0.5875 2.5875C0.979167 2.19583 1.45 2 2 2H6.175C6.35833 1.41667 6.71667 0.9375 7.25 0.5625C7.78333 0.1875 8.36667 0 9 0C9.66667 0 10.2625 0.1875 10.7875 0.5625C11.3125 0.9375 11.6667 1.41667 11.85 2H16C16.55 2 17.0208 2.19583 17.4125 2.5875C17.8042 2.97917 18 3.45 18 4V9ZM9 4C9.28333 4 9.52083 3.90417 9.7125 3.7125C9.90417 3.52083 10 3.28333 10 3C10 2.71667 9.90417 2.47917 9.7125 2.2875C9.52083 2.09583 9.28333 2 9 2C8.71667 2 8.47917 2.09583 8.2875 2.2875C8.09583 2.47917 8 2.71667 8 3C8 3.28333 8.09583 3.52083 8.2875 3.7125C8.47917 3.90417 8.71667 4 9 4Z" fill="black"/>
@@ -119,7 +119,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       {/* Add New Item */}
       <button
         onClick={onAddNewItem}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py- rounded shadow-md w-full sm:w-auto"
+        className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py- rounded shadow-md w-full sm:w-auto"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
           <path d="M13 11V5h-2v6H5v2h6v6h2v-6h6v-2z" />
@@ -351,13 +351,13 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
             </select>
             <div className="flex justify-end gap-4">
               <button
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded"
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded cursor-pointer"
                 onClick={() => setShowEditModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
                 onClick={handleEditSave}
               >
                 Save
@@ -882,7 +882,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center cursor-pointer"
               title="Open Calendar"
             >
               <svg
@@ -923,7 +923,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
             type="file"
             onChange={handleFileChange}
             accept="image/*,.pdf"
-            className="w-full max-w-[290px] py-2 px-3 border focus:outline-none text-black file:mr-3 file:py-1 file:px-3 file:rounded file:border file:text-sm file:font-medium file:bg-white file:text-black hover:file:bg-gray-100"
+            className="cursor-pointer w-full max-w-[290px] py-2 px-3 border focus:outline-none text-black file:mr-3 file:py-1 file:px-3 file:rounded file:border file:text-sm file:font-medium file:bg-white file:text-black hover:file:bg-gray-100"
             style={{
               backgroundColor: "#FFFFFF",
               color: "#000000",
@@ -943,7 +943,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
           <button
             onClick={handleCancel}
-            className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
+            className="px-6 py-2 bg-white text-black cursor-pointer rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
             style={{
               fontWeight: "600",
               fontSize: "15px",
@@ -953,7 +953,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
           </button>
           <button
             onClick={handleGenerateQR}
-            className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
+            className="px-6 py-2 bg-white cursor-pointer text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
             style={{
               fontWeight: "600",
               fontSize: "15px",
@@ -963,7 +963,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
           </button>
           <button
             onClick={handleSaveItem}
-            className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
+            className="px-6 py-2 bg-white cursor-pointer text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins]"
             style={{
               fontWeight: "600",
               fontSize: "15px",

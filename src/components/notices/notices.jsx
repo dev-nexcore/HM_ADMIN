@@ -48,7 +48,7 @@ const HostelNotices = () => {
   const [editingNotice, setEditingNotice] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoticeId, setDeleteNoticeId] = useState(null);
-
+const[formErrors,setFormErrors] = useState(null);
   const dateInputRef = useRef(null);
   const editDateInputRef = useRef(null);
 
@@ -111,7 +111,7 @@ const HostelNotices = () => {
     }
   };
 
-  return (
+ return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "Poppins" }}>
       {/* Header */}
       <div className="w-full px-4 sm:px-12 py-4 -mb-6 mt-8">
@@ -121,7 +121,7 @@ const HostelNotices = () => {
             fontFamily: "Inter",
           }}
         >
-          <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex items-center h-[25px]">
+          <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex font-bold items-center h-[25px]">
             Hostel Notices
           </span>
         </h1>
@@ -146,9 +146,16 @@ const HostelNotices = () => {
             </label>
             <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
               <select
-                className="w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px]"
+                className={`w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px] ${
+                  formErrors?.template ? "border border-red-500" : ""
+                }`}
                 value={form.template}
-                onChange={(e) => setForm({ ...form, template: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, template: e.target.value });
+                  if (e.target.value) {
+                    setFormErrors(prev => ({ ...prev, template: false }));
+                  }
+                }}
               >
                 <option value=""></option>
                 <option value="maintenance">Maintenance</option>
@@ -167,6 +174,9 @@ const HostelNotices = () => {
                 </svg>
               </div>
             </div>
+            {formErrors?.template && (
+              <p className="text-red-500 text-xs mt-1 ml-2">Please select a template</p>
+            )}
           </div>
 
           {/* Notice Title */}
@@ -178,9 +188,24 @@ const HostelNotices = () => {
               type="text"
               placeholder="Enter Notice Title"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+              onChange={(e) => {
+                setForm({ ...form, title: e.target.value });
+                if (e.target.value) {
+                  setFormErrors(prev => ({ ...prev, title: false }));
+                }
+              }}
+              onBlur={(e) => {
+                if (!e.target.value) {
+                  setFormErrors(prev => ({ ...prev, title: true }));
+                }
+              }}
+              className={`w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px] ${
+                formErrors?.title ? "border border-red-500" : ""
+              }`}
             />
+            {formErrors?.title && (
+              <p className="text-red-500 text-xs mt-1 ml-2">Please enter a title</p>
+            )}
           </div>
 
           {/* Recipient */}
@@ -190,15 +215,21 @@ const HostelNotices = () => {
             </label>
             <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
               <select
-                className="w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium"
+                className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${
+                  formErrors?.recipient ? "border border-red-500" : ""
+                }`}
                 value={form.recipient}
-                onChange={(e) =>
-                  setForm({ ...form, recipient: e.target.value })
-                }
+                onChange={(e) => {
+                  setForm({ ...form, recipient: e.target.value });
+                  if (e.target.value) {
+                    setFormErrors(prev => ({ ...prev, recipient: false }));
+                  }
+                }}
               >
-                <option>All (Students & Warden)</option>
-                <option>Students</option>
-                <option>Warden</option>
+                <option value="">Select recipient</option>
+                <option value="All (Students & Warden)">All (Students & Warden)</option>
+                <option value="Students">Students</option>
+                <option value="Warden">Warden</option>
               </select>
               <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
                 <svg
@@ -212,6 +243,9 @@ const HostelNotices = () => {
                 </svg>
               </div>
             </div>
+            {formErrors?.recipient && (
+              <p className="text-red-500 text-xs mt-1 ml-2">Please select a recipient</p>
+            )}
           </div>
 
           {/* Individual Recipient Input */}
@@ -239,9 +273,24 @@ const HostelNotices = () => {
             rows={4}
             placeholder="Type your message here..."
             value={form.message}
-            onChange={(e) => setForm({ ...form, message: e.target.value })}
-            className="w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none text-[12px] placeholder:font-medium placeholder:text-gray-400 resize-none"
+            onChange={(e) => {
+              setForm({ ...form, message: e.target.value });
+              if (e.target.value) {
+                setFormErrors(prev => ({ ...prev, message: false }));
+              }
+            }}
+            onBlur={(e) => {
+              if (!e.target.value) {
+                setFormErrors(prev => ({ ...prev, message: true }));
+              }
+            }}
+            className={`w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none text-[12px] placeholder:font-medium placeholder:text-gray-400 resize-none ${
+              formErrors?.message ? "border border-red-500" : ""
+            }`}
           />
+          {formErrors?.message && (
+            <p className="text-red-500 text-xs mt-1 ml-2">Please enter a message</p>
+          )}
         </div>
 
         <div className="w-full mt-6 font-[Poppins] flex flex-wrap items-center justify-between gap-4">
@@ -272,14 +321,22 @@ const HostelNotices = () => {
                         ...prev,
                         date: formattedDate,
                       }));
+                      setFormErrors(prev => ({ ...prev, date: false }));
                     } else {
                       setForm((prev) => ({ ...prev, date: "" }));
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!form.date) {
+                      setFormErrors(prev => ({ ...prev, date: true }));
                     }
                   }}
                   className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
                   style={{ colorScheme: "light" }}
                 />
-                <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]">
+                <div className={`bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] ${
+                  formErrors?.date ? "border border-red-500" : ""
+                }`}>
                   {form.date || ""}
                 </div>
                 {!form.date && (
@@ -291,7 +348,7 @@ const HostelNotices = () => {
               <button
                 type="button"
                 onClick={handleCalendarClick}
-                className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                className="ml-3 p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
                 title="Open Calendar"
               >
                 <svg
@@ -321,6 +378,9 @@ const HostelNotices = () => {
                 </svg>
               </button>
             </div>
+            {formErrors?.date && (
+              <p className="text-red-500 text-xs mt-1 ml-2">Please select a date</p>
+            )}
           </div>
 
           {/* Buttons */}
@@ -329,13 +389,31 @@ const HostelNotices = () => {
               <button
                 type="button"
                 onClick={() => handleCancel?.()}
-                className="bg-white text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
+                className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-white text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
+                onClick={() => {
+                  // Validate form before submission
+                  const errors = {};
+                  if (!form.template) errors.template = true;
+                  if (!form.title) errors.title = true;
+                  if (!form.recipient) errors.recipient = true;
+                  if (!form.message) errors.message = true;
+                  if (!form.date) errors.date = true;
+
+                  if (Object.keys(errors).length > 0) {
+                    setFormErrors(errors);
+                    return;
+                  }
+
+                  // If no errors, proceed with submission
+                  setFormErrors(null);
+                  // Your submit logic here
+                }}
+                className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
               >
                 Issue Notice
               </button>
