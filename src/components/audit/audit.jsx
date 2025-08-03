@@ -31,7 +31,7 @@ export default function AuditLogsSection() {
   return (
     <div className="min-h-screen w-full bg-white pt-8 px-6 sm:px-8 md:px-12">
       <div className="flex items-center gap-2 mb-6">
-        <span className="h-7 w-1 bg-[#4F8CCF]" />
+        <span className="h-7 w-1 bg-[#4F8CCF]"/>
         <h2 className="text-3xl font-semibold text-black">Audit Logs</h2>
       </div>
 
@@ -59,9 +59,9 @@ export default function AuditLogsSection() {
             </div>
 
             {/* Filter button (commented) */}
-            {/* <button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md px-5 py-2 shadow-md" onClick={toggleFilterModal}>
+            { <button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md px-6 py-2 shadow-md" onClick={toggleFilterModal}>
               <FaFilter /><span className="hidden sm:inline">Filter</span>
-            </button> */}
+            </button> }
           </div>
         </div>
 
@@ -110,13 +110,72 @@ export default function AuditLogsSection() {
       </div>
 
       {/* Filter Modal (commented) */}
-      {/* {isFilterModalOpen && (
+      {/* Filter Modal */}
+       {isFilterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] sm:w-[400px]">
-            …filter content…
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">Filter Refunds</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-black">Status</label>
+                <select className="w-full mt-1 p-2 border border-gray-700 rounded-md text-gray-700">
+                  <option>All Status</option>
+                  <option>Pending</option>
+                  <option>Completed</option>
+                  <option>Rejected</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date From</label>
+                <input
+                  type="date"
+                  className="w-full mt-1 p-2 border border-gray-700 rounded-md  text-gray-700"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date To</label>
+                <input
+                  type="date"
+                  className="w-full mt-1 p-2 border border-gray-700 rounded-md  text-gray-700 "
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount Range</label>
+                <div className="flex gap-4">
+                  <input
+                    type="number"
+                    placeholder="Min Amount"
+                    className="p-2 border border-gray-700 rounded-md w-full text-gray-900"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max Amount"
+                    className="p-2 border border-gray-700 rounded-md w-full  text-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-between">
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-md"
+              >
+                Clear Filters
+              </button>
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="bg-green-500 text-white px-4 py-2 rounded-md"
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
         </div>
-      )} */}
+      )} 
     </div>
   );
 }
