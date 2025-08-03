@@ -58,13 +58,17 @@ const AdminLogin = () => {
             <div>
               <label className="block text-lg font-bold mb-2">User ID</label>
               <input
-              type="text"
-              value={adminId}
-              onChange={(e) => setAdminId(e.target.value)}
-              placeholder="Enter Your User ID"
-              required
-              className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
-              style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
+                type="text"
+                value={adminId}
+                onChange={(e) => setAdminId(e.target.value)}
+                placeholder="Enter Your User ID"
+                required
+                className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                style={{
+                  boxShadow: "0px 4px 10px 0px #00000040",
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: "500",
+                }}
               />
             </div>
             {/* Password */}
@@ -77,7 +81,11 @@ const AdminLogin = () => {
                 placeholder="Enter Your Password"
                 required
                 className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
-                style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
+                style={{
+                  boxShadow: "0px 4px 10px 0px #00000040",
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: "500",
+                }}
               />
               <div className="text-right mt-2">
                 <a
@@ -112,7 +120,7 @@ const AdminLogin = () => {
       {/* Mobile Layout - Visible on screens smaller than large (ALL CHANGES HERE) */}
       <div className="lg:hidden flex flex-col items-center w-full h-full">
         {/* Top white section with logo */}
-        <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-15 rounded-b-[20px] relative z-0">
+        <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-10 rounded-b-[20px] relative z-0">
           <img
             src="/photos/logo.png"
             alt="Logo"
@@ -128,12 +136,16 @@ const AdminLogin = () => {
           {/* Header with border touching edges */}
           <div className="w-full">
             <h2
-              className="text-2xl font-bold text-black bg-white text-center py-4 m-0 rounded-t-[20px] rounded-b-[20px]"
-              style={{ border: "0.5px solid #000000" }}
+              className="text-xl font-bold text-black bg-white text-center py-4 m-0 rounded-t-[20px] rounded-b-[20px]"
+              style={{
+                border: "0.5px solid #000000",
+                fontFamily: "Poppins",
+                fontWeight: "600",
+              }}
             >
               Admin Login
             </h2>
-          </div> 
+          </div>
 
           {/* Login Form */}
           <div className="p-6 sm:p-8">
@@ -148,7 +160,11 @@ const AdminLogin = () => {
                   placeholder="Enter User ID"
                   required
                   className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
-                  style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
+                  style={{
+                    boxShadow: "0px 4px 10px 0px #00000040",
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: "500",
+                  }}
                 />
               </div>
 
@@ -162,12 +178,21 @@ const AdminLogin = () => {
                   placeholder="Enter Password"
                   required
                   className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
-                  style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
+                  style={{
+                    boxShadow: "0px 4px 10px 0px #00000040",
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: "500",
+                  }}
                 />
-                <div className="text-right mt-2"> 
+                <div className="text-right mt-2">
                   <a
                     href="/forgetpassword"
-                    className="text-blue-600 text-sm font-medium hover:underline"
+                    className="text-sm font-semibold hover:underline"
+                    style={{
+                      color: "#1109FF",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: "600",
+                    }}
                   >
                     Forget Password?
                   </a>
