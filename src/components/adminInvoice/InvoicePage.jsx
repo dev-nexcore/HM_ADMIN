@@ -3,11 +3,19 @@
 import { useEffect, useState } from "react";
 import InvoiceSection from "./InvoiceSection";
 import axios from "axios";
+import InvoiceModal from "./invoiceModal";
 
 export default function InvoicePage() {
   const [studentFees, setStudentFees] = useState([]);
   const [managementInvoices, setManagementInvoices] = useState([]);
   const [purchaseReceipts, setPurchaseReceipts] = useState([]);
+
+  const [modalData, setModalData] = useState({
+    isOpen: false,
+    section: "",
+    headers: [],
+    row: [],
+  });
 
   useEffect(() => {
     // Simulated API data — replace with axios requests
@@ -35,6 +43,7 @@ export default function InvoicePage() {
   }, []);
 
   // Handlers
+  // 📌 Handler for opening modal
   const handleView = (row, section) => {
     let headers = [];
 
@@ -52,11 +61,12 @@ export default function InvoicePage() {
       ];
     }
 
-    const details = headers
-      .map((header, index) => `${header}: ${row[index]}`)
-      .join("\n");
-
-    alert(`Details for ${section}:\n\n${details}`);
+    setModalData({
+      isOpen: true,
+      section,
+      headers,
+      row,
+    });
   };
 
   const handleDownload = (row) => {
@@ -119,6 +129,16 @@ export default function InvoicePage() {
           onDownload={handleDownload}
         />
       </div>
+      {/* 📦 Modal for details */}
+      <InvoiceModal
+        isOpen={modalData.isOpen}
+        onClose={() =>
+          setModalData({ isOpen: false, section: "", headers: [], row: [] })
+        }
+        section={modalData.section}
+        headers={modalData.headers}
+        row={modalData.row}
+      />
     </main>
   );
 }

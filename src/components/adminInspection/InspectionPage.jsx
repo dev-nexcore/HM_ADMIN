@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Eye, Download } from "lucide-react";
 import Image from "next/image";
+import InspectionModal from "./InspectionModal";
 
 const statusStyles = {
   Scheduled: "bg-[#FF9D00] text-white",
@@ -21,6 +22,7 @@ export default function InspectionPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedInspection, setSelectedInspection] = useState(null);
 
   const upcomingInspections = [
     {
@@ -95,9 +97,7 @@ export default function InspectionPage() {
   };
 
   const handleViewDetails = (inspection) => {
-    alert(
-      `Inspection Details:\n\nTitle: ${inspection.title}\nTarget: ${inspection.target}\nDate: ${inspection.date}\nTime: ${inspection.time}\nStatus: ${inspection.status}`
-    );
+    setSelectedInspection(inspection);
   };
 
   return (
@@ -332,6 +332,36 @@ export default function InspectionPage() {
           </div>
         </div>
       </section>
+      {selectedInspection && (
+        <InspectionModal
+          isOpen={!!selectedInspection}
+          onClose={() => setSelectedInspection(null)}
+          section="Inspection Details"
+          headers={[
+            "Inspection ID",
+            "Title",
+            "Target",
+            "Date",
+            "Time",
+            "Status",
+          ]}
+          row={[
+            selectedInspection.id,
+            selectedInspection.title,
+            selectedInspection.target,
+            selectedInspection.date,
+            selectedInspection.time,
+            <span
+              className={`inline-block px-3 py-1 text-xs font-medium rounded-lg ${
+                statusStyles[selectedInspection.status] ??
+                "bg-gray-300 text-black"
+              }`}
+            >
+              {selectedInspection.status}
+            </span>,
+          ]}
+        />
+      )}
     </div>
   );
 }
