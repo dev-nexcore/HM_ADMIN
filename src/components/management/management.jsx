@@ -603,7 +603,7 @@ const StudentManagement = () => {
               fontFamily: "Inter",
             }}
           >
-            <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex items-center h-[25px]">
+            <span className="border-l-4 border-[#4F8CCF] pl-2  inline-flex items-center h-[25px]">
               Student Management
             </span>
           </h1>

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
-import { FaEye, FaEyeSlash, FaPen, FaSearch } from "react-icons/fa";
-import { FiUpload, FiFileText, FiPlus } from "react-icons/fi";
+import { FaSearch } from "react-icons/fa";
 
 const initialData = [
   {
@@ -10,6 +9,10 @@ const initialData = [
     category: "Bedding",
     location: "Room-A-101",
     status: "In Use",
+    description: "Standard single bed with mattress",
+    purchaseDate: "12-05-2022",
+    purchaseCost: "12000",
+    receipt:null
   },
   {
     name: "Study Chair",
@@ -17,6 +20,10 @@ const initialData = [
     category: "Furniture",
     location: "Room-A-101",
     status: "Available",
+    description: "Ergonomic study chair with adjustable height",
+    purchaseDate: "15-06-2022",
+    purchaseCost: "4500",
+    receipt:null
   },
   {
     name: "Ceiling Fan",
@@ -24,6 +31,10 @@ const initialData = [
     category: "Electronics",
     location: "Room-A-101",
     status: "In maintenance",
+    description: "3-blade ceiling fan with remote control",
+    purchaseDate: "20-04-2022",
+    purchaseCost: "3200",
+    receipt:null
   },
   {
     name: "Wardrobe",
@@ -31,6 +42,10 @@ const initialData = [
     category: "Furniture",
     location: "Room-A-101",
     status: "In Use",
+    description: "Wooden wardrobe with mirror",
+    purchaseDate: "05-03-2022",
+    purchaseCost: "18000",
+    receipt:null
   },
   {
     name: "Water Heater",
@@ -38,14 +53,18 @@ const initialData = [
     category: "Applications",
     location: "Room-A-101",
     status: "Damaged",
+    description: "15L instant water heater",
+    purchaseDate: "10-01-2022",
+    purchaseCost: "7500",
+    receipt:null
   },
 ];
 
 const statusColor = {
-  "In Use": "bg-[#f5a623] text-white",
-  Available: "bg-[#25d366] text-white",
+  "In Use": "bg-[#FF9D00] text-white",
+  Available: "bg-[#28C404] text-white",
   "In maintenance": "bg-[#d6d6c2] text-black",
-  Damaged: "bg-[#ff3b30] text-white",
+  Damaged: "bg-[#FF0000] text-white",
 };
 
 const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
@@ -57,7 +76,10 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   const [receiptFile, setReceiptFile] = useState(null);
   const [hiddenRows, setHiddenRows] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false); // NEW
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const fileInputRef = useRef(null);
 
   const toggleVisibility = (barcode) => {
     setHiddenRows((prev) => ({
@@ -67,9 +89,32 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   };
 
   const handleUploadReceipt = (e) => {
-    setReceiptFile(e.target.files[0]);
-  };
+  const file = e.target.files[0];
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size should be less than 5MB");
+      return;
+    }
+    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      alert("Only JPEG, PNG, or PDF files are allowed");
+      return;
+    }
 
+    if (selectedItem) {
+      // Update the specific item with the receipt
+      setInventory(prev => prev.map(item => 
+        item.barcode === selectedItem.barcode 
+          ? { ...item, receipt: file } 
+          : item
+      ));
+      alert(`Receipt uploaded for ${selectedItem.name}`);
+    } else {
+      // For new items
+      setReceiptFile(file);
+    }
+  }
+};
   const handleEditClick = (item) => {
     setEditData({ ...item });
     setShowEditModal(true);
@@ -82,96 +127,110 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
     setShowEditModal(false);
   };
 
+  const handleViewDetails = (item) => {
+    setSelectedItem(item);
+    setShowDetailModal(true);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
   return (
     <div className="bg-white min-h-screen py-4 w-full mt-6">
-     <div className="px-4 sm:px-6 mb-8">
-    {/* Header */}
-  <div className="flex items-center justify-between flex-wrap gap-4">
-    <div className="flex items-center gap-3">
-  <div className="w-1 h-6 bg-[#4F8CCF]"></div>
-  <h2 className="text-2xl font-bold text-black">Inventory List</h2>
-</div>
+      <div className="px-4 sm:px-6 mb-8">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-[#4F8CCF]"></div>
+            <h2 className="text-2xl font-bold text-black">Inventory List</h2>
+          </div>
 
+          <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
+            {/* Upload Receipt */}
+            <button
+              onClick={triggerFileInput}
+              className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
+            >
+             <svg width="17" height="16" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.05147 14.783V4.82777L5.87557 8.00367L4.16547 6.23249L10.273 0.125L16.3805 6.23249L14.6704 8.00367L11.4945 4.82777V14.783H9.05147ZM2.94397 19.669C2.27215 19.669 1.69703 19.4298 1.21861 18.9513C0.740187 18.4729 0.500977 17.8978 0.500977 17.226V13.5615H2.94397V17.226H17.602V13.5615H20.045V17.226C20.045 17.8978 19.8057 18.4729 19.3273 18.9513C18.8489 19.4298 18.2738 19.669 17.602 19.669H2.94397Z" fill="white"/>
+</svg>
 
-    <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
-      {/* Upload Receipt */}
-      <button
-        onClick={() => setShowUploadModal(true)}
-        className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
-      >
-        <svg width="16" height="15" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9.05147 14.783V4.82777L5.87557 8.00367L4.16547 6.23249L10.273 0.125L16.3805 6.23249L14.6704 8.00367L11.4945 4.82777V14.783H9.05147ZM2.94397 19.669C2.27215 19.669 1.69703 19.4298 1.21861 18.9513C0.740187 18.4729 0.500977 17.8978 0.500977 17.226V13.5615H2.94397V17.226H17.602V13.5615H20.045V17.226C20.045 17.8978 19.8057 18.4729 19.3273 18.9513C18.8489 19.4298 18.2738 19.669 17.602 19.669H2.94397Z" fill="white" />
-        </svg>
-        Upload Receipt
-      </button>
+              Upload Receipt
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleUploadReceipt}
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+            />
 
-      {/* Generate Monthly Stock Report */}
-      <button
-        onClick={() => setShowReportModal(true)}
-        className="flex items-center gap-2 bg-white border border-gray-300 cursor-pointer text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
-      >
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.5 18.925L8.25 14.675L9.65 13.275L12.5 16.125L18.15 10.475L19.55 11.875L12.5 18.925ZM18 9H16V4H14V7H4V4H2V18H8V20H2C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V4C0 3.45 0.195833 2.97917 0.5875 2.5875C0.979167 2.19583 1.45 2 2 2H6.175C6.35833 1.41667 6.71667 0.9375 7.25 0.5625C7.78333 0.1875 8.36667 0 9 0C9.66667 0 10.2625 0.1875 10.7875 0.5625C11.3125 0.9375 11.6667 1.41667 11.85 2H16C16.55 2 17.0208 2.19583 17.4125 2.5875C17.8042 2.97917 18 3.45 18 4V9ZM9 4C9.28333 4 9.52083 3.90417 9.7125 3.7125C9.90417 3.52083 10 3.28333 10 3C10 2.71667 9.90417 2.47917 9.7125 2.2875C9.52083 2.09583 9.28333 2 9 2C8.71667 2 8.47917 2.09583 8.2875 2.2875C8.09583 2.47917 8 2.71667 8 3C8 3.28333 8.09583 3.52083 8.2875 3.7125C8.47917 3.90417 8.71667 4 9 4Z" fill="black"/>
-        </svg>
-        Generate Monthly Stock Report
-      </button>
+            {/* Generate Monthly Stock Report */}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="flex items-center gap-2 bg-white border border-gray-300 cursor-pointer text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
+            >
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.5 18.925L8.25 14.675L9.65 13.275L12.5 16.125L18.15 10.475L19.55 11.875L12.5 18.925ZM18 9H16V4H14V7H4V4H2V18H8V20H2C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V4C0 3.45 0.195833 2.97917 0.5875 2.5875C0.979167 2.19583 1.45 2 2 2H6.175C6.35833 1.41667 6.71667 0.9375 7.25 0.5625C7.78333 0.1875 8.36667 0 9 0C9.66667 0 10.2625 0.1875 10.7875 0.5625C11.3125 0.9375 11.6667 1.41667 11.85 2H16C16.55 2 17.0208 2.19583 17.4125 2.5875C17.8042 2.97917 18 3.45 18 4V9ZM9 4C9.28333 4 9.52083 3.90417 9.7125 3.7125C9.90417 3.52083 10 3.28333 10 3C10 2.71667 9.90417 2.47917 9.7125 2.2875C9.52083 2.09583 9.28333 2 9 2C8.71667 2 8.47917 2.09583 8.2875 2.2875C8.09583 2.47917 8 2.71667 8 3C8 3.28333 8.09583 3.52083 8.2875 3.7125C8.47917 3.90417 8.71667 4 9 4Z" fill="black"/>
+              </svg>
+              Generate Monthly Stock Report
+            </button>
 
-      {/* Add New Item */}
-      <button
-        onClick={onAddNewItem}
-        className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py- rounded shadow-md w-full sm:w-auto"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
-          <path d="M13 11V5h-2v6H5v2h6v6h2v-6h6v-2z" />
-        </svg>
-        Add New Item
-      </button>
-    </div>
-  </div>
-</div>
-
+            {/* Add New Item */}
+            <button
+              onClick={onAddNewItem}
+              className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py- rounded shadow-md w-full sm:w-auto"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+                <path d="M13 11V5h-2v6H5v2h6v6h2v-6h6v-2z" />
+              </svg>
+              Add New Item
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-8 px-4 sm:px-6">
-  {/* Search Box */}
-  <div className="relative flex-1 min-w-[250px] shadow-[0px_2px_4px_0px_#00000040] rounded-md">
-    <FaSearch className="absolute top-3 left-3 text-black" />
-    <input
-      type="text"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
-      placeholder="Search by Item Name or Barcode ID"
-    />
-  </div>
+        {/* Search Box */}
+        <div className="relative flex-1 min-w-[250px] shadow-[0px_2px_4px_0px_#00000040] rounded-md">
+          <FaSearch className="absolute top-3 left-3 text-black" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-4 py-2 text-m rounded-md bg-[#e8e8e8] text-black placeholder-black w-full outline-none"
+            placeholder="Search by Item Name or Barcode ID"
+          />
+        </div>
 
-  {/* Status Dropdown */}
-  <select
-    className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
-    value={statusFilter}
-    onChange={(e) => setStatusFilter(e.target.value)}
-  >
-    <option>All Status</option>
-    <option>In Use</option>
-    <option>Available</option>
-    <option>In maintenance</option>
-    <option>Damaged</option>
-  </select>
+        {/* Status Dropdown */}
+        <select
+          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option>All Status</option>
+          <option>In Use</option>
+          <option>Available</option>
+          <option>In maintenance</option>
+          <option>Damaged</option>
+        </select>
 
-  {/* Category Dropdown */}
-  <select
-    className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
-    value={categoryFilter}
-    onChange={(e) => setCategoryFilter(e.target.value)}
-  >
-    <option>All Categories</option>
-    <option>Bedding</option>
-    <option>Furniture</option>
-    <option>Electronics</option>
-    <option>Applications</option>
-  </select>
-</div>
-
+        {/* Category Dropdown */}
+        <select
+          className="px-4 py-2 text-m rounded-md bg-[#e8e8e8] w-full sm:w-64 outline-none shadow-[0px_2px_4px_0px_#00000040]"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option>All Categories</option>
+          <option>Bedding</option>
+          <option>Furniture</option>
+          <option>Electronics</option>
+          <option>Applications</option>
+        </select>
+      </div>
 
       {/* Table */}
       <div className="px-4 sm:px-6">
@@ -235,10 +294,15 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                           Hidden
                         </td>
                         <td className="px-4 py-2 flex justify-center gap-2">
-                          <FaEyeSlash
+                          {/* Eye Slash (Hide) Icon */}
+                          <div
                             className="cursor-pointer text-gray-600 hover:text-red-600"
                             onClick={() => toggleVisibility(item.barcode)}
-                          />
+                          >
+                            <svg width="28" height="19" viewBox="0 0 28 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M14 15C15.5625 15 16.8906 14.4531 17.9844 13.3594C19.0781 12.2656 19.625 10.9375 19.625 9.375C19.625 7.8125 19.0781 6.48438 17.9844 5.39062C16.8906 4.29688 15.5625 3.75 14 3.75C12.4375 3.75 11.1094 4.29688 10.0156 5.39062C8.92188 6.48438 8.375 7.8125 8.375 9.375C8.375 10.9375 8.92188 12.2656 10.0156 13.3594C11.1094 14.4531 12.4375 15 14 15ZM14 12.75C13.0625 12.75 12.2656 12.4219 11.6094 11.7656C10.9531 11.1094 10.625 10.3125 10.625 9.375C10.625 8.4375 10.9531 7.64062 11.6094 6.98438C12.2656 6.32812 13.0625 6 14 6C14.9375 6 15.7344 6.32812 16.3906 6.98438C17.0469 7.64062 17.375 8.4375 17.375 9.375C17.375 10.3125 17.0469 11.1094 16.3906 11.7656C15.7344 12.4219 14.9375 12.75 14 12.75ZM14 18.75C10.9583 18.75 8.1875 17.901 5.6875 16.2031C3.1875 14.5052 1.375 12.2292 0.25 9.375C1.375 6.52083 3.1875 4.24479 5.6875 2.54688C8.1875 0.848958 10.9583 0 14 0C17.0417 0 19.8125 0.848958 22.3125 2.54688C24.8125 4.24479 26.625 6.52083 27.75 9.375C26.625 12.2292 24.8125 14.5052 22.3125 16.2031C19.8125 17.901 17.0417 18.75 14 18.75ZM14 16.25C16.3542 16.25 18.5156 15.6302 20.4844 14.3906C22.4531 13.151 23.9583 11.4792 25 9.375C23.9583 7.27083 22.4531 5.59896 20.4844 4.35938C18.5156 3.11979 16.3542 2.5 14 2.5C11.6458 2.5 9.48438 3.11979 7.51562 4.35938C5.54688 5.59896 4.04167 7.27083 3 9.375C4.04167 11.4792 5.54688 13.151 7.51562 14.3906C9.48438 15.6302 11.6458 16.25 14 16.25Z" fill="#1C1B1F"/>
+                            </svg>
+                          </div>
                         </td>
                       </>
                     ) : (
@@ -256,16 +320,29 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                             {item.status}
                           </span>
                         </td>
-                        <td className="px-4 py-2 flex justify-center gap-2">
-                          <FaEye
+                        <td className="px-4 py-2 flex justify-center gap-3">
+                          {/* Eye Icon (Show) */}
+                          <div
                             className="cursor-pointer text-gray-600 hover:text-blue-600"
-                            onClick={() => toggleVisibility(item.barcode)}
-                          />
+                            onClick={() => handleViewDetails(item)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C1B1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </div>
+
                           <div className="w-[1px] h-5 bg-gray-400" />
-                          <FaPen
+
+                          {/* Edit Icon */}
+                          <div
                             className="cursor-pointer text-gray-600 hover:text-green-600"
                             onClick={() => handleEditClick(item)}
-                          />
+                          >
+                            <svg width="18" height="18" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z" fill="#1C1B1F"/>
+                            </svg>
+                          </div>
                         </td>
                       </>
                     )}
@@ -367,6 +444,84 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
         </div>
       )}
 
+      {/* Detail Modal */}
+      {showDetailModal && selectedItem && (
+  <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div className="bg-white rounded-lg p-6 shadow-lg max-w-4xl w-full h-[80%] overflow-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Item Details</h3>
+        <button
+          className="text-gray-600 cursor-pointer hover:text-red-600 text-xl"
+          onClick={() => setShowDetailModal(false)}
+        >
+          &times;
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 className="font-bold text-lg mb-2">Basic Information</h4>
+          <div className="space-y-2">
+            <p><span className="font-semibold">Item Name:</span> {selectedItem.name}</p>
+            <p><span className="font-semibold">Barcode ID:</span> {selectedItem.barcode}</p>
+            <p><span className="font-semibold">Category:</span> {selectedItem.category}</p>
+            <p><span className="font-semibold">Location:</span> {selectedItem.location}</p>
+            <p>
+              <span className="font-semibold">Status:</span> 
+              <span className={`inline-block ml-2 px-2 py-1 text-xs rounded ${statusColor[selectedItem.status] || 'bg-gray-200'}`}>
+                {selectedItem.status}
+              </span>
+            </p>
+          </div>
+        </div>
+        
+        <div>
+          <h4 className="font-bold text-lg mb-2">Additional Information</h4>
+          <div className="space-y-2">
+            <p><span className="font-semibold">Description:</span> {selectedItem.description || "No description available"}</p>
+            <p><span className="font-semibold">Purchase Date:</span> {selectedItem.purchaseDate || "Not specified"}</p>
+            <p><span className="font-semibold">Purchase Cost:</span> {selectedItem.purchaseCost ? `₹${selectedItem.purchaseCost}` : "Not specified"}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-6">
+        <h4 className="font-bold text-lg mb-2">Receipt</h4>
+        <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
+          {selectedItem.receipt ? (
+            <div className="flex flex-col items-center">
+              <p>Receipt: {selectedItem.receipt.name}</p>
+              <button 
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => {
+                  // Implement receipt viewing logic here
+                  alert(`Viewing receipt: ${selectedItem.receipt.name}`);
+                }}
+              >
+                View Receipt
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <p className="mb-2">No receipt uploaded</p>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedItem(selectedItem);
+                  triggerFileInput();
+                }}
+              >
+                Upload Receipt
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Report Modal */}
       {showReportModal && (
         <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -374,7 +529,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Monthly Stock Report</h3>
               <button
-                className="text-gray-600 hover:text-red-600 text-xl"
+                className="text-gray-600 cursor-pointer hover:text-red-600 text-xl"
                 onClick={() => setShowReportModal(false)}
               >
                 &times;
@@ -890,7 +1045,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 rounded-lg transition-colors flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
               title="Open Calendar"
             >
               <svg
