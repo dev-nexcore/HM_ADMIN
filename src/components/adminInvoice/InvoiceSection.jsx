@@ -115,7 +115,22 @@ export default function InvoiceSection({
                       );
                     }
 
-                    if (isHidden) return <td key={cellIndex}></td>;
+                    if (isHidden) {
+                      return (
+                        <td
+                          key={cellIndex}
+                          className="px-4 py-2 text-center whitespace-nowrap"
+                        >
+                          {column === "Status" ? (
+                            <span className="inline-block w-24 px-3 py-1 text-xs md:text-sm text-center font-medium rounded-lg bg-gray-300 text-black">
+                              ***
+                            </span>
+                          ) : (
+                            "***"
+                          )}
+                        </td>
+                      );
+                    }
 
                     return (
                       <td

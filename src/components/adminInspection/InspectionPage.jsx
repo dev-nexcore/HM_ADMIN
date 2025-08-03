@@ -293,6 +293,7 @@ export default function InspectionPage() {
               <tbody>
                 {upcomingInspections.map((row, rowIndex) => {
                   const isHidden = hiddenRows.includes(rowIndex);
+
                   return (
                     <tr key={rowIndex} className="hover:bg-black/5 transition">
                       {tableHeaders.map((column, cellIndex) => {
@@ -324,7 +325,22 @@ export default function InspectionPage() {
                           );
                         }
 
-                        if (isHidden) return <td key={cellIndex}></td>;
+                        if (isHidden) {
+                          return (
+                            <td
+                              key={cellIndex}
+                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
+                            >
+                              {column.key === "status" ? (
+                                <span className="inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg bg-gray-300 text-black">
+                                  ***
+                                </span>
+                              ) : (
+                                "***"
+                              )}
+                            </td>
+                          );
+                        }
 
                         if (column.key === "status") {
                           return (
