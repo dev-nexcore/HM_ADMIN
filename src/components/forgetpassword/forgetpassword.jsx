@@ -113,7 +113,7 @@ const ForgotPassword = () => {
           <div className="p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-6 w-full">
               {/* Email ID */}
-              <div>
+              <div className="mt-10">
                 <label className="block text-lg font-bold mb-2">Email ID</label>
                 <input
                   type="email"
@@ -121,10 +121,10 @@ const ForgotPassword = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter Your Email ID"
                   required
-                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                  className="w-full px-5 py-3 text-gray-400 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
                   style={{
                     boxShadow: "0px 4px 10px 0px #00000040",
-                    fontFamily: "Poppins, sans-serif",
+                    fontFamily: "Poppins",
                     fontWeight: "500",
                   }}
                 />
@@ -137,7 +137,7 @@ const ForgotPassword = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-3 rounded-xl hover:bg-[#9AAA87] transition-all duration-200"
+                  className="w-[160px] cursor-pointer bg-[#A4B494] text-black font-bold py-2 rounded-xl hover:bg-[#9AAA87] transition-all duration-200 mt-6"
                   style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
                 >
                   {loading ? "Sending..." : "Submit"}
