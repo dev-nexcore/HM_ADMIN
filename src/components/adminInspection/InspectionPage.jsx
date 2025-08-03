@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { CalendarIcon, ClockIcon, Eye, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Eye, EyeOff, Download } from "lucide-react";
+import Image from "next/image";
 
 const statusStyles = {
   Scheduled: "bg-[#FF9D00] text-white",
   Completed: "bg-[#28C404] text-white",
   Cancelled: "bg-gray-300 text-black",
 };
+
+const STORAGE_KEY = "hiddenInspectionRows";
 
 export default function InspectionPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +23,7 @@ export default function InspectionPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [hiddenRows, setHiddenRows] = useState([]);
 
   const upcomingInspections = [
     {
@@ -58,6 +62,14 @@ export default function InspectionPage() {
     { label: "Actions", key: "actions" },
   ];
 
+  // Load hidden rows from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setHiddenRows(JSON.parse(stored));
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -89,8 +101,14 @@ export default function InspectionPage() {
     setTimeout(() => setSubmitted(false), 3000);
   };
 
-  const handleView = (inspection) => {
-    alert(`Viewing details for ${inspection.title} (${inspection.id})`);
+  const handleToggleRow = (rowIndex) => {
+    setHiddenRows((prev) => {
+      const updated = prev.includes(rowIndex)
+        ? prev.filter((i) => i !== rowIndex)
+        : [...prev, rowIndex];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleDownload = (inspection) => {
@@ -105,6 +123,7 @@ export default function InspectionPage() {
         </span>
       </h2>
 
+      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="rounded-2xl p-6 bg-[#BEC5AD] shadow-md space-y-4"
@@ -152,13 +171,28 @@ export default function InspectionPage() {
             <label htmlFor="date" className="block font-semibold mb-1">
               Date
             </label>
-            <input
-              name="date"
-              type="date"
-              value={formData.date}
-              onChange={handleChange}
-              className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl"
-            />
+            <div className="flex items-center gap-2 md:max-w-[400px] w-full">
+              <input
+                name="date"
+                type="date"
+                value={formData.date}
+                onChange={handleChange}
+                id="dateInput"
+                className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
+                style={{ WebkitAppearance: "none", appearance: "none" }}
+              />
+              <Image
+                src="/photos/calendar.svg"
+                alt="Calendar Icon"
+                width={24}
+                height={24}
+                className="cursor-pointer hover:scale-110 transition-transform"
+                onClick={() =>
+                  document.getElementById("dateInput")?.showPicker?.() ||
+                  document.getElementById("dateInput")?.focus()
+                }
+              />
+            </div>
             {errors.date && (
               <p className="text-red-600 text-xs mt-1">{errors.date}</p>
             )}
@@ -168,13 +202,28 @@ export default function InspectionPage() {
             <label htmlFor="time" className="block font-semibold mb-1">
               Time
             </label>
-            <input
-              name="time"
-              type="time"
-              value={formData.time}
-              onChange={handleChange}
-              className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl"
-            />
+            <div className="flex items-center gap-2 md:max-w-[400px] w-full">
+              <input
+                name="time"
+                type="time"
+                value={formData.time}
+                onChange={handleChange}
+                id="timeInput"
+                className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
+                style={{ WebkitAppearance: "none", appearance: "none" }}
+              />
+              <Image
+                src="/photos/clock.svg"
+                alt="Clock Icon"
+                width={24}
+                height={24}
+                className="cursor-pointer hover:scale-110 transition-transform"
+                onClick={() =>
+                  document.getElementById("timeInput")?.showPicker?.() ||
+                  document.getElementById("timeInput")?.focus()
+                }
+              />
+            </div>
             {errors.time && (
               <p className="text-red-600 text-xs mt-1">{errors.time}</p>
             )}
@@ -220,7 +269,7 @@ export default function InspectionPage() {
         </div>
       </form>
 
-      {/* Table Section */}
+      {/* Inspection Table */}
       <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
         <h2 className="text-black text-lg font-semibold mb-3 ml-2">
           Upcoming Inspections
@@ -242,61 +291,71 @@ export default function InspectionPage() {
                 </tr>
               </thead>
               <tbody>
-                {upcomingInspections.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-black/5 transition">
-                    {tableHeaders.map((column, cellIndex) => {
-                      if (column.key === "status") {
-                        return (
-                          <td
-                            key={cellIndex}
-                            className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                          >
-                            <span
-                              className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg ${
-                                statusStyles[row.status] ??
-                                "bg-gray-300 text-black"
-                              }`}
+                {upcomingInspections.map((row, rowIndex) => {
+                  const isHidden = hiddenRows.includes(rowIndex);
+                  return (
+                    <tr key={rowIndex} className="hover:bg-black/5 transition">
+                      {tableHeaders.map((column, cellIndex) => {
+                        if (column.key === "actions") {
+                          return (
+                            <td
+                              key={cellIndex}
+                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
                             >
-                              {row.status}
-                            </span>
-                          </td>
-                        );
-                      }
+                              <div className="flex justify-center items-center gap-2 sm:gap-3">
+                                {isHidden ? (
+                                  <EyeOff
+                                    className="w-4 h-4 text-black cursor-pointer"
+                                    onClick={() => handleToggleRow(rowIndex)}
+                                  />
+                                ) : (
+                                  <Eye
+                                    className="w-4 h-4 text-black cursor-pointer"
+                                    onClick={() => handleToggleRow(rowIndex)}
+                                  />
+                                )}
+                                <span className="text-gray-400">|</span>
+                                <Download
+                                  className="w-4 h-4 text-black cursor-pointer"
+                                  onClick={() => handleDownload(row)}
+                                />
+                              </div>
+                            </td>
+                          );
+                        }
 
-                      if (column.key === "actions") {
+                        if (isHidden) return <td key={cellIndex}></td>;
+
+                        if (column.key === "status") {
+                          return (
+                            <td
+                              key={cellIndex}
+                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
+                            >
+                              <span
+                                className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg ${
+                                  statusStyles[row.status] ??
+                                  "bg-gray-300 text-black"
+                                }`}
+                              >
+                                {row.status}
+                              </span>
+                            </td>
+                          );
+                        }
+
                         return (
                           <td
                             key={cellIndex}
                             className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
                           >
-                            <div className="flex justify-center items-center gap-2 sm:gap-3">
-                              <Eye
-                                className="w-4 h-4 text-black cursor-pointer"
-                                aria-label="View Inspection"
-                                onClick={() => handleView(row)}
-                              />
-                              <span className="text-gray-400">|</span>
-                              <Download
-                                className="w-4 h-4 text-black cursor-pointer"
-                                aria-label="Download Report"
-                                onClick={() => handleDownload(row)}
-                              />
-                            </div>
+                            {row[column.key]}
                           </td>
                         );
-                      }
-
-                      return (
-                        <td
-                          key={cellIndex}
-                          className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                        >
-                          {row[column.key]}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

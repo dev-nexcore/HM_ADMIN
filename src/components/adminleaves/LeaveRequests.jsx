@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Mail } from "lucide-react";
+import { CheckCircle, XCircle, Mail, CircleCheck } from "lucide-react";
 import axios from "axios"; // Ready for backend
 // import { toast } from "sonner"; // Optional future toast library
 
@@ -96,18 +96,18 @@ export default function LeaveRequestsPage() {
         <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
       </h2>
 
-      <div className="flex flex-wrap gap-4 mb-6 ml-5">
+      <div className="flex flex-wrap justify-start sm:justify-start gap-4 sm:gap-0 sm:space-x-6 mb-6 ml-5 overflow-visible">
         {filters.map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-4 py-2 rounded-xl cursor-pointer shadow-xl font-bold ${
+            className={`min-w-[80px] sm:min-w-[100px] px-2 sm:px-4 py-2 rounded-xl border-b-2 cursor-pointer shadow-[2px_8px_6px_rgba(0,0,0,0.4),0_-2px_4px_rgba(0,0,0,0.2)] transition-colors duration-200 font-bold ${
               activeFilter === filter
-                ? "bg-[#ADCE8C] text-white"
+                ? "bg-[#ADCE8C] text-black"
                 : "bg-white text-black"
             }`}
           >
-            {filter}
+            <span className="text-xs sm:text-base">{filter}</span>
           </button>
         ))}
       </div>
@@ -171,19 +171,20 @@ export default function LeaveRequestsPage() {
                           className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
                           onClick={() => handleAction(req.id, "approve")}
                         >
-                          <CheckCircle size={18} /> APPROVE
+                          <CheckCircle strokeWidth={2} size={15} />
+                          APPROVE
                         </button>
                         <button
                           className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
                           onClick={() => handleAction(req.id, "reject")}
                         >
-                          <XCircle size={16} /> Reject
+                          <XCircle size={15} /> Reject
                         </button>
                         <button
                           className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
                           onClick={() => handleAction(req.id, "message")}
                         >
-                          <Mail size={16} /> Message
+                          <Mail size={15} /> Message
                         </button>
                       </div>
                     ) : (
