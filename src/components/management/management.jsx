@@ -274,7 +274,7 @@ const StudentManagement = () => {
     fontWeight: "500",
     fontSize: "18px",
     lineHeight: "100%",
-    textAlign: "left",
+    textAlign: "left",   
   };
 
   // Common form content for both registration and edit modal
@@ -493,7 +493,7 @@ const StudentManagement = () => {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center cursor-pointer relative z-30" // Added z-30 to ensure it's on top
+              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer relative z-30 hover:scale-110 transition-transform" // Added z-30 to ensure it's on top
               title="Open Calendar"
             >
               <svg

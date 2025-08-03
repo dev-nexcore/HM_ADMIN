@@ -631,7 +631,9 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               required
             />
             {errors.itemName && (
-              <p className="text-red-500 text-xs mt-1 ml-2">{errors.itemName}</p>
+              <p className="text-red-500 text-xs mt-1 ml-2">
+                {errors.itemName}
+              </p>
             )}
           </div>
 
@@ -654,7 +656,9 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               required
             />
             {errors.location && (
-              <p className="text-red-500 text-xs mt-1 ml-2">{errors.location}</p>
+              <p className="text-red-500 text-xs mt-1 ml-2">
+                {errors.location}
+              </p>
             )}
           </div>
 
@@ -677,7 +681,9 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               required
             />
             {errors.barcodeId && (
-              <p className="text-red-500 text-xs mt-1 ml-2">{errors.barcodeId}</p>
+              <p className="text-red-500 text-xs mt-1 ml-2">
+                {errors.barcodeId}
+              </p>
             )}
           </div>
 
@@ -776,7 +782,9 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               </svg>
             </div>
             {errors.category && (
-              <p className="text-red-500 text-xs mt-1 ml-2">{errors.category}</p>
+              <p className="text-red-500 text-xs mt-1 ml-2">
+                {errors.category}
+              </p>
             )}
           </div>
 
@@ -882,7 +890,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center cursor-pointer"
+              className="ml-3 p-2 rounded-lg transition-colors flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
               title="Open Calendar"
             >
               <svg
@@ -1000,7 +1008,7 @@ export default function InventoryManagement() {
         <InventoryList
           onAddNewItem={handleAddNewItem}
           inventory={inventory}
-          setInventory={setInventory}
+          setInventory={setInventory}   
         />
       ) : (
         <AddNewItem
