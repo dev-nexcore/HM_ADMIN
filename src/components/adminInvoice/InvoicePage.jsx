@@ -35,9 +35,28 @@ export default function InvoicePage() {
   }, []);
 
   // Handlers
-  const handleView = (row) => {
-    console.log("View clicked for:", row);
-    alert(`Viewing invoice for: ${row[0]}`);
+  const handleView = (row, section) => {
+    let headers = [];
+
+    if (section === "Student Fees Invoices") {
+      headers = ["Student Name", "Room No.", "Amount", "Due Date", "Status"];
+    } else if (section === "Management Invoices (Salaries)") {
+      headers = ["Staff Name", "Role", "Amount", "Payment Date", "Status"];
+    } else if (section === "Staff Purchase Receipts") {
+      headers = [
+        "Item/Description",
+        "Vendor",
+        "Amount",
+        "Purchase Date",
+        "Status",
+      ];
+    }
+
+    const details = headers
+      .map((header, index) => `${header}: ${row[index]}`)
+      .join("\n");
+
+    alert(`Details for ${section}:\n\n${details}`);
   };
 
   const handleDownload = (row) => {

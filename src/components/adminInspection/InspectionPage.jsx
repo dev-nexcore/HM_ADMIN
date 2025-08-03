@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Eye, EyeOff, Download } from "lucide-react";
+import { useState } from "react";
+import { Eye, Download } from "lucide-react";
 import Image from "next/image";
 
 const statusStyles = {
@@ -9,8 +9,6 @@ const statusStyles = {
   Completed: "bg-[#28C404] text-white",
   Cancelled: "bg-gray-300 text-black",
 };
-
-const STORAGE_KEY = "hiddenInspectionRows";
 
 export default function InspectionPage() {
   const [formData, setFormData] = useState({
@@ -23,7 +21,6 @@ export default function InspectionPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
-  const [hiddenRows, setHiddenRows] = useState([]);
 
   const upcomingInspections = [
     {
@@ -62,14 +59,6 @@ export default function InspectionPage() {
     { label: "Actions", key: "actions" },
   ];
 
-  // Load hidden rows from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setHiddenRows(JSON.parse(stored));
-    }
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -101,18 +90,14 @@ export default function InspectionPage() {
     setTimeout(() => setSubmitted(false), 3000);
   };
 
-  const handleToggleRow = (rowIndex) => {
-    setHiddenRows((prev) => {
-      const updated = prev.includes(rowIndex)
-        ? prev.filter((i) => i !== rowIndex)
-        : [...prev, rowIndex];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   const handleDownload = (inspection) => {
     alert(`Downloading report for ${inspection.title} (${inspection.id})`);
+  };
+
+  const handleViewDetails = (inspection) => {
+    alert(
+      `Inspection Details:\n\nTitle: ${inspection.title}\nTarget: ${inspection.target}\nDate: ${inspection.date}\nTime: ${inspection.time}\nStatus: ${inspection.status}`
+    );
   };
 
   return (
@@ -179,7 +164,6 @@ export default function InspectionPage() {
                 onChange={handleChange}
                 id="dateInput"
                 className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
-                style={{ WebkitAppearance: "none", appearance: "none" }}
               />
               <Image
                 src="/photos/calendar.svg"
@@ -210,7 +194,6 @@ export default function InspectionPage() {
                 onChange={handleChange}
                 id="timeInput"
                 className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
-                style={{ WebkitAppearance: "none", appearance: "none" }}
               />
               <Image
                 src="/photos/clock.svg"
@@ -291,87 +274,59 @@ export default function InspectionPage() {
                 </tr>
               </thead>
               <tbody>
-                {upcomingInspections.map((row, rowIndex) => {
-                  const isHidden = hiddenRows.includes(rowIndex);
-
-                  return (
-                    <tr key={rowIndex} className="hover:bg-black/5 transition">
-                      {tableHeaders.map((column, cellIndex) => {
-                        if (column.key === "actions") {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              <div className="flex justify-center items-center gap-2 sm:gap-3">
-                                {isHidden ? (
-                                  <EyeOff
-                                    className="w-4 h-4 text-black cursor-pointer"
-                                    onClick={() => handleToggleRow(rowIndex)}
-                                  />
-                                ) : (
-                                  <Eye
-                                    className="w-4 h-4 text-black cursor-pointer"
-                                    onClick={() => handleToggleRow(rowIndex)}
-                                  />
-                                )}
-                                <span className="text-gray-400">|</span>
-                                <Download
-                                  className="w-4 h-4 text-black cursor-pointer"
-                                  onClick={() => handleDownload(row)}
-                                />
-                              </div>
-                            </td>
-                          );
-                        }
-
-                        if (isHidden) {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              {column.key === "status" ? (
-                                <span className="inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg bg-gray-300 text-black">
-                                  ***
-                                </span>
-                              ) : (
-                                "***"
-                              )}
-                            </td>
-                          );
-                        }
-
-                        if (column.key === "status") {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              <span
-                                className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg ${
-                                  statusStyles[row.status] ??
-                                  "bg-gray-300 text-black"
-                                }`}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                          );
-                        }
-
+                {upcomingInspections.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="hover:bg-black/5 transition">
+                    {tableHeaders.map((column, cellIndex) => {
+                      if (column.key === "actions") {
                         return (
                           <td
                             key={cellIndex}
                             className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
                           >
-                            {row[column.key]}
+                            <div className="flex justify-center items-center gap-2 sm:gap-3">
+                              <Eye
+                                className="w-4 h-4 text-black cursor-pointer"
+                                onClick={() => handleViewDetails(row)}
+                              />
+                              <span className="text-gray-400">|</span>
+                              <Download
+                                className="w-4 h-4 text-black cursor-pointer"
+                                onClick={() => handleDownload(row)}
+                              />
+                            </div>
                           </td>
                         );
-                      })}
-                    </tr>
-                  );
-                })}
+                      }
+
+                      if (column.key === "status") {
+                        return (
+                          <td
+                            key={cellIndex}
+                            className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
+                          >
+                            <span
+                              className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg ${
+                                statusStyles[row.status] ??
+                                "bg-gray-300 text-black"
+                              }`}
+                            >
+                              {row.status}
+                            </span>
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td
+                          key={cellIndex}
+                          className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
+                        >
+                          {row[column.key]}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
