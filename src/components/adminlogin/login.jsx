@@ -33,7 +33,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-[#9AAA87]">
+    <div className="h-screen w-screen flex items-center justify-center bg-[#A4B494]">
       {/* Desktop Layout - Visible on large screens and above (NO CHANGES HERE) */}
       <div className="hidden lg:flex flex-row w-full h-full bg-white shadow-2xl overflow-hidden">
         {/* Left Panel - Original green background */}
@@ -114,12 +114,15 @@ const AdminLogin = () => {
           <img
             src="/photos/logo.png"
             alt="Logo"
-            className="w-[210px] h-[190px] bg-white p-4 rounded-lg object-contain"
+            className="w-[250px] h-[230px] bg-white p-4 rounded-lg object-contain"
           />
         </div>
 
         {/* Login Form Card - white, positioned to overlap */}
-        <div className="absolute top-[280px] w-9/12 max-w-sm bg-white rounded-xl z-20 p-0 min-h-[400px] overflow-hidden" style={{boxShadow: '0px 4px 10px 0px #00000040'}}>
+        <div
+          className="absolute top-[320px] w-9/12 max-w-sm bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[400px] overflow-hidden"
+          style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+        >
           {/* Header with border touching edges */}
           <div className="w-full">
             <h2
@@ -181,7 +184,7 @@ const AdminLogin = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-[200px] cursor-pointer bg-[#BEC5AD] text-black font-bold py-3 rounded-xl hover:bg-[#c1cca4] transition-all duration-200"
+                  className="w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-3 rounded-xl hover:bg-[#9AAA87] transition-all duration-200"
                   style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
                 >
                   {loading ? "Logging in..." : "Submit"}
