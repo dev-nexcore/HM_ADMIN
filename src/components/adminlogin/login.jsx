@@ -58,13 +58,13 @@ const AdminLogin = () => {
             <div>
               <label className="block text-lg font-bold mb-2">User ID</label>
               <input
-                type="text"
-                value={adminId}
-                onChange={(e) => setAdminId(e.target.value)}
-                placeholder="Enter Your User ID"
-                required
-                className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
-                style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+              type="text"
+              value={adminId}
+              onChange={(e) => setAdminId(e.target.value)}
+              placeholder="Enter Your User ID"
+              required
+              className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+              style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
               />
             </div>
             {/* Password */}
@@ -76,7 +76,8 @@ const AdminLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter Your Password"
                 required
-                className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
+                className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
               />
               <div className="text-right mt-2">
                 <a
@@ -98,7 +99,8 @@ const AdminLogin = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-[200px] cursor-pointer bg-[#BEC5AD] text-black font-bold py-3 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:bg-[#c1cca4] transition-all duration-200"
+                className="w-[200px] cursor-pointer bg-[#BEC5AD] text-black font-bold py-3 rounded-xl hover:bg-[#c1cca4] transition-all duration-200"
+                style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
               >
                 {loading ? "Logging in..." : "Login"}
               </button>
@@ -110,17 +112,17 @@ const AdminLogin = () => {
       {/* Mobile Layout - Visible on screens smaller than large (ALL CHANGES HERE) */}
       <div className="lg:hidden flex flex-col items-center w-full h-full">
         {/* Top white section with logo */}
-        <div className="w-full flex flex-col items-center justify-center bg-white pt-10 pb-20 rounded-b-[20px] relative z-0">
+        <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-15 rounded-b-[20px] relative z-0">
           <img
             src="/photos/logo.png"
             alt="Logo"
-            className="w-[250px] h-[230px] bg-white p-4 rounded-lg object-contain"
+            className="w-[300px] h-[280px] bg-white p-4 rounded-lg object-contain"
           />
         </div>
 
         {/* Login Form Card - white, positioned to overlap */}
         <div
-          className="absolute top-[320px] w-9/12 max-w-sm bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[400px] overflow-hidden"
+          className="absolute top-[300px] w-9/12 max-w-sm bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[400px] overflow-hidden"
           style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
         >
           {/* Header with border touching edges */}
@@ -131,7 +133,7 @@ const AdminLogin = () => {
             >
               Admin Login
             </h2>
-          </div>
+          </div> 
 
           {/* Login Form */}
           <div className="p-6 sm:p-8">
@@ -143,10 +145,10 @@ const AdminLogin = () => {
                   type="text"
                   value={adminId}
                   onChange={(e) => setAdminId(e.target.value)}
-                  placeholder="Enter Your User ID"
+                  placeholder="Enter User ID"
                   required
-                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
-                  style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                  style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
                 />
               </div>
 
@@ -157,12 +159,12 @@ const AdminLogin = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter Your Password"
+                  placeholder="Enter Password"
                   required
-                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
-                  style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                  style={{ boxShadow: "0px 4px 10px 0px #00000040", fontFamily: "Poppins, sans-serif", fontWeight: "500" }}
                 />
-                <div className="text-right mt-2">
+                <div className="text-right mt-2"> 
                   <a
                     href="/forgetpassword"
                     className="text-blue-600 text-sm font-medium hover:underline"
@@ -187,7 +189,7 @@ const AdminLogin = () => {
                   className="w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-3 rounded-xl hover:bg-[#9AAA87] transition-all duration-200"
                   style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
                 >
-                  {loading ? "Logging in..." : "Submit"}
+                  {loading ? "Logging in..." : "Login"}
                 </button>
               </div>
             </form>
