@@ -112,7 +112,7 @@ export default function LeaveRequestsPage() {
         ))}
       </div>
 
-      <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
+      <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-[0px_4px_4px_0px_#00000040_inset]">
         <div className="overflow-x-auto">
           <table className="min-w-full text-black text-sm md:text-base table-fixed">
             <thead>
