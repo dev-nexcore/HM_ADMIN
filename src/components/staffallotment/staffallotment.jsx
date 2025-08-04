@@ -325,7 +325,7 @@ const StaffAllotment = () => {
       {/* Register New Warden Section */}
       <div
         className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6 mb-6"
-        style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+        style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
       >
         <h2 className="text-2xl font-semibold text-black mb-6">
           Register New Warden
