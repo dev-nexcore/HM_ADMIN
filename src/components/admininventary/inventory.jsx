@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
+import axios from "axios";
 
 const initialData = [
   {
@@ -66,6 +67,19 @@ const statusColor = {
   "In maintenance": "bg-[#d6d6c2] text-black",
   Damaged: "bg-[#FF0000] text-white",
 };
+useEffect(() => {
+  const fetchInventory = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:5224/api/adminauth/inventory");
+      setInventory(data.items); // Assuming backend returns { items: [...] }
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error);
+    }
+  };
+
+  fetchInventory();
+}, []);
+
 
 const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   const [editData, setEditData] = useState(null);
@@ -87,6 +101,16 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       [barcode]: !prev[barcode],
     }));
   };
+
+  const handleDeleteItem = async (barcodeId) => {
+  try {
+    await axios.delete(`http://localhost:5224/api/adminauth/inventory/${barcodeId}`);
+    setInventory((prev) => prev.filter((item) => item.barcodeId !== barcodeId));
+  } catch (error) {
+    console.error("Failed to delete inventory item:", error);
+  }
+};
+
 
   const handleUploadReceipt = (e) => {
   const file = e.target.files[0];
@@ -676,40 +700,42 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     // QR code generation logic here
   };
 
-  const handleSaveItem = () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+const handleSaveItem = async () => {
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("itemName", formData.itemName);
+    formDataToSend.append("barcodeId", formData.barcodeId);
+    formDataToSend.append("category", formData.category);
+    formDataToSend.append("location", formData.location);
+    formDataToSend.append("status", formData.status);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("purchaseDate", formData.purchaseDate);
+    formDataToSend.append("purchaseCost", formData.purchaseCost);
+    if (formData.receipt) {
+      formDataToSend.append("receipt", formData.receipt);
     }
-    
-    console.log("Saving item:", formData);
-    // Save item logic here
+
+    const { data } = await axios.post(
+      "http://localhost:5224/api/adminauth/inventory/add",
+      formDataToSend,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
     if (onItemAdded) {
-      onItemAdded({
-        name: formData.itemName,
-        barcode: formData.barcodeId,
-        category: formData.category,
-        location: formData.location,
-        status: formData.status === "active" ? "Available" : "In Use", // Map to existing statuses
-      });
+      onItemAdded(data.item); // Assuming backend returns { item: {...} }
     }
-    
-    // Reset form after successful save
-    setFormData({
-      itemName: "",
-      location: "",
-      barcodeId: "",
-      status: "",
-      category: "",
-      description: "",
-      purchaseDate: "",
-      purchaseCost: "",
-      receipt: null,
-    });
-    setErrors({});
     onBackToInventory();
-  };
+  } catch (error) {
+    console.error("Failed to add inventory item:", error);
+  }
+};
+
 
   // Calendar click handler
   const handleCalendarClick = () => {
