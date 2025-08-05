@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Mail, CircleCheck } from "lucide-react";
-import axios from "axios"; // Ready for backend
-// import { toast } from "sonner"; // Optional future toast library
+import { useEffect, useState, useCallback } from "react";
+import { CheckCircle, XCircle, Mail } from "lucide-react";
+import axios from "axios";
 
 const statusStyles = {
   Pending: "bg-orange-500 text-white",
@@ -16,79 +15,95 @@ const filters = ["All", "Approved", "Rejected", "Pending"];
 export default function LeaveRequestsPage() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [activeFilter, setActiveFilter] = useState("All");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchLeaves() {
-      try {
-        // const res = await axios.get("/api/leaves");
-        // setLeaveRequests(res.data);
-        setLeaveRequests([
-          {
-            id: 1,
-            name: "Chinmay Gawade (Student)",
-            type: "Vacation",
-            from: "10-05-2025",
-            to: "20-05-2025",
-            reason: "Family Visit",
-            status: "Pending",
-          },
-          {
-            id: 2,
-            name: "Chinmay Gawade (Student)",
-            type: "Vacation",
-            from: "10-05-2025",
-            to: "20-05-2025",
-            reason: "Family Visit",
-            status: "Approved",
-          },
-          {
-            id: 3,
-            name: "Chinmay Gawade (Student)",
-            type: "Vacation",
-            from: "10-05-2025",
-            to: "20-05-2025",
-            reason: "Family Visit",
-            status: "Rejected",
-          },
-        ]);
-      } catch (err) {
-        console.error("Failed to fetch leaves", err);
+  // Fetch leaves from backend
+  const fetchLeaves = useCallback(async (filter) => {
+    setLoading(true);
+    try {
+      let url = "";
+      let params = {};
+
+      if (filter.toLowerCase() === "pending") {
+        url = `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves/pending`;
+      } else {
+        url = `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves`;
+        if (filter.toLowerCase() !== "all") {
+          params = { status: filter.toLowerCase(), page: 1, limit: 20 };
+        }
       }
-    }
 
-    fetchLeaves();
+      const res = await axios.get(url, {
+        params,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+      });
+
+      const leavesData = res.data.leaves || res.data || [];
+
+      const formatted = leavesData.map((leave) => ({
+        id: leave._id,
+        name: `${leave.studentId?.studentName} (${leave.studentId?.studentId})`,
+        type: leave.leaveType,
+        from: new Date(leave.startDate).toLocaleDateString(),
+        to: new Date(leave.endDate).toLocaleDateString(),
+        reason: leave.reason,
+        status: leave.status,
+        
+      }));
+
+      setLeaveRequests(formatted);
+    } catch (err) {
+      console.error("Failed to fetch leaves", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleAction = (id, action) => {
-    setLeaveRequests((prev) =>
-      prev.map((req) =>
-        req.id === id
-          ? {
-              ...req,
-              status:
-                action === "approve"
-                  ? "Approved"
-                  : action === "reject"
-                  ? "Rejected"
-                  : req.status,
-            }
-          : req
-      )
-    );
+  // Load data whenever filter changes
+  useEffect(() => {
+    fetchLeaves(activeFilter);
+  }, [activeFilter, fetchLeaves]);
 
-    if (action === "approve") alert("Leave approved ✅");
-    else if (action === "reject") alert("Leave rejected ❌");
-    else if (action === "message") alert("Message sent 📩");
+  // Approve / Reject / Message actions
+  const handleAction = async (id, action) => {
+  try {
+    if (action === "approve" || action === "reject") {
+      // match backend's expected values
+      const status = action === "approve" ? "approved" : "rejected";
 
-    // toast.success("Leave approved ✅");
-    // toast.error("Leave rejected ❌");
-    // toast.info("Message sent 📩");
-  };
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves/${id}/status`,
+        {
+          status, // backend expects 'approved' or 'rejected'
+          adminComments: "", // optional: could be a state value from an input
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+      
+        toast.success(
+          `Leave has been ${status === "approved" ? "approved ✅" : "rejected ❌"}`
+        );
+
+      fetchLeaves(activeFilter); // refresh after update
+    } else if (action === "message") {
+      alert("Message sent 📩");
+    }
+  } catch (err) {
+    console.error("Action failed", err);
+  }
+};
+
 
   const filteredRequests =
     activeFilter === "All"
       ? leaveRequests
-      : leaveRequests.filter((req) => req.status === activeFilter);
+      : leaveRequests.filter((req) => req.status.toLowerCase() === activeFilter.toLowerCase());
 
   return (
     <div className="p-8 min-h-screen bg-white text-black mt-8">
@@ -96,12 +111,13 @@ export default function LeaveRequestsPage() {
         <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
       </h2>
 
-      <div className="flex flex-wrap justify-start sm:justify-start gap-4 sm:gap-0 sm:space-x-6 mb-6 ml-5 overflow-visible">
+      {/* Filter buttons */}
+      <div className="flex flex-wrap justify-start gap-4 mb-6 ml-5">
         {filters.map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`min-w-[80px] sm:min-w-[100px] px-2 sm:px-4 py-2 rounded-xl border-b-2 cursor-pointer shadow-[2px_8px_6px_rgba(0,0,0,0.4),0_-2px_4px_rgba(0,0,0,0.2)] transition-colors duration-200 font-bold ${
+            className={`min-w-[80px] sm:min-w-[100px] px-2 sm:px-4 py-2 rounded-xl border-b-2 shadow-md font-bold ${
               activeFilter === filter
                 ? "bg-[#ADCE8C] text-black"
                 : "bg-white text-black"
@@ -112,98 +128,81 @@ export default function LeaveRequestsPage() {
         ))}
       </div>
 
-      <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-[0px_4px_4px_0px_#00000040_inset]">
+      {/* Table */}
+      <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-inner">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-black text-sm md:text-base table-fixed">
-            <thead>
-              <tr className="bg-[#BEC5AD]">
-                <th className="px-4 py-3 text-center font-semibold rounded-tl-2xl w-[20%]">
-                  Requester Name
-                </th>
-                <th className="px-4 py-3 text-center font-semibold w-[10%]">
-                  Type
-                </th>
-                <th className="px-4 py-3 text-center font-semibold w-[15%]">
-                  Dates
-                </th>
-                <th className="px-4 py-3 text-center font-semibold w-[20%]">
-                  Reason
-                </th>
-                <th className="px-4 py-3 text-center font-semibold w-[10%]">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-center font-semibold rounded-tr-2xl w-[25%]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.map((req) => (
-                <tr
-                  key={req.id}
-                  className="hover:bg-black/5 transition border-t"
-                >
-                  <td className="px-4 py-3 text-center align-top break-words">
-                    {req.name}
-                  </td>
-                  <td className="px-4 py-3 text-center align-top">
-                    {req.type}
-                  </td>
-                  <td className="px-4 py-3 text-center align-top whitespace-nowrap">
-                    {req.from} <br /> To <br /> {req.to}
-                  </td>
-                  <td className="px-4 py-3 text-center align-top">
-                    {req.reason}
-                  </td>
-                  <td className="px-4 py-3 text-center align-top">
-                    <span
-                      className={`inline-block w-24 text-center px-3 py-1 text-xs md:text-sm rounded-lg font-medium ${
-                        statusStyles[req.status] || "bg-gray-300 text-black"
-                      }`}
-                    >
-                      {req.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center align-top">
-                    {req.status === "Pending" ? (
-                      <div className="flex flex-col gap-2 items-center justify-center">
-                        <button
-                          className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
-                          onClick={() => handleAction(req.id, "approve")}
-                        >
-                          <CheckCircle strokeWidth={2} size={15} />
-                          APPROVE
-                        </button>
-                        <button
-                          className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
-                          onClick={() => handleAction(req.id, "reject")}
-                        >
-                          <XCircle size={15} /> Reject
-                        </button>
-                        <button
-                          className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 shadow-lg px-3 py-1 text-xs md:text-sm rounded-lg font-medium cursor-pointer"
-                          onClick={() => handleAction(req.id, "message")}
-                        >
-                          <Mail size={15} /> Message
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500 text-sm">
-                        No actions available
+          {loading ? (
+            <p className="text-center py-4">Loading...</p>
+          ) : (
+            <table className="min-w-full text-black text-sm md:text-base table-fixed">
+              <thead>
+                <tr className="bg-[#BEC5AD]">
+                  <th className="px-4 py-3 text-center">Requester Name</th>
+                  <th className="px-4 py-3 text-center">Type</th>
+                  <th className="px-4 py-3 text-center">Dates</th>
+                  <th className="px-4 py-3 text-center">Reason</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRequests.map((req) => (
+                  <tr key={req.id} className="hover:bg-black/5 border-t">
+                    <td className="px-4 py-3 text-center">{req.name}</td>
+                    <td className="px-4 py-3 text-center">{req.type}</td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {req.from} <br /> To <br /> {req.to}
+                    </td>
+                    <td className="px-4 py-3 text-center">{req.reason}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-medium ${
+                          statusStyles[req.status] || "bg-gray-300 text-black"
+                        }`}
+                      >
+                        {req.status}
                       </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {filteredRequests.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center py-6 text-gray-600">
-                    No leave requests found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {req.status === "pending" ? (
+                        <div className="flex flex-col gap-2 items-center">
+                          <button
+                            className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 px-3 py-1 text-xs md:text-sm rounded-lg"
+                            onClick={() => handleAction(req.id, "approve")}
+                          >
+                            <CheckCircle size={15} /> APPROVE
+                          </button>
+                          <button
+                            className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 px-3 py-1 text-xs md:text-sm rounded-lg"
+                            onClick={() => handleAction(req.id, "reject")}
+                          >
+                            <XCircle size={15} /> REJECT
+                          </button>
+                          <button
+                            className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 px-3 py-1 text-xs md:text-sm rounded-lg"
+                            onClick={() => handleAction(req.id, "message")}
+                          >
+                            <Mail size={15} /> MESSAGE
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-sm">
+                          No actions available
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {filteredRequests.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-6 text-gray-600">
+                      No leave requests found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
     </div>
