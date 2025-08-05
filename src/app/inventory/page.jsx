@@ -1,3 +1,4 @@
+'use client';
 import InventoryList from "@/components/admininventary/inventory";
 
 
