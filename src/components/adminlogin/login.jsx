@@ -117,26 +117,26 @@ const AdminLogin = () => {
         </div>
       </div>
 
-      {/* Mobile Layout - Visible on screens smaller than large (ALL CHANGES HERE) */}
-      <div className="lg:hidden flex flex-col items-center w-full h-full">
-        {/* Top white section with logo */}
-        <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-10 rounded-b-[20px] relative z-0">
+      {/* Mobile Layout - Fully Responsive for All Devices */}
+      <div className="lg:hidden flex flex-col items-center w-full h-full relative overflow-hidden">
+        {/* Top white section with logo - Responsive sizing */}
+        <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-10 sm:pb-8 md:pb-10 rounded-b-[20px] relative z-0">
           <img
             src="/photos/logo.png"
             alt="Logo"
-            className="w-[300px] h-[280px] bg-white p-4 rounded-lg object-contain"
+            className="w-[200px] h-[180px] xs:w-[220px] xs:h-[200px] sm:w-[260px] sm:h-[240px] md:w-[300px] md:h-[280px] bg-white p-3 sm:p-4 rounded-lg object-contain"
           />
         </div>
 
-        {/* Login Form Card - white, positioned to overlap */}
+        {/* Login Form Card - Fully responsive positioning and sizing */}
         <div
-          className="absolute top-[300px] w-9/12 max-w-sm bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[400px] overflow-hidden"
+          className="absolute top-[200px] xs:top-[220px] sm:top-[260px] md:top-[300px] w-[85%] xs:w-[80%] sm:w-[75%] md:w-9/12 max-w-[400px] bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[350px] xs:min-h-[380px] sm:min-h-[400px] overflow-hidden"
           style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
         >
-          {/* Header with border touching edges */}
+          {/* Header with border touching edges - Responsive text */}
           <div className="w-full">
             <h2
-              className="text-xl font-bold text-black bg-white text-center py-4 m-0 rounded-t-[20px] rounded-b-[20px]"
+              className="text-lg xs:text-xl sm:text-xl font-bold text-black bg-white text-center py-3 xs:py-4 m-0 rounded-t-[20px] rounded-b-[20px]"
               style={{
                 border: "0.5px solid #000000",
                 fontFamily: "Poppins",
@@ -147,19 +147,19 @@ const AdminLogin = () => {
             </h2>
           </div>
 
-          {/* Login Form */}
-          <div className="p-6 sm:p-8">
-            <form onSubmit={handleLogin} className="space-y-6 w-full">
-              {/* User ID */}
+          {/* Login Form - Responsive padding and spacing */}
+          <div className="p-4 xs:p-5 sm:p-6 md:p-8">
+            <form onSubmit={handleLogin} className="space-y-4 xs:space-y-5 sm:space-y-6 w-full">
+              {/* User ID - Responsive text and input sizing */}
               <div>
-                <label className="block text-lg font-bold mb-2">User ID</label>
+                <label className="block text-base xs:text-lg font-bold mb-2">User ID</label>
                 <input
                   type="text"
                   value={adminId}
                   onChange={(e) => setAdminId(e.target.value)}
                   placeholder="Enter User ID"
                   required
-                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                  className="w-full px-3 xs:px-4 sm:px-5 py-2.5 xs:py-3 text-sm xs:text-base text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
                   style={{
                     boxShadow: "0px 4px 10px 0px #00000040",
                     fontFamily: "Poppins, sans-serif",
@@ -168,16 +168,16 @@ const AdminLogin = () => {
                 />
               </div>
 
-              {/* Password */}
+              {/* Password - Responsive text and input sizing */}
               <div>
-                <label className="block text-lg font-bold mb-2">Password</label>
+                <label className="block text-base xs:text-lg font-bold mb-2">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter Password"
                   required
-                  className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
+                  className="w-full px-3 xs:px-4 sm:px-5 py-2.5 xs:py-3 text-sm xs:text-base text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium"
                   style={{
                     boxShadow: "0px 4px 10px 0px #00000040",
                     fontFamily: "Poppins, sans-serif",
@@ -187,7 +187,7 @@ const AdminLogin = () => {
                 <div className="text-right mt-2">
                   <a
                     href="/forgetpassword"
-                    className="text-sm font-semibold hover:underline"
+                    className="text-xs xs:text-sm font-semibold hover:underline"
                     style={{
                       color: "#1109FF",
                       fontFamily: "Poppins, sans-serif",
@@ -199,19 +199,19 @@ const AdminLogin = () => {
                 </div>
               </div>
 
-              {/* Error Message */}
+              {/* Error Message - Responsive text */}
               {errorMsg && (
-                <div className="text-red-600 text-sm font-semibold text-center">
+                <div className="text-red-600 text-xs xs:text-sm font-semibold text-center">
                   {errorMsg}
                 </div>
               )}
 
-              {/* Submit Button */}
-              <div className="flex justify-center">
+              {/* Submit Button - Responsive sizing */}
+              <div className="flex justify-center pt-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-3 rounded-xl hover:bg-[#9AAA87] transition-all duration-200"
+                  className="w-[160px] xs:w-[180px] sm:w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-2.5 xs:py-3 text-sm xs:text-base rounded-xl hover:bg-[#9AAA87] transition-all duration-200"
                   style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
                 >
                   {loading ? "Logging in..." : "Login"}
@@ -221,9 +221,9 @@ const AdminLogin = () => {
           </div>
         </div>
 
-        {/* Bottom quote section - on green background */}
-        <div className="w-full flex flex-col items-center justify-center text-center px-6 py-10 mt-auto">
-          <p className="text-black text-lg font-semibold max-w-lg">
+        {/* Bottom quote section - Responsive text and spacing */}
+        <div className="w-full flex flex-col items-center justify-center text-center px-4 xs:px-5 sm:px-6 py-4 xs:py-5 sm:py-6 mt-[320px] xs:mt-[360px] sm:mt-[380px] md:mt-[400px]">
+          <p className="text-black text-sm xs:text-base sm:text-lg font-semibold max-w-xs xs:max-w-sm sm:max-w-lg leading-relaxed">
             “Manage Your Hostel Smarter – Everything You Need in One Platform.”
           </p>
         </div>
