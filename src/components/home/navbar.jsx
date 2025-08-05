@@ -1,12 +1,19 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 
-export default function Navbar({ sidebarOpen, setSidebarOpen }) {
-  const [showPopup, setShowPopup] = useState(false);
-  const popupRef = useRef(null);
+export default function AdminNavbar({ subtitle = "- have a great day" }) {
+  const [showPopup, setShowPopup] = useState(false);  // Notification popup state
+  const popupRef = useRef(null);  // Ref for the popup to detect click outside
 
+  // Simulate fetching the profile data
+  const adminFullName = "Nouman";  // Or fetch from context like useProfile()
+  const profileImage = "/photos/profile.jpg";  // Update with actual image path or URL
+  const loading = false;
+
+  // Handle closing the popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -17,13 +24,16 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Redirect to profile page on profile image click
+  const handleProfileClick = () => {
+    console.log("Redirecting to profile");
+  };
+
   return (
-    <nav
-      className={`flex items-center justify-between px-4 sm:px-6 py-6 bg-[#BEC5AD] h-24 min-h-[80px] transition-all duration-300 md:ml-60 relative`}
-    >
-      {/* Hamburger */}
+    <nav className="flex items-center justify-between px-4 sm:px-6 py-4 bg-[#BEC5AD] transition-all duration-300 relative">
+      {/* Hamburger (sidebar toggle) */}
       <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
+        onClick={() => console.log("Toggle Sidebar")}
         className="md:hidden p-2"
         aria-label="Toggle sidebar"
       >
@@ -38,19 +48,21 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
         </svg>
       </button>
 
-      {/* Welcome Text */}
-      <div className={`flex-1 ${sidebarOpen ? "pl-48" : "pl-4"} md:pl-0`}>
+      {/* Welcome Message */}
+      
+      <div className="flex-1 text-center md:text-left">
         <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
-          Welcome Back, Nouman
+          Welcome Back, {adminFullName}
         </h2>
-        <p className="text-xs sm:text-sm italic text-gray-800">- have a great day</p>
+        <p className="text-xs sm:text-sm italic text-gray-800">{subtitle}</p>
       </div>
 
-      {/* Bell + Profile */}
+      {/* Bell Icon and Profile Image */}
       <div className="relative flex items-center gap-3 sm:gap-4 flex-shrink-0">
-        <button onClick={() => setShowPopup(!showPopup)} className="hover:opacity-80 relative">
+        {/* Bell Icon */}
+        <button onClick={() => setShowPopup(!showPopup)} className="relative">
           <Image
-            src="/photos/bell1.png"
+            src="/photos/bell1.png" // Replace with the actual bell image path
             alt="Notifications"
             width={24}
             height={24}
@@ -62,7 +74,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
         {showPopup && (
           <div
             ref={popupRef}
-            className="absolute right-0 top-16 w-72 sm:w-80 bg-white rounded-xl shadow-xl z-50"
+            className="absolute right-0 top-16 w-72 sm:w-80 bg-white rounded-xl shadow-xl z-50 p-4"
           >
             <div className="bg-[#A4B494] text-black px-4 py-3 rounded-t-xl flex justify-between items-center">
               <div>
@@ -91,10 +103,20 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
           </div>
         )}
 
-        {/* Profile */}
-        <Link href="/profile" aria-label="Go to profile">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-gray-300 cursor-pointer" />
-        </Link>
+        {/* Profile Image/Icon */}
+        <button onClick={handleProfileClick} className="w-10 h-10 rounded-full bg-white border border-gray-300 cursor-pointer overflow-hidden">
+          {loading || !profileImage ? (
+            <User className="w-8 h-8 text-gray-600" />
+          ) : (
+            <Image
+              src={profileImage}
+              alt="Profile"
+              width={40}
+              height={40}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </button>
       </div>
     </nav>
   );
