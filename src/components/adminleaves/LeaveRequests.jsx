@@ -5,6 +5,9 @@ import { CheckCircle, XCircle, Mail } from "lucide-react";
 import axios from "axios";
 
 const statusStyles = {
+  pending: "bg-orange-500 text-white",
+  approved: "bg-green-600 text-white", 
+  rejected: "bg-red-600 text-white",
   Pending: "bg-orange-500 text-white",
   Approved: "bg-green-600 text-white",
   Rejected: "bg-red-600 text-white",
@@ -25,9 +28,9 @@ export default function LeaveRequestsPage() {
       let params = {};
 
       if (filter.toLowerCase() === "pending") {
-        url = `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves/pending`;
+        url = `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/leaves/pending`;
       } else {
-        url = `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves`;
+        url = `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/leaves`;
         if (filter.toLowerCase() !== "all") {
           params = { status: filter.toLowerCase(), page: 1, limit: 20 };
         }
@@ -42,16 +45,21 @@ export default function LeaveRequestsPage() {
 
       const leavesData = res.data.leaves || res.data || [];
 
-      const formatted = leavesData.map((leave) => ({
-        id: leave._id,
-        name: `${leave.studentId?.studentName} (${leave.studentId?.studentId})`,
-        type: leave.leaveType,
-        from: new Date(leave.startDate).toLocaleDateString(),
-        to: new Date(leave.endDate).toLocaleDateString(),
-        reason: leave.reason,
-        status: leave.status,
-        
-      }));
+ const formatted = leavesData.map((leave) => ({
+  id: leave._id,
+  // Updated to handle firstName and lastName from Student schema
+  name: leave.studentId 
+    ? (typeof leave.studentId === 'object' 
+        ? `${leave.studentId.firstName || ''} ${leave.studentId.lastName || ''}`.trim() + 
+          (leave.studentId.studentId ? ` (${leave.studentId.studentId})` : '')
+        : leave.studentId) // If it's just an ID string
+    : 'Unknown Student',
+  type: leave.leaveType,
+  from: new Date(leave.startDate).toLocaleDateString(),
+  to: new Date(leave.endDate).toLocaleDateString(),
+  reason: leave.reason,
+  status: leave.status,
+}));
 
       setLeaveRequests(formatted);
     } catch (err) {
@@ -67,17 +75,16 @@ export default function LeaveRequestsPage() {
   }, [activeFilter, fetchLeaves]);
 
   // Approve / Reject / Message actions
-  const handleAction = async (id, action) => {
+const handleAction = async (id, action) => {
   try {
     if (action === "approve" || action === "reject") {
-      // match backend's expected values
       const status = action === "approve" ? "approved" : "rejected";
 
       await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/adminauth/leaves/${id}/status`,
+        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/leaves/${id}/status`,
         {
-          status, // backend expects 'approved' or 'rejected'
-          adminComments: "", // optional: could be a state value from an input
+          status,
+          adminComments: "",
         },
         {
           headers: {
@@ -86,16 +93,30 @@ export default function LeaveRequestsPage() {
         }
       );
       
-        toast.success(
-          `Leave has been ${status === "approved" ? "approved ✅" : "rejected ❌"}`
-        );
-
-      fetchLeaves(activeFilter); // refresh after update
+      alert(`Leave has been ${status === "approved" ? "approved ✅" : "rejected ❌"}`);
+      fetchLeaves(activeFilter);
     } else if (action === "message") {
-      alert("Message sent 📩");
+      // Implement message functionality
+      const message = prompt("Enter your message to the student:");
+      if (message) {
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/leaves/${id}/message`,
+          {
+            message: message,
+            subject: "Regarding Your Leave Request"
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            },
+          }
+        );
+        alert("Message sent successfully 📩");
+      }
     }
   } catch (err) {
     console.error("Action failed", err);
+    alert("Failed to perform action. Please try again.");
   }
 };
 
@@ -155,41 +176,43 @@ export default function LeaveRequestsPage() {
                     </td>
                     <td className="px-4 py-3 text-center">{req.reason}</td>
                     <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-medium ${
-                          statusStyles[req.status] || "bg-gray-300 text-black"
-                        }`}
-                      >
-                        {req.status}
-                      </span>
+                   <span
+  className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-medium ${
+    statusStyles[req.status] || statusStyles[req.status?.toLowerCase()] || "bg-gray-300 text-black"
+  }`}
+>
+  {req.status?.charAt(0).toUpperCase() + req.status?.slice(1).toLowerCase()}
+</span>
+
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {req.status === "pending" ? (
-                        <div className="flex flex-col gap-2 items-center">
-                          <button
-                            className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 px-3 py-1 text-xs md:text-sm rounded-lg"
-                            onClick={() => handleAction(req.id, "approve")}
-                          >
-                            <CheckCircle size={15} /> APPROVE
-                          </button>
-                          <button
-                            className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 px-3 py-1 text-xs md:text-sm rounded-lg"
-                            onClick={() => handleAction(req.id, "reject")}
-                          >
-                            <XCircle size={15} /> REJECT
-                          </button>
-                          <button
-                            className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 px-3 py-1 text-xs md:text-sm rounded-lg"
-                            onClick={() => handleAction(req.id, "message")}
-                          >
-                            <Mail size={15} /> MESSAGE
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 text-sm">
-                          No actions available
-                        </span>
-                      )}
+                 {req.status?.toLowerCase() === "pending" ? (
+  <div className="flex flex-col gap-2 items-center">
+    <button
+      className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 px-3 py-1 text-xs md:text-sm rounded-lg"
+      onClick={() => handleAction(req.id, "approve")}
+    >
+      <CheckCircle size={15} /> APPROVE
+    </button>
+    <button
+      className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 px-3 py-1 text-xs md:text-sm rounded-lg"
+      onClick={() => handleAction(req.id, "reject")}
+    >
+      <XCircle size={15} /> REJECT
+    </button>
+    <button
+      className="w-28 h-8 flex items-center justify-start gap-2 bg-white border text-black hover:bg-gray-100 px-3 py-1 text-xs md:text-sm rounded-lg"
+      onClick={() => handleAction(req.id, "message")}
+    >
+      <Mail size={15} /> MESSAGE
+    </button>
+  </div>
+) : (
+  <span className="text-gray-500 text-sm">
+    No actions available
+  </span>
+)}
+
                     </td>
                   </tr>
                 ))}

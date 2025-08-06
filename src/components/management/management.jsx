@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye } from "lucide-react";
 import axios from "axios";
 
@@ -90,7 +90,7 @@ const StudentManagement = () => {
 
 const fetchStudentsAPI = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/students?populate=roomBedNumber`, {
+    const response = await axios.get(`${API_BASE_URL}/students`, {
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
@@ -100,7 +100,6 @@ const fetchStudentsAPI = async () => {
     throw error.response?.data || { message: 'Failed to fetch students' };
   }
 };
-
 const fetchAvailableRoomsAPI = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/inventory/available-beds`, {
@@ -316,40 +315,92 @@ const fetchAvailableRoomsAPI = async () => {
     }
   };
 
+  const fetchRoomDetailsAPI = async (roomObjectId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/inventory/${roomObjectId}`, {
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching room details for ${roomObjectId}:`, error);
+    return null;
+  }
+};
+
+
+
   // Load students on component mount
-  useState(() => {
+const loadStudents = async () => {
+  try {
+    const studentsData = await fetchStudentsAPI();
+    
+    // Transform students and fetch room details for each
+    const transformedStudents = await Promise.all(
+      studentsData.students?.map(async (student) => {
+        let roomDisplay = "Not Assigned";
+        let roomDetails = null;
+        
+        // If roomBedNumber is an ObjectId string, fetch room details
+        if (student.roomBedNumber && typeof student.roomBedNumber === 'string' && student.roomBedNumber.length === 24) {
+          roomDetails = await fetchRoomDetailsAPI(student.roomBedNumber);
+          if (roomDetails && roomDetails.inventory) {
+            roomDisplay = `${roomDetails.inventory.barcodeId} - Floor ${roomDetails.inventory.floor}, Room ${roomDetails.inventory.roomNo}`;
+          }
+        } else if (student.roomBedNumber && typeof student.roomBedNumber === 'object') {
+          // If it's already populated
+          roomDisplay = `${student.roomBedNumber.barcodeId} - Floor ${student.roomBedNumber.floor}, Room ${student.roomBedNumber.roomNo}`;
+          roomDetails = student.roomBedNumber;
+        } else if (student.roomBedNumber) {
+          // If it's a string that's not ObjectId
+          roomDisplay = student.roomBedNumber;
+        }
+
+        return {
+          id: student.studentId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          name: `${student.firstName} ${student.lastName}`,
+          room: roomDisplay,
+          contact: student.contactNumber,
+          email: student.email,
+          emergencyContactNumber: student.emergencyContactNumber,
+          admissionDate: student.admissionDate,
+          emergencyContactName: student.emergencyContactName,
+          feeStatus: student.feeStatus,
+          dues: "₹ 0/-",
+          roomDetails: roomDetails,
+          roomObjectId: student.roomBedNumber
+        };
+      }) || []
+    );
+    
+    setStudents(transformedStudents);
+  } catch (error) {
+    console.error('Error loading students:', error);
+    // Keep default students if API fails
+  }
+};
+
+
+useEffect(() => {
   const loadData = async () => {
     try {
       // Load students
-      const studentsData = await fetchStudentsAPI();
-      const transformedStudents = studentsData.students?.map(student => ({
-        id: student.studentId,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        name: `${student.firstName} ${student.lastName}`,
-        room: student.roomBedNumber?.barcodeId || student.roomBedNumber?.roomNo || student.roomBedNumber || "Not Assigned",
-        contact: student.contactNumber,
-        email: student.email,
-        emergencyContactNumber: student.emergencyContactNumber,
-        admissionDate: student.admissionDate,
-        emergencyContactName: student.emergencyContactName,
-        feeStatus: student.feeStatus,
-        dues: "₹ 0/-",
-        roomDetails: student.roomBedNumber
-      })) || [];
-      setStudents(transformedStudents);
-
+      await loadStudents();
+      
       // Load available rooms
       const roomsData = await fetchAvailableRoomsAPI();
       setAvailableRooms(roomsData.availableBeds || []);
     } catch (error) {
       console.error('Error loading data:', error);
-      // Keep default students if API fails
     }
   };
   
   loadData();
 }, []);
+
 
   // New handler for viewing student details
   const handleViewDetails = (studentId) => {
@@ -644,7 +695,7 @@ const fetchAvailableRoomsAPI = async () => {
                   {formData.admissionDate || ""}
                 </div>
                 {!formData.admissionDate && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[15px] tracking-[0.3em] pointer-events-none select-none">
+                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[10px] md:text-[15px] tracking-[0.3em] pointer-events-none select-none">
                     {"d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"}
                   </div>
                 )}
