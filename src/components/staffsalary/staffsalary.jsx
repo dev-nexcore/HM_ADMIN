@@ -415,97 +415,114 @@ export default function StaffSalaryContent() {
   </>
 );
 
-  // Render Tax/PF Table
- const renderTaxPfTable = () => (
-    <div className="w-full overflow-x-auto">
-      <div
-        className="rounded-lg overflow-hidden border border-gray-300 min-w-[700px]"
-        style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-      >
-        <style jsx>{`
-          .custom-table th {
-            position: relative;
-            background-color: white !important;
-          }
-          .custom-table th:not(:last-child)::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 8px;
-            bottom: 8px;
-            width: 1px;
-            background-color: #9ca3af;
-          }
-          .custom-table tbody tr:not(:last-child) {
-            border-bottom: 1px solid #9ca3af;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-          }
-          .custom-table tbody tr:not(:last-child)::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 16px;
-            right: 16px;
-            height: 1px;
-            background-color: #00000;
-          }
-        `}</style>
-        <table className="custom-table w-full border-collapse">
-          <thead>
-            <tr>
-              <td colSpan="7" className="py-2">
-                &nbsp;
-              </td>
-            </tr>
-            <tr className="bg-white">
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Staff Name
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Department
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Tax Deducted
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                PF Deducted
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Loan Deducted
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Total Deduction
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {staffData.map((staff, index) => (
-              <tr key={index} className="relative">
-                <td className="px-2 sm:px-4 py-3 sm:py-5 font-medium text-center text-xs sm:text-sm">{staff.name}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.role}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.tax}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.pf}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.loanDeduction}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.netSalary}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
-                  <button 
-                    onClick={() => handleEditDeduction(staff)}
-                    className="bg-transparent border-none text-[#1109FF] cursor-pointer text-xs sm:text-sm hover:text-blue-800"
-                  >
-                    Edit
-                  </button>
+  const renderTaxPfTable = () => (
+  <>
+    <div className="w-full">
+      {/* Desktop Table View */}
+      <div className="w-full overflow-x-auto custom-table">
+        <div
+          className="rounded-lg overflow-hidden border border-gray-300 min-w-[700px]"
+          style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+        >
+          <table className="custom-table w-full border-collapse">
+            <thead>
+              <tr>
+                <td colSpan="7" className="py-2">
+                  &nbsp;
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+              <tr className="bg-white">
+                {["Staff Name", "Department", "Tax Deducted", "PF Deducted", "Loan Deducted", "Total Deduction", "Actions"].map((header, idx) => (
+                  <th key={idx} className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {staffData.map((staff, index) => (
+                <tr key={index} className="relative">
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 font-medium text-center text-xs sm:text-sm">{staff.name}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.role}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.tax}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.pf}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.loanDeduction}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.netSalary}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
+                    <button 
+                      onClick={() => handleEditDeduction(staff)}
+                      className="bg-transparent border-none text-[#1109FF] cursor-pointer text-xs sm:text-sm hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="taxpf-card space-y-4 sm:hidden mt-4">
+        {staffData.map((staff, index) => (
+          <div key={index} className="bg-[#BEC5AD] rounded-md p-4 text-sm shadow-md">
+            <div className="mb-2"><strong>Staff Name:</strong> {staff.name}</div>
+            <div className="mb-2"><strong>Department:</strong> {staff.role}</div>
+            <div className="mb-2"><strong>Tax Deducted:</strong> {staff.tax}</div>
+            <div className="mb-2"><strong>PF Deducted:</strong> {staff.pf}</div>
+            <div className="mb-2"><strong>Loan Deducted:</strong> {staff.loanDeduction}</div>
+            <div className="mb-2"><strong>Total Deduction:</strong> {staff.netSalary}</div>
+            <div>
+              <button
+                onClick={() => handleEditDeduction(staff)}
+                className="text-[#1109FF] cursor-pointer hover:text-blue-800 text-xs"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
-  )
+
+    {/* CSS Media Queries & Custom Styles */}
+    <style jsx>{`
+      .custom-table th {
+        position: relative;
+        background-color: white !important;
+      }
+      .custom-table th:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 1px;
+        background-color: #9ca3af;
+      }
+      .custom-table tbody tr:not(:last-child) {
+        border-bottom: 1px solid #9ca3af;
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+      }
+      @media (max-width: 640px) {
+        .custom-table {
+          display: none;
+        }
+        .taxpf-card {
+          display: block;
+        }
+      }
+      @media (min-width: 641px) {
+        .taxpf-card {
+          display: none;
+        }
+      }
+    `}</style>
+  </>
+);
+
 
   if (showProcessSalary) {
     return renderProcessSalaryForm();
