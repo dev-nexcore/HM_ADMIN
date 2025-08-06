@@ -17,7 +17,7 @@ const AdminLogin = () => {
     setErrorMsg("");
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/adminauth/login`,
+        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
         { adminId, password }
       );
       const { token, refreshToken, admin } = response.data;
