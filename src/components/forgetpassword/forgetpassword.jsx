@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setSuccessMsg("");
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/auth/forgot-password`, { email });
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/forgot-password`, { email });
       setSuccessMsg("OTP has been sent to your email");
     } catch (error) {
       setErrorMsg(error.response?.data?.message || "Failed to send OTP. Please try again.");

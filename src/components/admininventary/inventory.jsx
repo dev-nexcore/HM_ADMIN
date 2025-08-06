@@ -110,7 +110,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
   const handleDeleteItem = async (barcodeId) => {
   try {
-    await axios.delete(`http://localhost:5224/api/adminauth/inventory/${barcodeId}`);
+    await axios.delete(`${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${barcodeId}`);
     setInventory((prev) => prev.filter((item) => item.barcodeId !== barcodeId));
   } catch (error) {
     console.error("Failed to delete inventory item:", error);
@@ -127,7 +127,7 @@ const handleUploadReceipt = async (e) => {
 
   try {
     const { data } = await axios.put(
-      `http://localhost:5224/api/adminauth/inventory/${selectedItem._id}/receipt`,
+      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${selectedItem._id}/receipt`,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
@@ -148,7 +148,7 @@ const handleUploadReceipt = async (e) => {
 const handleEditSave = async () => {
   try {
     const { data } = await axios.put(
-      `http://localhost:5224/api/adminauth/inventory/${editData._id}`,
+      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${editData._id}`,
       editData
     );
     setInventory((prev) =>
@@ -732,7 +732,7 @@ const handleSaveItem = async () => {
     }
 
     const { data } = await axios.post(
-      "http://localhost:5224/api/adminauth/inventory/add",
+      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/add`,
       formDataToSend,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
@@ -1184,7 +1184,7 @@ export default function InventoryManagement() {
   const fetchInventory = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:5224/api/adminauth/inventory"
+        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory`
       );
       setInventory(data.items);
     } catch (error) {
