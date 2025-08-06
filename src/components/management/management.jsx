@@ -21,6 +21,7 @@ const StudentManagement = () => {
   });
   const dateInputRef = useRef(null);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [availableRooms, setAvailableRooms] = useState([]);
   const [students, setStudents] = useState([
     {
       id: "STU-001",
@@ -87,18 +88,31 @@ const StudentManagement = () => {
     }
   };
 
-  const fetchStudentsAPI = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/students`, {
-        headers: {
-          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to fetch students' };
-    }
-  };
+const fetchStudentsAPI = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/students?populate=roomBedNumber`, {
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch students' };
+  }
+};
+
+const fetchAvailableRoomsAPI = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/inventory/available-beds`, {
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch available rooms' };
+  }
+};
 
   const deleteStudentAPI = async (studentId) => {
     try {
@@ -304,33 +318,38 @@ const StudentManagement = () => {
 
   // Load students on component mount
   useState(() => {
-    const loadStudents = async () => {
-      try {
-        const studentsData = await fetchStudentsAPI();
-        // Transform backend data to match frontend structure
-        const transformedStudents = studentsData.students?.map(student => ({
-          id: student.studentId,
-          firstName: student.firstName,
-          lastName: student.lastName,
-          name: `${student.firstName} ${student.lastName}`,
-          room: student.roomBedNumber,
-          contact: student.contactNumber,
-          email: student.email,
-          emergencyContactNumber: student.emergencyContactNumber,
-          admissionDate: student.admissionDate,
-          emergencyContactName: student.emergencyContactName,
-          feeStatus: student.feeStatus,
-          dues: "₹ 0/-", // You might want to calculate this from backend
-        })) || [];
-        setStudents(transformedStudents);
-      } catch (error) {
-        console.error('Error loading students:', error);
-        // Keep default students if API fails
-      }
-    };
-    
-    loadStudents();
-  }, []);
+  const loadData = async () => {
+    try {
+      // Load students
+      const studentsData = await fetchStudentsAPI();
+      const transformedStudents = studentsData.students?.map(student => ({
+        id: student.studentId,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        name: `${student.firstName} ${student.lastName}`,
+        room: student.roomBedNumber?.barcodeId || student.roomBedNumber?.roomNo || student.roomBedNumber || "Not Assigned",
+        contact: student.contactNumber,
+        email: student.email,
+        emergencyContactNumber: student.emergencyContactNumber,
+        admissionDate: student.admissionDate,
+        emergencyContactName: student.emergencyContactName,
+        feeStatus: student.feeStatus,
+        dues: "₹ 0/-",
+        roomDetails: student.roomBedNumber
+      })) || [];
+      setStudents(transformedStudents);
+
+      // Load available rooms
+      const roomsData = await fetchAvailableRoomsAPI();
+      setAvailableRooms(roomsData.availableBeds || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      // Keep default students if API fails
+    }
+  };
+  
+  loadData();
+}, []);
 
   // New handler for viewing student details
   const handleViewDetails = (studentId) => {
@@ -530,30 +549,29 @@ const StudentManagement = () => {
             Room/Bed Number
           </label>
           <div className="relative w-full sm:max-w-[530px] h-[40px]">
-            <select
-              name="roomBedNumber"
-              value={formData.roomBedNumber}
-              onChange={handleInputChange}
-              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-                formData.roomBedNumber === "" ? "text-[#0000008A]" : "text-black"
-              }`}
-              style={{
-                WebkitAppearance: "none",
-                MozAppearance: "none",
-                appearance: "none",
-                boxShadow: "0px 4px 10px 0px #00000040",
-              }}
-            >
-              <option value="" disabled hidden>
-                Select Room/Bed
-              </option>
-              <option value="Room-A-101">Room-A-101</option>
-              <option value="Room-A-102">Room-A-102</option>
-              <option value="Room-A-103">Room-A-103</option>
-              <option value="Room-B-101">Room-B-101</option>
-              <option value="Room-B-102">Room-B-102</option>
-              <option value="Room-B-103">Room-B-103</option>
-            </select>
+         <select
+  name="roomBedNumber"
+  value={formData.roomBedNumber}
+  onChange={handleInputChange}
+  className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+    formData.roomBedNumber === "" ? "text-[#0000008A]" : "text-black"
+  }`}
+  style={{
+    WebkitAppearance: "none",
+    MozAppearance: "none",
+    appearance: "none", 
+    boxShadow: "0px 4px 10px 0px #00000040",
+  }}
+>
+  <option value="" disabled hidden>
+    Select Room/Bed
+  </option>
+  {availableRooms.map((room) => (
+    <option key={room._id} value={room._id}>
+      {room.barcodeId} - Floor {room.floor}, Room {room.roomNo}
+    </option>
+  ))}
+</select>
             <svg
               className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
               fill="currentColor"
@@ -933,7 +951,7 @@ const StudentManagement = () => {
         )}
 
         {/* Student List Header */}
-        <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">
+      <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">
           <h2
             className="text-xl sm:text-2xl lg:text-3xl font-bold text-black mb-4 px-4 sm:px-0"
             style={{
@@ -950,25 +968,25 @@ const StudentManagement = () => {
         </div>
         
         {/* Student List Table */}
-        <div className="w-full max-w-7xl mx-auto mt-4 ">
+        <div className="w-full max-w-7xl mx-auto mt-4 px-4 sm:px-0">
           <div
-            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 "
+            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8"
             style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
           >
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
               <div
                 className="border border-black rounded-[19.6px] overflow-hidden"
                 style={{
                   borderWidth: "0.98px",
                   width: "100%",
-                  minWidth: "900px",
                 }}
               >
                 {/* Table Header */}
                 <div className="bg-white text-black flex text-center">
                   {[
                     "Student ID",
-                    "Name",
+                    "Name", 
                     "Room/Bed",
                     "Contact",
                     "Fees Status",
@@ -977,7 +995,7 @@ const StudentManagement = () => {
                   ].map((header, index) => (
                     <div
                       key={header}
-                      className="px-0.5 py-2 relative flex-1"
+                      className="px-2 py-3 relative flex-1"
                       style={{
                         fontFamily: "Poppins",
                         fontWeight: "600",
@@ -1006,13 +1024,13 @@ const StudentManagement = () => {
                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                   {students.map((student, i) => (
                     <div key={student.id} className="text-black flex">
-                      <div className="px-0.5 py-1 flex-1">{student.id}</div>
-                      <div className="px-0.5 py-1 flex-1">{student.name}</div>
-                      <div className="px-0.5 py-1 flex-1">{student.room}</div>
-                      <div className="px-0.5 py-1 text-xs flex-1">
+                      <div className="px-2 py-2 flex-1">{student.id}</div>
+                      <div className="px-2 py-2 flex-1">{student.name}</div>
+                      <div className="px-2 py-2 flex-1">{student.room}</div>
+                      <div className="px-2 py-2 text-xs flex-1">
                         {student.contact}
                       </div>
-                      <div className="px-0.5 py-1 flex-1">
+                      <div className="px-2 py-2 flex-1">
                         <span
                           className="font-semibold"
                           style={getFeeStatusStyle(student.feeStatus)}
@@ -1020,8 +1038,8 @@ const StudentManagement = () => {
                           {student.feeStatus}
                         </span>
                       </div>
-                      <div className="px-0.5 py-1 flex-1">{student.dues}</div>
-                      <div className="px-0.5 py-1 flex items-center justify-center flex-1">
+                      <div className="px-2 py-2 flex-1">{student.dues}</div>
+                      <div className="px-2 py-2 flex items-center justify-center flex-1">
                         <div className="flex items-center justify-center gap-4 relative">
                           <button
                             onClick={() => handleViewDetails(student.id)}
@@ -1081,6 +1099,95 @@ const StudentManagement = () => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {students.map((student, i) => (
+                <div
+                  key={student.id}
+                  className="bg-white rounded-xl p-4 border border-black/20 shadow-sm"
+                >
+                  {/* Student Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg text-black">{student.name}</h3>
+                      <p className="text-sm text-gray-600">ID: {student.id}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewDetails(student.id)}
+                        className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors"
+                        title="View Details"
+                      >
+                        <Eye size={18} color="#000000" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(student.id)}
+                        className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors"
+                        title="Edit Student"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 27 26"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <mask
+                            id={`mask0_mobile_${i}`}
+                            style={{ maskType: "alpha" }}
+                            maskUnits="userSpaceOnUse"
+                            x="0"
+                            y="0"
+                            width="27"
+                            height="26"
+                          >
+                            <rect
+                              x="0.678223"
+                              y="0.0253906"
+                              width="25.7356"
+                              height="25.7356"
+                              fill="#D9D9D9"
+                            />
+                          </mask>
+                          <g mask={`url(#mask0_mobile_${i})`}>
+                            <path
+                              d="M2.82373 25.7609V21.4717H24.2701V25.7609H2.82373ZM7.113 17.1824H8.61425L16.9783 8.8451L15.4503 7.31705L7.113 15.6811V17.1824ZM4.96837 19.327V14.7697L16.9783 2.78651C17.1749 2.58991 17.4028 2.438 17.6619 2.33077C17.9211 2.22354 18.1936 2.16992 18.4796 2.16992C18.7655 2.16992 19.0425 2.22354 19.3106 2.33077C19.5787 2.438 19.82 2.59885 20.0344 2.81331L21.5089 4.31456C21.7233 4.51115 21.8797 4.74349 21.978 5.01157C22.0763 5.27965 22.1255 5.55666 22.1255 5.84261C22.1255 6.11069 22.0763 6.3743 21.978 6.63345C21.8797 6.89259 21.7233 7.1294 21.5089 7.34386L9.52572 19.327H4.96837Z"
+                              fill="#1C1B1F"
+                            />
+                          </g>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Student Details Grid */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-600 font-medium">Room/Bed:</span>
+                      <p className="text-black">{student.room}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 font-medium">Contact:</span>
+                      <p className="text-black text-xs">{student.contact}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 font-medium">Fee Status:</span>
+                      <p 
+                        className="font-semibold"
+                        style={getFeeStatusStyle(student.feeStatus)}
+                      >
+                        {student.feeStatus}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 font-medium">Dues:</span>
+                      <p className="text-black font-semibold">{student.dues}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

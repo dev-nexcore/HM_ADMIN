@@ -6,10 +6,9 @@ import { Menu, X, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function Sidebar() {
+export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [active, setActive] = useState("Dashboard");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
@@ -21,9 +20,9 @@ export default function Sidebar() {
     };
 
     if (sidebarOpen) {
-      document.documentElement.style.overflow = "hidden"; // HTML scroll lock
-      document.body.style.overflow = "hidden";            // Body scroll lock
-      document.addEventListener("touchmove", preventScroll, { passive: false }); // Touch scroll lock
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      document.addEventListener("touchmove", preventScroll, { passive: false });
     } else {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
@@ -75,35 +74,18 @@ export default function Sidebar() {
     `flex items-center gap-3 px-4 py-2 transition-all duration-200 text-sm font-semibold cursor-pointer
     ${
       active === label || pathname === href
-        ? "bg-white text-black rounded-lg ml-2 shadow-inner"
+        ? "bg-white text-black rounded-lg mx-2 shadow-sm mb-1"
         : "hover:bg-white/30 text-black pl-6"
     }`;
 
   return (
-    <div className="relative min-h-screen">
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40  md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* Hamburger Button */}
-      <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#A4B494] rounded-md shadow text-black"
-        onClick={() => setSidebarOpen(true)}
-        aria-label="Open sidebar"
-      >
-        <Menu size={24} />
-      </button>
-
+    <>
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-60 bg-[#A4B494] py-6 shadow-md rounded-tr-3xl flex flex-col items-center transition-transform duration-300 overflow-y-auto md:translate-x-0
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 z-50 h-screen w-60 bg-[#A4B494] py-6 shadow-lg rounded-tr-3xl flex flex-col items-center transition-transform duration-300 overflow-y-auto scrollbar-hidden
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        {/* Close Button */}
+        {/* Close Button - Mobile Only */}
         <button
           className="md:hidden absolute top-4 right-4 p-2 text-black"
           onClick={() => setSidebarOpen(false)}
@@ -120,66 +102,77 @@ export default function Sidebar() {
         </div>
 
         {/* Nav Items */}
-        <ul className="flex flex-col gap-1 w-full px-2">
-          {navItems.map((item) => {
-            const isParent = !!item.children;
+        <div className="flex-1 w-full overflow-y-auto px-2 scrollbar-hidden">
+          <ul className="flex flex-col gap-1">
+            {navItems.map((item) => {
+              const isParent = !!item.children;
 
-            return (
-              <li key={item.label} className="w-full">
-                {isParent ? (
-                  <>
-                    <div
-                      className={`flex items-center justify-between gap-3 px-4 py-2 cursor-pointer font-semibold text-black hover:bg-white/30 ${
-                        openMenus[item.label] ? "bg-white/40 rounded-lg" : ""
-                      }`}
-                      onClick={() => toggleMenu(item.label)}
-                    >
-                      <div className="flex items-center gap-3">
-                        {item.icon === "react-icon" ? (
-                          <Users size={20} />
-                        ) : (
-                          <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
-                        )}
+              return (
+                <li key={item.label} className="w-full">
+                  {isParent ? (
+                    <>
+                      <div
+                        className={`flex items-center justify-between gap-3 px-4 py-2 cursor-pointer font-semibold text-black hover:bg-white/30 rounded-lg transition-all duration-200 ${
+                          openMenus[item.label] ? "bg-white/40" : ""
+                        }`}
+                        onClick={() => toggleMenu(item.label)}
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.icon === "react-icon" ? (
+                            <Users size={20} />
+                          ) : (
+                            <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
+                          )}
+                          <span className="text-sm">{item.label}</span>
+                        </div>
+                        <span>{openMenus[item.label] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
+                      </div>
+
+                      {openMenus[item.label] && (
+                        <div className="mt-1 space-y-1">
+                          {item.children.map((child) => (
+                            <Link href={child.href} key={child.label}>
+                              <div
+                                className={`${getLinkClass(child.href, child.label)} ml-4`}
+                                onClick={() => {
+                                  setActive(child.label);
+                                  setSidebarOpen(false); // Close sidebar on mobile after selection
+                                }}
+                              >
+                                <Image src={child.icon} alt={`${child.label} icon`} width={20} height={20} />
+                                <span className="text-sm">{child.label}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link href={item.href}>
+                      <div
+                        className={getLinkClass(item.href, item.label)}
+                        onClick={() => {
+                          setActive(item.label);
+                          setSidebarOpen(false); // Close sidebar on mobile after selection
+                        }}
+                      >
+                        <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
                         <span className="text-sm">{item.label}</span>
                       </div>
-                      <span>{openMenus[item.label] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
-                    </div>
-
-                    {openMenus[item.label] &&
-                      item.children.map((child) => (
-                        <Link href={child.href} key={child.label}>
-                          <div
-                            className={`${getLinkClass(child.href, child.label)} ml-6`}
-                            onClick={() => setActive(child.label)}
-                          >
-                            <Image src={child.icon} alt={`${child.label} icon`} width={20} height={20} />
-                            <span className="text-sm">{child.label}</span>
-                          </div>
-                        </Link>
-                      ))}
-                  </>
-                ) : (
-                  <Link href={item.href}>
-                    <div
-                      className={getLinkClass(item.href, item.label)}
-                      onClick={() => setActive(item.label)}
-                    >
-                      <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
-                      <span className="text-sm">{item.label}</span>
-                    </div>
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         {/* Logout */}
         <div className="mt-auto mb-6 px-5 w-full">
           <hr className="border-t border-black mb-3" />
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex items-center gap-3 text-black px-4 rounded-full hover:bg-[#3E522D] w-full font-semibold"
+            className="flex items-center gap-3 text-black px-4 py-2 rounded-full hover:bg-[#3E522D] w-full font-semibold"
           >
             <Image src="/photos/logout.png" alt="Logout" width={20} height={20} />
             Logout
@@ -209,6 +202,6 @@ export default function Sidebar() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

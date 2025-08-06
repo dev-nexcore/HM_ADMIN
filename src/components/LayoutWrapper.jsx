@@ -2,9 +2,11 @@
 import Sidebar from "./home/sidebar";
 import Navbar from "./home/navbar";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Pages without layout
   const noLayoutPages = ["/", "/forgetpassword"];
@@ -16,21 +18,24 @@ export default function LayoutWrapper({ children }) {
       {hideLayout ? (
         children
       ) : (
-        <div className="flex min-h-screen bg-white">
+        <div className="min-h-screen bg-white">
           {/* Sidebar */}
-          <Sidebar />
+          <Sidebar 
+            sidebarOpen={sidebarOpen} 
+            setSidebarOpen={setSidebarOpen} 
+          />
           
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
+          {/* Main Content Area - with proper margin for desktop sidebar */}
+          <div className={`md:ml-60 min-h-screen flex flex-col transition-all duration-300 ${sidebarOpen ? 'md:ml-60' : ''}`}>
             {/* Navbar - Fixed at top */}
-            <div className="h-20 bg-[#C0C8A4] flex-shrink-0">
-              <Navbar />
-            </div>
+            <Navbar 
+              onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+            />
             
-            {/* Page Content */}
-            <div className="flex-1 px-4 md:px-6 py-4">
+            {/* Page Content - with top margin for fixed navbar */}
+            <main className="flex-1 px-4 md:px-6 py-4 mt-16 sm:mt-20 md:mt-24">
               {children}
-            </div>
+            </main>
           </div>
         </div>
       )}
