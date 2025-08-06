@@ -1,64 +1,67 @@
 "use client";
-import { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
+import axios from "axios";
 
-const initialData = [
-  {
-    name: "Single bed",
-    barcode: "INV-BED-A101-1",
-    category: "Bedding",
-    location: "Room-A-101",
-    status: "In Use",
-    description: "Standard single bed with mattress",
-    purchaseDate: "12-05-2022",
-    purchaseCost: "12000",
-    receipt:null
-  },
-  {
-    name: "Study Chair",
-    barcode: "INV-CHR-A101-1",
-    category: "Furniture",
-    location: "Room-A-101",
-    status: "Available",
-    description: "Ergonomic study chair with adjustable height",
-    purchaseDate: "15-06-2022",
-    purchaseCost: "4500",
-    receipt:null
-  },
-  {
-    name: "Ceiling Fan",
-    barcode: "INV-FAN-A101-1",
-    category: "Electronics",
-    location: "Room-A-101",
-    status: "In maintenance",
-    description: "3-blade ceiling fan with remote control",
-    purchaseDate: "20-04-2022",
-    purchaseCost: "3200",
-    receipt:null
-  },
-  {
-    name: "Wardrobe",
-    barcode: "INV-WAR-A101-1",
-    category: "Furniture",
-    location: "Room-A-101",
-    status: "In Use",
-    description: "Wooden wardrobe with mirror",
-    purchaseDate: "05-03-2022",
-    purchaseCost: "18000",
-    receipt:null
-  },
-  {
-    name: "Water Heater",
-    barcode: "INV-WHT-A101-1",
-    category: "Applications",
-    location: "Room-A-101",
-    status: "Damaged",
-    description: "15L instant water heater",
-    purchaseDate: "10-01-2022",
-    purchaseCost: "7500",
-    receipt:null
-  },
-];
+
+
+// const initialData = [
+//   {
+//     name: "Single bed",
+//     barcode: "INV-BED-A101-1",
+//     category: "Bedding",
+//     location: "Room-A-101",
+//     status: "In Use",
+//     description: "Standard single bed with mattress",
+//     purchaseDate: "12-05-2022",
+//     purchaseCost: "12000",
+//     receipt:null
+//   },
+//   {
+//     name: "Study Chair",
+//     barcode: "INV-CHR-A101-1",
+//     category: "Furniture",
+//     location: "Room-A-101",
+//     status: "Available",
+//     description: "Ergonomic study chair with adjustable height",
+//     purchaseDate: "15-06-2022",
+//     purchaseCost: "4500",
+//     receipt:null
+//   },
+//   {
+//     name: "Ceiling Fan",
+//     barcode: "INV-FAN-A101-1",
+//     category: "Electronics",
+//     location: "Room-A-101",
+//     status: "In maintenance",
+//     description: "3-blade ceiling fan with remote control",
+//     purchaseDate: "20-04-2022",
+//     purchaseCost: "3200",
+//     receipt:null
+//   },
+//   {
+//     name: "Wardrobe",
+//     barcode: "INV-WAR-A101-1",
+//     category: "Furniture",
+//     location: "Room-A-101",
+//     status: "In Use",
+//     description: "Wooden wardrobe with mirror",
+//     purchaseDate: "05-03-2022",
+//     purchaseCost: "18000",
+//     receipt:null
+//   },
+//   {
+//     name: "Water Heater",
+//     barcode: "INV-WHT-A101-1",
+//     category: "Applications",
+//     location: "Room-A-101",
+//     status: "Damaged",
+//     description: "15L instant water heater",
+//     purchaseDate: "10-01-2022",
+//     purchaseCost: "7500",
+//     receipt:null
+//   },
+// ];
 
 const statusColor = {
   "In Use": "bg-[#FF9D00] text-white",
@@ -66,6 +69,23 @@ const statusColor = {
   "In maintenance": "bg-[#d6d6c2] text-black",
   Damaged: "bg-[#FF0000] text-white",
 };
+
+
+// useEffect(() => {
+//   const fetchInventory = async () => {
+//     try {
+//       const { data } = await axios.get("http://localhost:5224/api/adminauth/inventory");
+//       setInventory(data.items); // from backend
+//     } catch (error) {
+//       console.error("Failed to fetch inventory:", error);
+//     }
+//   };
+
+//   fetchInventory();
+// }, []);
+
+
+
 
 const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   const [editData, setEditData] = useState(null);
@@ -88,44 +108,58 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
     }));
   };
 
-  const handleUploadReceipt = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size should be less than 5MB");
-      return;
-    }
-    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      alert("Only JPEG, PNG, or PDF files are allowed");
-      return;
-    }
-
-    if (selectedItem) {
-      // Update the specific item with the receipt
-      setInventory(prev => prev.map(item => 
-        item.barcode === selectedItem.barcode 
-          ? { ...item, receipt: file } 
-          : item
-      ));
-      alert(`Receipt uploaded for ${selectedItem.name}`);
-    } else {
-      // For new items
-      setReceiptFile(file);
-    }
+  const handleDeleteItem = async (barcodeId) => {
+  try {
+    await axios.delete(`http://localhost:5224/api/adminauth/inventory/${barcodeId}`);
+    setInventory((prev) => prev.filter((item) => item.barcodeId !== barcodeId));
+  } catch (error) {
+    console.error("Failed to delete inventory item:", error);
   }
 };
+
+
+const handleUploadReceipt = async (e) => {
+  const file = e.target.files[0];
+  if (!file || !selectedItem) return;
+
+  const formData = new FormData();
+  formData.append("receipt", file);
+
+  try {
+    const { data } = await axios.put(
+      `http://localhost:5224/api/adminauth/inventory/${selectedItem._id}/receipt`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    setInventory((prev) =>
+      prev.map((item) => (item._id === data.item._id ? data.item : item))
+    );
+    alert(`Receipt uploaded for ${data.item.itemName}`);
+  } catch (error) {
+    console.error("Failed to upload receipt:", error);
+  }
+};
+
   const handleEditClick = (item) => {
     setEditData({ ...item });
     setShowEditModal(true);
   };
 
-  const handleEditSave = () => {
+const handleEditSave = async () => {
+  try {
+    const { data } = await axios.put(
+      `http://localhost:5224/api/adminauth/inventory/${editData._id}`,
+      editData
+    );
     setInventory((prev) =>
-      prev.map((item) => (item.barcode === editData.barcode ? editData : item))
+      prev.map((item) => (item._id === data.item._id ? data.item : item))
     );
     setShowEditModal(false);
-  };
+  } catch (error) {
+    console.error("Failed to update inventory:", error);
+  }
+};
+
 
   const handleViewDetails = (item) => {
     setSelectedItem(item);
@@ -279,15 +313,15 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                       item.status === statusFilter) &&
                     (categoryFilter === "All Categories" ||
                       item.category === categoryFilter) &&
-                    (item.name
+                    (item.itemName
                       .toLowerCase()
                       .includes(searchQuery.toLowerCase()) ||
-                      item.barcode
+                      item.barcodeId
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()))
                 )
                 .map((item) => (
-                  <tr key={item.barcode} className="hover:bg-gray-100">
+                  <tr key={item.barcodeId} className="hover:bg-gray-100">
                     {hiddenRows[item.barcode] ? (
                       <>
                         <td colSpan={5} className="italic text-gray-400 py-4">
@@ -297,7 +331,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                           {/* Eye Slash (Hide) Icon */}
                           <div
                             className="cursor-pointer text-gray-600 hover:text-red-600"
-                            onClick={() => toggleVisibility(item.barcode)}
+                            onClick={() => toggleVisibility(item.barcodeId)}
                           >
                             <svg width="28" height="19" viewBox="0 0 28 19" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M14 15C15.5625 15 16.8906 14.4531 17.9844 13.3594C19.0781 12.2656 19.625 10.9375 19.625 9.375C19.625 7.8125 19.0781 6.48438 17.9844 5.39062C16.8906 4.29688 15.5625 3.75 14 3.75C12.4375 3.75 11.1094 4.29688 10.0156 5.39062C8.92188 6.48438 8.375 7.8125 8.375 9.375C8.375 10.9375 8.92188 12.2656 10.0156 13.3594C11.1094 14.4531 12.4375 15 14 15ZM14 12.75C13.0625 12.75 12.2656 12.4219 11.6094 11.7656C10.9531 11.1094 10.625 10.3125 10.625 9.375C10.625 8.4375 10.9531 7.64062 11.6094 6.98438C12.2656 6.32812 13.0625 6 14 6C14.9375 6 15.7344 6.32812 16.3906 6.98438C17.0469 7.64062 17.375 8.4375 17.375 9.375C17.375 10.3125 17.0469 11.1094 16.3906 11.7656C15.7344 12.4219 14.9375 12.75 14 12.75ZM14 18.75C10.9583 18.75 8.1875 17.901 5.6875 16.2031C3.1875 14.5052 1.375 12.2292 0.25 9.375C1.375 6.52083 3.1875 4.24479 5.6875 2.54688C8.1875 0.848958 10.9583 0 14 0C17.0417 0 19.8125 0.848958 22.3125 2.54688C24.8125 4.24479 26.625 6.52083 27.75 9.375C26.625 12.2292 24.8125 14.5052 22.3125 16.2031C19.8125 17.901 17.0417 18.75 14 18.75ZM14 16.25C16.3542 16.25 18.5156 15.6302 20.4844 14.3906C22.4531 13.151 23.9583 11.4792 25 9.375C23.9583 7.27083 22.4531 5.59896 20.4844 4.35938C18.5156 3.11979 16.3542 2.5 14 2.5C11.6458 2.5 9.48438 3.11979 7.51562 4.35938C5.54688 5.59896 4.04167 7.27083 3 9.375C4.04167 11.4792 5.54688 13.151 7.51562 14.3906C9.48438 15.6302 11.6458 16.25 14 16.25Z" fill="#1C1B1F"/>
@@ -307,8 +341,8 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                       </>
                     ) : (
                       <>
-                        <td className="px-4 py-2">{item.name}</td>
-                        <td className="px-4 py-2">{item.barcode}</td>
+                        <td className="px-4 py-2">{item.itemName}</td>
+                        <td className="px-4 py-2">{item.barcodeId}</td>
                         <td className="px-4 py-2">{item.category}</td>
                         <td className="px-4 py-2">{item.location}</td>
                         <td className="px-4 py-2">
@@ -462,8 +496,8 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
         <div>
           <h4 className="font-bold text-lg mb-2">Basic Information</h4>
           <div className="space-y-2">
-            <p><span className="font-semibold">Item Name:</span> {selectedItem.name}</p>
-            <p><span className="font-semibold">Barcode ID:</span> {selectedItem.barcode}</p>
+            <p><span className="font-semibold">Item Name:</span> {selectedItem.itemName}</p>
+            <p><span className="font-semibold">Barcode ID:</span> {selectedItem.barcodeId}</p>
             <p><span className="font-semibold">Category:</span> {selectedItem.category}</p>
             <p><span className="font-semibold">Location:</span> {selectedItem.location}</p>
             <p>
@@ -561,9 +595,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                           .includes(searchQuery.toLowerCase()))
                   )
                   .map((item) => (
-                    <tr key={item.barcode} className="hover:bg-gray-100">
-                      <td className="py-2 px-4 border-b">{item.name}</td>
-                      <td className="py-2 px-4 border-b">{item.barcode}</td>
+                    <tr key={item.barcodeId} className="hover:bg-gray-100">
+                      <td className="py-2 px-4 border-b">{item.itemName}</td>
+                      <td className="py-2 px-4 border-b">{item.barcodeId}</td>
                       <td className="py-2 px-4 border-b">{item.category}</td>
                       <td className="py-2 px-4 border-b">{item.location}</td>
                       <td className="py-2 px-4 border-b">{item.status}</td>
@@ -676,40 +710,42 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     // QR code generation logic here
   };
 
-  const handleSaveItem = () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+const handleSaveItem = async () => {
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("itemName", formData.itemName);
+    formDataToSend.append("barcodeId", formData.barcodeId);
+    formDataToSend.append("category", formData.category);
+    formDataToSend.append("location", formData.location);
+    formDataToSend.append("status", formData.status);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("purchaseDate", formData.purchaseDate);
+    formDataToSend.append("purchaseCost", formData.purchaseCost);
+    if (formData.receipt) {
+      formDataToSend.append("receipt", formData.receipt);
     }
-    
-    console.log("Saving item:", formData);
-    // Save item logic here
+
+    const { data } = await axios.post(
+      "http://localhost:5224/api/adminauth/inventory/add",
+      formDataToSend,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
     if (onItemAdded) {
-      onItemAdded({
-        name: formData.itemName,
-        barcode: formData.barcodeId,
-        category: formData.category,
-        location: formData.location,
-        status: formData.status === "active" ? "Available" : "In Use", // Map to existing statuses
-      });
+      onItemAdded(data.item); // Assuming backend returns { item: {...} }
     }
-    
-    // Reset form after successful save
-    setFormData({
-      itemName: "",
-      location: "",
-      barcodeId: "",
-      status: "",
-      category: "",
-      description: "",
-      purchaseDate: "",
-      purchaseCost: "",
-      receipt: null,
-    });
-    setErrors({});
     onBackToInventory();
-  };
+  } catch (error) {
+    console.error("Failed to add inventory item:", error);
+  }
+};
+
 
   // Calendar click handler
   const handleCalendarClick = () => {
@@ -1142,35 +1178,40 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
 
 // Main component that manages the view state and central inventory data
 export default function InventoryManagement() {
-  const [currentView, setCurrentView] = useState("inventory"); // 'inventory' or 'addItem'
-  const [inventory, setInventory] = useState(initialData); // Central inventory state
+  const [inventory, setInventory] = useState([]);
+  const [currentView, setCurrentView] = useState("inventory");
 
-  const handleAddNewItem = () => {
-    setCurrentView("addItem");
-  };  
-
-  const handleBackToInventory = () => {
-    setCurrentView("inventory");
+  const fetchInventory = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:5224/api/adminauth/inventory"
+      );
+      setInventory(data.items);
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error);
+    }
   };
- 
-  const handleItemAdded = (newItem) => {
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  const handleAddNewItem = () => setCurrentView("addItem");
+  const handleBackToInventory = () => setCurrentView("inventory");
+  const handleItemAdded = (newItem) =>
     setInventory((prev) => [...prev, newItem]);
-  };
 
-  return (
-    <div>
-      {currentView === "inventory" ? (
-        <InventoryList
-          onAddNewItem={handleAddNewItem}
-          inventory={inventory}
-          setInventory={setInventory}   
-        />
-      ) : (
-        <AddNewItem
-          onBackToInventory={handleBackToInventory}
-          onItemAdded={handleItemAdded}
-        />
-      )}
-    </div>
+  return currentView === "inventory" ? (
+    <InventoryList
+      onAddNewItem={handleAddNewItem}
+      inventory={inventory}
+      setInventory={setInventory}
+      fetchInventory={fetchInventory}
+    />
+  ) : (
+    <AddNewItem
+      onBackToInventory={handleBackToInventory}
+      onItemAdded={handleItemAdded}
+    />
   );
 }

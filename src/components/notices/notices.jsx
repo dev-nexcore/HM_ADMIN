@@ -1,5 +1,7 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import axios from "axios";
+const API_BASE = "http://localhost:5224/api/adminauth";
 
 const HostelNotices = () => {
   const [form, setForm] = useState({
@@ -11,44 +13,57 @@ const HostelNotices = () => {
     date: "",
   });
 
-  const [notices, setNotices] = useState([
-    {
-      id: 1,
-      title: "Hostel Maintenance Schedule",
-      recipient: "All Residents",
-      date: "05-07-2025",
-      status: "Active",
-      template: "maintenance",
-      individualRecipient: "",
-      message: "Scheduled maintenance will be conducted on all floors.",
-    },
-    {
-      id: 2,
-      title: "New Warden Onboarding",
-      recipient: "All Wardens",
-      date: "05-07-2025",
-      status: "Active",
-      template: "",
-      individualRecipient: "",
-      message: "Welcome to our new warden joining the team.",
-    },
-    {
-      id: 3,
-      title: "Upcoming Holiday Schedule",
-      recipient: "All",
-      date: "05-07-2025",
-      status: "Archived",
-      template: "",
-      individualRecipient: "",
-      message: "Holiday schedule for the upcoming month.",
-    },
-  ]);
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ status: "All", recipientType: "", page: 1, limit: 50 });
+
+  const fetchNotices = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get(`${API_BASE}/notices`, { params: filters });
+      if (data.success) setNotices(data.notices);
+    } catch (err) {
+      console.error("Failed to fetch notices:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchNotices(); }, [filters]);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoticeId, setDeleteNoticeId] = useState(null);
 const[formErrors,setFormErrors] = useState(null);
+  
+  const handleIssueNotice = async () => {
+    try {
+      await axios.post(`${API_BASE}/issue-notice`, {
+        template: form.template,
+        title: form.title,
+        message: form.message,
+        issueDate: form.date,
+        recipientType: form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
+        individualRecipient: form.individualRecipient || ""
+      });
+      fetchNotices();
+      setForm({ template: "", title: "", recipient: "", individualRecipient: "", message: "", date: "" });
+    } catch (err) {
+      console.error("Failed to issue notice:", err);
+    }
+  };
+
+  const handleDeleteNotice = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this notice?")) return;
+    try {
+      await axios.delete(`${API_BASE}/notices/${id}`);
+      setNotices(prev => prev.filter(n => n.id !== id));
+    } catch (err) {
+      console.error("Failed to delete notice:", err);
+    }
+  };
+
   const dateInputRef = useRef(null);
   const editDateInputRef = useRef(null);
 

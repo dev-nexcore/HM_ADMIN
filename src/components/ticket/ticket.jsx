@@ -49,26 +49,80 @@ export default function TicketsSection() {
   };
 
   return (
-    <div className="px-4 md:px-6 py-10 space-y-10 max-w-screen-xl mx-auto">
+    <div className="p-4 space-y-6">
       <h2 className="text-2xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
         Tickets & Queries
       </h2>
 
       {/* Open Tickets */}
-      <div className="bg-[#A4B494] rounded-2xl p-6 shadow-md">
+      <div className="bg-[#A4B494] rounded-2xl p-4 md:p-6 shadow-md">
         <h2 className="text-xl font-semibold text-black mb-4">Open Tickets</h2>
 
-        {/* Responsive table wrapper for both mobile & desktop */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-base text-left font-semibold text-black border-separate border-spacing-y-3">
+        {/* Mobile Card View */}
+        <div className="block md:hidden space-y-4">
+          {openTickets.length > 0 ? (
+            openTickets.map((ticket, index) => (
+              <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <span className="font-semibold text-sm text-gray-600">ID:</span>
+                    <span className="font-bold">{ticket.id}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-sm text-gray-600">Subject:</span>
+                    <p className="mt-1">{ticket.subject}</p>
+                  </div>
+                  <div className="flex justify-between">
+                    <div>
+                      <span className="font-semibold text-sm text-gray-600">Raised By:</span>
+                      <p>{ticket.raisedBy}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-sm text-gray-600">Date:</span>
+                      <p>{ticket.dateRaised}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-semibold text-sm text-gray-600">Status:</span>
+                      <span className="ml-2 font-bold text-[#4F8CCF]">{ticket.status}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      className="bg-lime-500 text-black font-semibold flex-1 py-2 rounded-md hover:bg-lime-600"
+                      onClick={() => handleApprove(index)}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="bg-red-600 text-white font-semibold flex-1 py-2 rounded-md hover:bg-red-700"
+                      onClick={() => handleReject(index)}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-700">
+              No open tickets available.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-base text-left font-semibold text-black border-separate border-spacing-y-3">
             <thead className="bg-white text-black font-bold">
               <tr>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Ticket ID</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Subject</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Raised By</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Status</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Date Raised</th>
-                <th className="px-5 py-3">Actions</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Ticket ID</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Subject</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Raised By</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Status</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Date Raised</th>
+                <th className="px-5 py-3 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -113,18 +167,57 @@ export default function TicketsSection() {
       </div>
 
       {/* Resolved Tickets */}
-      <div className="bg-[#A4B494] rounded-2xl p-6 shadow-md">
+      <div className="bg-[#A4B494] rounded-2xl p-4 md:p-6 shadow-md">
         <h3 className="text-xl font-semibold mb-4 text-black">Resolved Tickets</h3>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-base text-left text-black border-separate border-spacing-y-3">
+        {/* Mobile Card View */}
+        <div className="block md:hidden space-y-4">
+          {resolvedTickets.length > 0 ? (
+            resolvedTickets.map((ticket, index) => (
+              <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <span className="font-semibold text-sm text-gray-600">ID:</span>
+                    <span className="font-bold">{ticket.id}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-sm text-gray-600">Subject:</span>
+                    <p className="mt-1">{ticket.subject}</p>
+                  </div>
+                  <div className="flex justify-between">
+                    <div>
+                      <span className="font-semibold text-sm text-gray-600">Raised By:</span>
+                      <p>{ticket.raisedBy}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-sm text-gray-600">Date:</span>
+                      <p>{ticket.dateRaised}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-sm text-gray-600">Status:</span>
+                    <span className="ml-2 text-green-600 font-semibold">{ticket.status}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-900 font-semibold">
+              No resolved tickets available.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-base text-left text-black border-separate border-spacing-y-3">
             <thead className="bg-white font-semibold text-black">
               <tr>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Ticket ID</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Subject</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Raised By</th>
-                <th className="px-5 py-3 border-r border-[#A4B494]">Status</th>
-                <th className="px-5 py-3">Date Raised</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Ticket ID</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Subject</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Raised By</th>
+                <th className="px-5 py-3 border-r border-[#A4B494] whitespace-nowrap">Status</th>
+                <th className="px-5 py-3 whitespace-nowrap">Date Raised</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +239,7 @@ export default function TicketsSection() {
                     No resolved tickets available.
                   </td>
                 </tr>
-              )}
+                )}
             </tbody>
           </table>
         </div>

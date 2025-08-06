@@ -1,89 +1,117 @@
 "use client";
 import { useState, useRef } from "react";
-import { Eye } from "lucide-react"; // Only Eye is needed for viewing details
+import { Eye } from "lucide-react";
+import axios from "axios";
+
+// Configure axios base URL - adjust this to match your backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224/api/adminauth';
 
 const StudentManagement = () => {
   const [formData, setFormData] = useState({
-    studentName: "",
+    firstName: "",
+    lastName: "",
     studentId: "",
     contactNumber: "",
     email: "",
-    roomBed: "",
-    emergencyContact: "",
+    roomBedNumber: "",
+    emergencyContactNumber: "",
     admissionDate: "",
     emergencyContactName: "",
     feeStatus: "",
   });
   const dateInputRef = useRef(null);
-  const [editingStudent, setEditingStudent] = useState(null); // Stores the ID of the student being edited
+  const [editingStudent, setEditingStudent] = useState(null);
   const [students, setStudents] = useState([
     {
       id: "STU-001",
+      firstName: "Shahid",
+      lastName: "Ansari",
       name: "Shahid Ansari",
       room: "Room-A-101",
       contact: "+91 8888888888",
-      email: "shahid.ansari@example.com", // Added for details view
-      emergencyContact: "+91 9999999999", // Added for details view
-      admissionDate: "15-08-2023", // Added for details view
-      emergencyContactName: "Parent A", // Added for details view
+      email: "shahid.ansari@example.com",
+      emergencyContactNumber: "+91 9999999999",
+      admissionDate: "15-08-2023",
+      emergencyContactName: "Parent A",
       feeStatus: "In Use",
       dues: "₹ 2,000/-",
     },
     {
       id: "STU-002",
+      firstName: "Ayesha",
+      lastName: "Khan",
       name: "Ayesha Khan",
       room: "Room-A-101",
       contact: "+91 8888888888",
-      email: "ayesha.khan@example.com", // Added for details view
-      emergencyContact: "+91 9999999998", // Added for details view
-      admissionDate: "20-09-2023", // Added for details view
-      emergencyContactName: "Parent B", // Added for details view
+      email: "ayesha.khan@example.com",
+      emergencyContactNumber: "+91 9999999998",
+      admissionDate: "20-09-2023",
+      emergencyContactName: "Parent B",
       feeStatus: "Available",
       dues: "₹ 2,000/-",
     },
-    {
-      id: "STU-003",
-      name: "Awab Fakih",
-      room: "Room-A-101",
-      contact: "+91 8888888888",
-      email: "awab.fakih@example.com", // Added for details view
-      emergencyContact: "+91 9999999997", // Added for details view
-      admissionDate: "01-10-2023", // Added for details view
-      emergencyContactName: "Parent C", // Added for details view
-      feeStatus: "In maintenance",
-      dues: "₹ 2,000/-",
-    },
-    {
-      id: "STU-004",
-      name: "Fatima Zahira",
-      room: "Room-A-101",
-      contact: "+91 8888888888",
-      email: "fatima.zahira@example.com", // Added for details view
-      emergencyContact: "+91 9999999996", // Added for details view
-      admissionDate: "05-11-2023", // Added for details view
-      emergencyContactName: "Parent D", // Added for details view
-      feeStatus: "In Use",
-      dues: "₹ 2,000/-",
-    },
-    {
-      id: "STU-005",
-      name: "Fatima Zahira",
-      room: "Room-A-101",
-      contact: "+91 8888888888",
-      email: "fatima.zahira2@example.com", // Added for details view
-      emergencyContact: "+91 9999999995", // Added for details view
-      admissionDate: "10-12-2023", // Added for details view
-      emergencyContactName: "Parent E", // Added for details view
-      feeStatus: "In Use",
-      dues: "₹ 2,000/-",
-    },
   ]);
-  const [errors, setErrors] = useState({}); // State for validation errors
-  const [showEditModal, setShowEditModal] = useState(false); // State for edit modal visibility
-
-  // New states for details modal
+  const [errors, setErrors] = useState({});
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [studentDetailsData, setStudentDetailsData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // API Functions
+  const registerStudentAPI = async (studentData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/register-student`, studentData, {
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if you have auth tokens
+          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to register student' };
+    }
+  };
+
+  const updateStudentAPI = async (studentId, studentData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/update-student/${studentId}`, studentData, {
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to update student' };
+    }
+  };
+
+  const fetchStudentsAPI = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/students`, {
+        headers: {
+          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch students' };
+    }
+  };
+
+  const deleteStudentAPI = async (studentId) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/delete-student/${studentId}`, {
+        headers: {
+          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to delete student' };
+    }
+  };
 
   // Simple input change handler
   const handleInputChange = (e) => {
@@ -105,8 +133,11 @@ const StudentManagement = () => {
   // Validation function
   const validateForm = (data, isEdit = false) => {
     const newErrors = {};
-    if (!data.studentName.trim()) {
-      newErrors.studentName = "Student Name is required.";
+    if (!data.firstName.trim()) {
+      newErrors.firstName = "First Name is required.";
+    }
+    if (!data.lastName.trim()) {
+      newErrors.lastName = "Last Name is required.";
     }
     if (!data.studentId.trim()) {
       newErrors.studentId = "Student ID is required.";
@@ -126,43 +157,73 @@ const StudentManagement = () => {
   // Reset form
   const resetForm = () => {
     setFormData({
-      studentName: "",
+      firstName: "",
+      lastName: "",
       studentId: "",
       contactNumber: "",
       email: "",
-      roomBed: "",
-      emergencyContact: "",
+      roomBedNumber: "",
+      emergencyContactNumber: "",
       admissionDate: "",
       emergencyContactName: "",
       feeStatus: "",
     });
     setEditingStudent(null);
-    setErrors({}); // Clear errors on form reset
-    setShowEditModal(false); // Close the modal
+    setErrors({});
+    setShowEditModal(false);
   };
 
   // Submit handler for new student registration
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = validateForm(formData);
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    const newStudent = {
-      id: formData.studentId,
-      name: formData.studentName,
-      room: formData.roomBed || "Not Assigned",
-      contact: formData.contactNumber,
-      email: formData.email, // Include email
-      emergencyContact: formData.emergencyContact, // Include emergency contact
-      admissionDate: formData.admissionDate, // Include admission date
-      emergencyContactName: formData.emergencyContactName, // Include emergency contact name
-      feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
-      dues: "₹ 0/-",
-    };
-    setStudents((prev) => [...prev, newStudent]);
-    resetForm();
-    alert("Student registered successfully!");
+
+    setLoading(true);
+    try {
+      // Prepare data for backend (matching your backend structure)
+      const studentData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        studentId: formData.studentId,
+        contactNumber: formData.contactNumber,
+        roomBedNumber: formData.roomBedNumber || "Not Assigned",
+        email: formData.email,
+        admissionDate: formData.admissionDate,
+        feeStatus: formData.feeStatus,
+        emergencyContactName: formData.emergencyContactName,
+        emergencyContactNumber: formData.emergencyContactNumber,
+      };
+
+      const response = await registerStudentAPI(studentData);
+      
+      // Add new student to local state
+      const newStudent = {
+        id: formData.studentId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
+        room: formData.roomBedNumber || "Not Assigned",
+        contact: formData.contactNumber,
+        email: formData.email,
+        emergencyContactNumber: formData.emergencyContactNumber,
+        admissionDate: formData.admissionDate,
+        emergencyContactName: formData.emergencyContactName,
+        feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
+        dues: "₹ 0/-",
+      };
+      
+      setStudents((prev) => [...prev, newStudent]);
+      resetForm();
+      alert(`Student registered successfully! Password: ${response.student?.password || 'Check email for credentials'}`);
+    } catch (error) {
+      console.error('Error registering student:', error);
+      alert(error.message || 'Error registering student. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Edit handler: pre-fills form and sets editing state
@@ -170,51 +231,108 @@ const StudentManagement = () => {
     const student = students.find((s) => s.id === studentId);
     if (student) {
       setFormData({
-        studentName: student.name,
+        firstName: student.firstName || student.name?.split(' ')[0] || '',
+        lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || '',
         studentId: student.id,
         contactNumber: student.contact,
-        email: student.email || "", // Use existing email or empty
-        roomBed: student.room,
-        emergencyContact: student.emergencyContact || "", // Use existing or empty
-        admissionDate: student.admissionDate || "", // Use existing or empty
-        emergencyContactName: student.emergencyContactName || "", // Use existing or empty
-        feeStatus: student.feeStatus === "Available" ? "Paid" : "Unpaid", // Map back to form value
+        email: student.email || "",
+        roomBedNumber: student.room,
+        emergencyContactNumber: student.emergencyContactNumber || "",
+        admissionDate: student.admissionDate || "",
+        emergencyContactName: student.emergencyContactName || "",
+        feeStatus: student.feeStatus === "Available" ? "Paid" : "Unpaid",
       });
       setEditingStudent(studentId);
-      setErrors({}); // Clear any previous errors when starting edit
-      setShowEditModal(true); // Open the modal
+      setErrors({});
+      setShowEditModal(true);
     }
   };
 
   // Update handler for editing student
-  const handleUpdate = () => {
-    const newErrors = validateForm(formData, true); // Pass true for isEdit
+  const handleUpdate = async () => {
+    const newErrors = validateForm(formData, true);
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.id === editingStudent
-          ? {
-              ...student,
-              name: formData.studentName,
-              contact: formData.contactNumber,
-              email: formData.email, // Update email
-              room: formData.roomBed || student.room,
-              emergencyContact: formData.emergencyContact, // Update emergency contact
-              admissionDate: formData.admissionDate, // Update admission date
-              emergencyContactName: formData.emergencyContactName, // Update emergency contact name
-              feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
-            }
-          : student
-      )
-    );
-    resetForm(); // Reset form and editingStudent state, and close modal
-    alert("Student updated successfully!");
+
+    setLoading(true);
+    try {
+      const studentData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        contactNumber: formData.contactNumber,
+        email: formData.email,
+        roomBedNumber: formData.roomBedNumber,
+        emergencyContactNumber: formData.emergencyContactNumber,
+        admissionDate: formData.admissionDate,
+        emergencyContactName: formData.emergencyContactName,
+        feeStatus: formData.feeStatus,
+      };
+
+      await updateStudentAPI(editingStudent, studentData);
+
+      // Update local state
+      setStudents((prev) =>
+        prev.map((student) =>
+          student.id === editingStudent
+            ? {
+                ...student,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                name: `${formData.firstName} ${formData.lastName}`,
+                contact: formData.contactNumber,
+                email: formData.email,
+                room: formData.roomBedNumber || student.room,
+                emergencyContactNumber: formData.emergencyContactNumber,
+                admissionDate: formData.admissionDate,
+                emergencyContactName: formData.emergencyContactName,
+                feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
+              }
+            : student
+        )
+      );
+      resetForm();
+      alert("Student updated successfully!");
+    } catch (error) {
+      console.error('Error updating student:', error);
+      alert(error.message || 'Error updating student. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // New handler for viewing student details (replaces handleToggleVisibility)
+  // Load students on component mount
+  useState(() => {
+    const loadStudents = async () => {
+      try {
+        const studentsData = await fetchStudentsAPI();
+        // Transform backend data to match frontend structure
+        const transformedStudents = studentsData.students?.map(student => ({
+          id: student.studentId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          name: `${student.firstName} ${student.lastName}`,
+          room: student.roomBedNumber,
+          contact: student.contactNumber,
+          email: student.email,
+          emergencyContactNumber: student.emergencyContactNumber,
+          admissionDate: student.admissionDate,
+          emergencyContactName: student.emergencyContactName,
+          feeStatus: student.feeStatus,
+          dues: "₹ 0/-", // You might want to calculate this from backend
+        })) || [];
+        setStudents(transformedStudents);
+      } catch (error) {
+        console.error('Error loading students:', error);
+        // Keep default students if API fails
+      }
+    };
+    
+    loadStudents();
+  }, []);
+
+  // New handler for viewing student details
   const handleViewDetails = (studentId) => {
     const student = students.find((s) => s.id === studentId);
     if (student) {
@@ -289,29 +407,54 @@ const StudentManagement = () => {
           : "Register New Student & Allot Bed"}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Student Name */}
+        {/* First Name */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
-            Student Name
+            First Name
           </label>
           <input
             type="text"
-            name="studentName"
-            value={formData.studentName}
+            name="firstName"
+            value={formData.firstName}
             onChange={handleInputChange}
-            placeholder="Enter your Name"
+            placeholder="Enter First Name"
             className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.studentName ? "border-red-500" : ""
+              errors.firstName ? "border-red-500" : ""
             }`}
             style={inputStyle}
             required
           />
-          {errors.studentName && (
+          {errors.firstName && (
             <p className="text-red-500 text-xs mt-1 ml-2">
-              {errors.studentName}
+              {errors.firstName}
             </p>
           )}
         </div>
+        
+        {/* Last Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            Last Name
+          </label>
+          <input
+            type="text"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleInputChange}
+            placeholder="Enter Last Name"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+              errors.lastName ? "border-red-500" : ""
+            }`}
+            style={inputStyle}
+            required
+          />
+          {errors.lastName && (
+            <p className="text-red-500 text-xs mt-1 ml-2">
+              {errors.lastName}
+            </p>
+          )}
+        </div>
+        
         {/* Student ID */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -322,18 +465,19 @@ const StudentManagement = () => {
             name="studentId"
             value={formData.studentId}
             onChange={handleInputChange}
-            placeholder="Enter your ID"
+            placeholder="Enter Student ID"
             className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
               errors.studentId ? "border-red-500" : ""
             }`}
             style={inputStyle}
-            disabled={isEditMode} // Disable if in edit mode
+            disabled={isEditMode}
             required
           />
           {errors.studentId && (
             <p className="text-red-500 text-xs mt-1 ml-2">{errors.studentId}</p>
           )}
         </div>
+        
         {/* Contact Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -344,7 +488,7 @@ const StudentManagement = () => {
             name="contactNumber"
             value={formData.contactNumber}
             onChange={handleInputChange}
-            placeholder="Enter your Phone Number"
+            placeholder="Enter Phone Number"
             className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
               errors.contactNumber ? "border-red-500" : ""
             }`}
@@ -357,6 +501,7 @@ const StudentManagement = () => {
             </p>
           )}
         </div>
+        
         {/* Email */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -378,6 +523,7 @@ const StudentManagement = () => {
             <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>
           )}
         </div>
+        
         {/* Room/Bed Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
@@ -385,11 +531,11 @@ const StudentManagement = () => {
           </label>
           <div className="relative w-full sm:max-w-[530px] h-[40px]">
             <select
-              name="roomBed"
-              value={formData.roomBed}
+              name="roomBedNumber"
+              value={formData.roomBedNumber}
               onChange={handleInputChange}
               className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-                formData.roomBed === "" ? "text-[#0000008A]" : "text-black"
+                formData.roomBedNumber === "" ? "text-[#0000008A]" : "text-black"
               }`}
               style={{
                 WebkitAppearance: "none",
@@ -399,7 +545,7 @@ const StudentManagement = () => {
               }}
             >
               <option value="" disabled hidden>
-                Select Category
+                Select Room/Bed
               </option>
               <option value="Room-A-101">Room-A-101</option>
               <option value="Room-A-102">Room-A-102</option>
@@ -408,7 +554,6 @@ const StudentManagement = () => {
               <option value="Room-B-102">Room-B-102</option>
               <option value="Room-B-103">Room-B-103</option>
             </select>
-            {/* Custom arrow */}
             <svg
               className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
               fill="currentColor"
@@ -423,6 +568,7 @@ const StudentManagement = () => {
             </svg>
           </div>
         </div>
+        
         {/* Emergency Contact Number */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -430,14 +576,15 @@ const StudentManagement = () => {
           </label>
           <input
             type="tel"
-            name="emergencyContact"
-            value={formData.emergencyContact}
+            name="emergencyContactNumber"
+            value={formData.emergencyContactNumber}
             onChange={handleInputChange}
             placeholder="Enter Contact Number"
             className="w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins]"
             style={inputStyle}
           />
         </div>
+        
         {/* Admission Date */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -446,7 +593,6 @@ const StudentManagement = () => {
           <div className="relative flex items-center">
             <div className="relative w-[300px] max-w-full">
               <div className="relative w-full">
-                {/* Hidden native date input */}
                 <input
                   ref={dateInputRef}
                   type="date"
@@ -473,19 +619,15 @@ const StudentManagement = () => {
                       setFormData((prev) => ({ ...prev, admissionDate: "" }));
                     }
                   }}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20" // Removed cursor-pointer from invisible input
+                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20"
                   style={{ colorScheme: "light" }}
                 />
-                {/* Styled fake input that displays the selected date */}
                 <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]">
                   {formData.admissionDate || ""}
                 </div>
-                {/* Placeholder spacing */}
                 {!formData.admissionDate && (
                   <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[15px] tracking-[0.3em] pointer-events-none select-none">
-                    {
-                      "d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"
-                    }
+                    {"d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"}
                   </div>
                 )}
               </div>
@@ -493,7 +635,7 @@ const StudentManagement = () => {
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer relative z-30 hover:scale-110 transition-transform" // Added z-30 to ensure it's on top
+              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer relative z-30 hover:scale-110 transition-transform"
               title="Open Calendar"
             >
               <svg
@@ -516,7 +658,7 @@ const StudentManagement = () => {
                 </mask>
                 <g mask="url(#mask0_370_4)">
                   <path
-                    d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 16.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 16.6042 21.1302 16.901 20.8906 17.1406C20.651 22.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
+                    d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 21.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 16.6042 21.1302 16.901 20.8906 17.1406C20.651 17.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
                     fill="#1C1B1F"
                   />
                 </g>
@@ -524,6 +666,7 @@ const StudentManagement = () => {
             </button>
           </div>
         </div>
+        
         {/* Emergency Contact Name */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -539,6 +682,7 @@ const StudentManagement = () => {
             style={inputStyle}
           />
         </div>
+        
         {/* Fee Status */}
         <div className="w-full px-2">
           <label
@@ -547,38 +691,53 @@ const StudentManagement = () => {
           >
             Fee Status
           </label>
-          <input
-            type="text"
+          <select
             name="feeStatus"
             value={formData.feeStatus}
             onChange={handleInputChange}
-            placeholder="Paid"
-            className="px-4 bg-white rounded-[10px] border-0 outline-none text-black text-[12px] font-[Poppins] font-semibold placeholder:font-[600] placeholder:font-[Poppins] placeholder-gray-500"
+            className={`px-4 bg-white rounded-[10px] border-0 outline-none text-black text-[12px] font-[Poppins] font-semibold cursor-pointer appearance-none ${
+              formData.feeStatus === "" ? "text-[#0000008A]" : "text-black"
+            }`}
             style={{
               ...inputStyle,
               width: "300px",
               maxWidth: "100%",
               paddingLeft: "1rem",
+              WebkitAppearance: "none",
+              MozAppearance: "none",
+              appearance: "none",
             }}
-          />
+          >
+            <option value="" disabled hidden>
+              Select Fee Status
+            </option>
+            <option value="Paid">Paid</option>
+            <option value="Unpaid">Unpaid</option>
+            <option value="Partial">Partial</option>
+          </select>
         </div>
       </div>
+      
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         <button
           onClick={isEditMode ? handleUpdate : handleSubmit}
-          className="mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
+          disabled={loading}
+          className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
           style={{
             fontWeight: "600",
             fontSize: "15px",
           }}
         >
-          {isEditMode ? "Update Student" : "Register Student"}
+          {loading ? (isEditMode ? "Updating..." : "Registering...") : (isEditMode ? "Update Student" : "Register Student")}
         </button>
         {isEditMode && (
           <button
             type="button"
             onClick={resetForm}
+            disabled={loading}
             className="mt-6 px-6 py-2 bg-gray-400 text-white rounded-[10px] shadow font-medium hover:bg-gray-500 transition-colors cursor-pointer"
           >
             Cancel
@@ -608,6 +767,7 @@ const StudentManagement = () => {
             </span>
           </h1>
         </div>
+        
         {/* Registration Form (conditionally rendered when not editing) */}
         {!editingStudent && (
           <div
@@ -617,14 +777,14 @@ const StudentManagement = () => {
             {formContent(false)}
           </div>
         )}
+        
         {/* Edit Student Modal (conditionally rendered when editing) */}
         {showEditModal && editingStudent && (
-          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
-              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative"
+              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
             >
-              {/* Close button for the modal */}
               <button
                 onClick={resetForm}
                 className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
@@ -650,11 +810,11 @@ const StudentManagement = () => {
           </div>
         )}
 
-        {/* Student Details Modal (New) */}
+        {/* Student Details Modal */}
         {showDetailsModal && studentDetailsData && (
-          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
-              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative"
+              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
             >
               <button
@@ -721,7 +881,7 @@ const StudentManagement = () => {
                   <p className="font-semibold" style={labelStyle}>
                     Emergency Contact:
                   </p>
-                  <p>{studentDetailsData.emergencyContact || "N/A"}</p>
+                  <p>{studentDetailsData.emergencyContactNumber || "N/A"}</p>
                 </div>
                 <div>
                   <p className="font-semibold" style={labelStyle}>
@@ -753,12 +913,11 @@ const StudentManagement = () => {
                   <p>{studentDetailsData.dues}</p>
                 </div>
               </div>
-              {/* New Edit Button in Details Modal */}
               <div className="flex justify-center mt-6">
                 <button
                   onClick={() => {
-                    setShowDetailsModal(false); // Close details modal
-                    handleEdit(studentDetailsData.id); // Open edit modal with student data
+                    setShowDetailsModal(false);
+                    handleEdit(studentDetailsData.id);
                   }}
                   className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
                   style={{
@@ -789,6 +948,7 @@ const StudentManagement = () => {
             Student List & Fee status
           </h2>
         </div>
+        
         {/* Student List Table */}
         <div className="w-full max-w-7xl mx-auto mt-4 ">
           <div
@@ -841,6 +1001,7 @@ const StudentManagement = () => {
                     </div>
                   ))}
                 </div>
+                
                 {/* Table Body */}
                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                   {students.map((student, i) => (
@@ -862,7 +1023,6 @@ const StudentManagement = () => {
                       <div className="px-0.5 py-1 flex-1">{student.dues}</div>
                       <div className="px-0.5 py-1 flex items-center justify-center flex-1">
                         <div className="flex items-center justify-center gap-4 relative">
-                          {/* View Details Button with Lucide Eye Icon */}
                           <button
                             onClick={() => handleViewDetails(student.id)}
                             className="text-black hover:text-gray-700 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
@@ -878,7 +1038,6 @@ const StudentManagement = () => {
                               margin: "0 8px",
                             }}
                           />
-                          {/* Edit Button */}
                           <button
                             onClick={() => handleEdit(student.id)}
                             className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer hover:scale-110 transition-transform"
