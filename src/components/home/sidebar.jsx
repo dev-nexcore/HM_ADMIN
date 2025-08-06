@@ -96,10 +96,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
         {/* Logo */}
         <div className="flex justify-center items-center mb-6 -mt-3">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow">
-            <img src="/photos/logo.png" alt="Logo" className="w-full h-full object-cover" />
-          </div>
-        </div>
+  <img src="/photos/logo1.svg" alt="Logo" className="w-31 h-auto" />
+</div>
 
         {/* Nav Items */}
         <div className="flex-1 w-full overflow-y-auto px-2 scrollbar-hidden">
