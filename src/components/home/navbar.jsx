@@ -11,7 +11,7 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
   const popupRef = useRef(null);
   const router = useRouter();
 
-  const adminFullName = "Nouman";
+  const adminFullName = "Raheem";
   const profileImage = "/photos/profile.jpg";
   const loading = false;
 

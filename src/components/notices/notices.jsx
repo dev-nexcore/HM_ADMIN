@@ -438,106 +438,13 @@ const[formErrors,setFormErrors] = useState(null);
       </div>
 
       {/* Table */}
-      <h3 className="text-2xl text-black font-semibold mb-4 font-[Poppins] ml-4">
-        Recent Notices
-      </h3>
-      <div
-        className="rounded-2xl p-4 overflow-x-auto mb-6"
-        style={{
-          backgroundColor: "#BEC5AD",
-          boxShadow: "0px 4px 4px 0px #00000040 inset",
-        }}
-      >
-        <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] ">
-          <thead>
-            <tr className="bg-white font-[Poppins] font-semibold">
-              <th className="p-3 pl-15 text-left rounded-tl-3xl">Title</th>
-              <th className="p-3 text-left">Recipient</th>
-              <th className="p-3 text-left">Date Issued</th>
-              <th className="p-3 pl-8 text-left ">Status</th>
-              <th className="p-3 text-left rounded-tr-3xl">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notices.map((n, i) => (
-              <tr key={n.id} className="font-[Poppins] font-semibold">
-                <td className="p-2">{n.title}</td>
-                <td className="p-2">{n.recipient}</td>
-                <td className="p-2">{n.date}</td>
-                <td className="p-2">
-                  <span
-                    className={`px-5 py-2 w-[130px] flex justify-center items-center rounded-[12px] font-semibold text-white text-base ${
-                      n.status === "Active" ? "bg-[#28C404]" : "bg-[#5A5D50]"
-                    }`}
-                  >
-                    {n.status}
-                  </span>
-                </td>
-                <td className="p-2">
-                  <div className="flex items-center gap-5">
-                    {/* Edit Icon */}
-                    <svg
-                      width="26"
-                      height="26"
-                      viewBox="0 0 26 26"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="cursor-pointer hover:opacity-70 transition-opacity hover:scale-110 transition-transform"
-                      onClick={() => handleEdit(n)}
-                    >
-                      <mask
-                        id={`editMask${n.id}`}
-                        maskUnits="userSpaceOnUse"
-                        x="0"
-                        y="0"
-                        width="26"
-                        height="26"
-                      >
-                        <rect width="26" height="26" fill="#D9D9D9" />
-                      </mask>
-                      <g mask={`url(#editMask${n.id})`}>
-                        <path
-                          d="M2.16895 26.0013V21.668H23.8356V26.0013H2.16895ZM6.50228 17.3346H8.01895L16.4689 8.91172L14.9252 7.36797L6.50228 15.818V17.3346ZM4.33561 19.5013V14.8971L16.4689 2.79089C16.6676 2.59227 16.8978 2.4388 17.1596 2.33047C17.4214 2.22214 17.6967 2.16797 17.9856 2.16797C18.2745 2.16797 18.5544 2.22214 18.8252 2.33047C19.096 2.4388 19.3398 2.6013 19.5564 2.81797L21.046 4.33464C21.2627 4.53325 21.4207 4.76797 21.52 5.0388C21.6193 5.30964 21.6689 5.5895 21.6689 5.87839C21.6689 6.14922 21.6193 6.41554 21.52 6.67734C21.4207 6.93915 21.2627 7.17839 21.046 7.39505L8.93978 19.5013H4.33561Z"
-                          fill="#000000ff"
-                        />
-                      </g>
-                    </svg>
-                    {/* Divider */}
-                    <div className="w-[0.1rem] h-8 bg-black"></div>
-                    {/* Delete Icon */}
-                    <svg
-                      width="26"
-                      height="26"
-                      viewBox="0 0 26 26"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="cursor-pointer hover:opacity-70 transition-opacity hover:scale-110 transition-transform"
-                      onClick={() => handleDelete(n.id)}
-                    >
-                      <mask
-                        id={`deleteMask${n.id}`}
-                        maskUnits="userSpaceOnUse"
-                        x="0"
-                        y="0"
-                        width="26"
-                        height="26"
-                      >
-                        <rect width="26" height="26" fill="#D9D9D9" />
-                      </mask>
-                      <g mask={`url(#deleteMask${n.id})`}>
-                        <path
-                          d="M7.58301 22.75C6.98717 22.75 6.47711 22.5378 6.0528 22.1135C5.62849 21.6892 5.41634 21.1792 5.41634 20.5833V6.5H4.33301V4.33333H9.74967V3.25H16.2497V4.33333H21.6663V6.5H20.583V20.5833C20.583 21.1792 20.3709 21.6892 19.9466 22.1135C19.5222 22.5378 19.0122 22.75 18.4163 22.75H7.58301ZM18.4163 6.5H7.58301V20.5833H18.4163V6.5ZM9.74967 18.4167H11.9163V8.66667H9.74967V18.4167ZM14.083 18.4167H16.2497V8.66667H14.083V18.4167Z"
-                          fill="#000000ff"
-                        />
-                      </g>
-                    </svg>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+  {/* Table */}
+  <NoticesTable
+    notices={notices}
+    handleEdit={handleEdit}
+    handleDelete={handleDelete}
+  />
+
 
       {/* Edit Popup Modal */}
       {isPopupOpen && (
@@ -865,5 +772,66 @@ const[formErrors,setFormErrors] = useState(null);
     </div>
   );
 };
+
+// export default HostelNotices; (removed duplicate)
+function NoticesTable({ notices, handleEdit, handleDelete }) {
+  return (
+    <div>
+      <h3 className="text-2xl text-black font-semibold mb-4 font-[Poppins] ml-4">
+        Recent Notices
+      </h3>
+      <div className="rounded-2xl p-4 overflow-x-auto mb-6" style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 4px 0px #00000040 inset" }}>
+        {/* Desktop Table View */}
+        <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] hidden sm:table">
+          <thead>
+            <tr className="bg-white font-[Poppins] font-semibold">
+              <th className="p-3 pl-15 text-left rounded-tl-3xl">Title</th>
+              <th className="p-3 text-left">Recipient</th>
+              <th className="p-3 text-left">Date Issued</th>
+              <th className="p-3 pl-8 text-left">Status</th>
+              <th className="p-3 text-left rounded-tr-3xl">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {notices.map((n) => (
+              <tr key={n.id} className="font-[Poppins] font-semibold">
+                <td className="p-2">{n.title}</td>
+                <td className="p-2">{n.recipient}</td>
+                <td className="p-2">{n.date}</td>
+                <td className="p-2">
+                  <span className={`px-5 py-2 w-[130px] flex justify-center items-center rounded-[12px] font-semibold text-white text-base ${n.status === "Active" ? "bg-[#28C404]" : "bg-[#5A5D50]"}`}>{n.status}</span>
+                </td>
+                <td className="p-2">
+                  <div className="flex items-center gap-5">
+                    <div className="cursor-pointer hover:opacity-70 transition hover:scale-110" onClick={() => handleEdit(n)}>✏️</div>
+                    <div className="w-[0.1rem] h-8 bg-black"></div>
+                    <div className="cursor-pointer hover:opacity-70 transition hover:scale-110" onClick={() => handleDelete(n.id)}>🗑️</div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* Mobile Card View */}
+        <div className="space-y-4 sm:hidden">
+          {notices.map((n) => (
+            <div key={n.id} className="bg-white rounded-xl p-4 shadow-md">
+              <div className="mb-2"><strong>Title:</strong> {n.title}</div>
+              <div className="mb-2"><strong>Recipient:</strong> {n.recipient}</div>
+              <div className="mb-2"><strong>Date Issued:</strong> {n.date}</div>
+              <div className="mb-2">
+                <strong>Status:</strong> <span className={`inline-block px-3 py-1 rounded-[12px] font-semibold text-white text-sm ${n.status === "Active" ? "bg-[#28C404]" : "bg-[#5A5D50]"}`}>{n.status}</span>
+              </div>
+              <div className="flex gap-5 mt-3">
+                <div className="cursor-pointer hover:opacity-70 transition hover:scale-110" onClick={() => handleEdit(n)}>✏️</div>
+                <div className="cursor-pointer hover:opacity-70 transition hover:scale-110" onClick={() => handleDelete(n.id)}>🗑️</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default HostelNotices;
