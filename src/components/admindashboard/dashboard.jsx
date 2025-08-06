@@ -19,7 +19,7 @@ const Dashboard = () => {
     const fetchCheckInOutStatus = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:5224/api/adminauth/todays-checkin-checkout"
+          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/todays-checkin-checkout`,
         );
         setCheckInOutData(data);
       } catch (error) {
@@ -30,7 +30,7 @@ const Dashboard = () => {
     const fetchBedOccupancyStatus = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:5224/api/adminauth/bed-occupancy-status"
+          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/bed-occupancy-status`,
         );
         setBedData(data);
       } catch (error) {
