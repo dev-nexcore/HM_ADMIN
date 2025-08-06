@@ -301,109 +301,119 @@ export default function StaffSalaryContent() {
     </div>
   );
 
-  // Render Payroll Table
-  const renderPayrollTable = () => (
-    <div className="w-full overflow-x-auto">
-      <div
-        className="rounded-lg overflow-hidden border border-gray-300 min-w-[800px]"
-        style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-      >
-        <style jsx>{`
-          .custom-table th {
-            position: relative;
-            background-color: white !important;
-          }
-          .custom-table th:not(:last-child)::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 8px;
-            bottom: 8px;
-            width: 1px;
-            background-color: #9ca3af;
-          }
-          .custom-table tbody tr:not(:last-child) {
-            border-bottom: 1px solid #9ca3af;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-          }
-          .custom-table tbody tr:not(:last-child)::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 16px;
-            right: 16px;
-            height: 1px;
-            background-color: #00000;
-          }
-        `}</style>
-        <table className="custom-table w-full border-collapse">
-          <thead>
-            <tr>
-              <td colSpan="9" className="py-2">
-                &nbsp;
-              </td>
-            </tr>
-            <tr className="bg-white">
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Name
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Role
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Basic Salary
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">Tax</th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">PF</th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Loan Deduction
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Net Salary
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Status
-              </th>
-              <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center bg-white text-xs sm:text-sm">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {staffData.map((staff, index) => (
-              <tr key={index} className="relative">
-                <td className="px-2 sm:px-4 py-3 sm:py-5 font-medium text-center text-xs sm:text-sm">{staff.name}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.role}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.basicSalary}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.tax}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.pf}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.loanDeduction}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.netSalary}</td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
-                  <span
-                    className={`px-1 sm:px-2 py-1 rounded text-xs font-medium text-white ${
-                      staff.status === "Paid" ? "bg-[#28C404]" : "bg-[#FF7700]"
-                    }`}
-                  >
-                    {staff.status}
-                  </span>
-                </td>
-                <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
-                  <button 
-                    onClick={() => handleViewPayslip(staff)}
-                    className="bg-transparent border-none text-blue-600 cursor-pointer text-xs sm:text-sm hover:text-blue-800"
-                  >
-                    View pay slip
-                  </button>
-                </td>
+ const renderPayrollTable = () => (
+  <>
+    <div className="w-full">
+      {/* Desktop Table View */}
+      <div className="w-full overflow-x-auto custom-table">
+        <div
+          className="rounded-lg overflow-hidden border border-gray-300 min-w-[800px]"
+          style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+        >
+          <table className="custom-table w-full border-collapse mt-4">
+            <thead>
+              <tr className="bg-white">
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Name</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Role</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Basic Salary</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Tax</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">PF</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Loan Deduction</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Net Salary</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Status</th>
+                <th className="font-bold text-gray-900 px-2 sm:px-4 py-3 text-center text-xs sm:text-sm">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {staffData.map((staff, index) => (
+                <tr key={index} className="relative">
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.name}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.role}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.basicSalary}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.tax}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.pf}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.loanDeduction}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center text-xs sm:text-sm">{staff.netSalary}</td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
+                    <span className={`px-1 sm:px-2 py-1 rounded text-xs font-medium text-white ${staff.status === "Paid" ? "bg-[#28C404]" : "bg-[#FF7700]"}`}>
+                      {staff.status}
+                    </span>
+                  </td>
+                  <td className="px-2 sm:px-4 py-3 sm:py-5 text-center">
+                    <button onClick={() => handleViewPayslip(staff)} className="text-blue-600 cursor-pointer hover:text-blue-800 text-xs sm:text-sm">
+                      View Payslip
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="payroll-card space-y-4 sm:hidden mt-4">
+        {staffData.map((staff, index) => (
+          <div key={index} className="bg-[#BEC5AD] rounded-md p-4 text-sm shadow-md">
+            <div className="mb-2"><strong>Name:</strong> {staff.name}</div>
+            <div className="mb-2"><strong>Role:</strong> {staff.role}</div>
+            <div className="mb-2"><strong>Basic Salary:</strong> {staff.basicSalary}</div>
+            <div className="mb-2"><strong>Tax:</strong> {staff.tax}</div>
+            <div className="mb-2"><strong>PF:</strong> {staff.pf}</div>
+            <div className="mb-2"><strong>Loan Deduction:</strong> {staff.loanDeduction}</div>
+            <div className="mb-2"><strong>Net Salary:</strong> {staff.netSalary}</div>
+            <div className="mb-2">
+              <strong>Status:</strong>{" "}
+              <span className={`px-2 py-1 rounded text-xs font-medium text-white ${staff.status === "Paid" ? "bg-[#28C404]" : "bg-[#FF7700]"}`}>
+                {staff.status}
+              </span>
+            </div>
+            <div>
+              <button onClick={() => handleViewPayslip(staff)} className="text-blue-600 cursor-pointer hover:text-blue-800 text-xs">
+                View Payslip
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
-  );
+
+    {/* CSS Media Queries & Custom Styles */}
+    <style jsx>{`
+      .custom-table th {
+        position: relative;
+        background-color: white !important;
+      }
+      .custom-table th:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 1px;
+        background-color: #9ca3af;
+      }
+      .custom-table tbody tr:not(:last-child) {
+        border-bottom: 1px solid #9ca3af;
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+      }
+      @media (max-width: 640px) {
+        .custom-table {
+          display: none;
+        }
+        .payroll-card {
+          display: block;
+        }
+      }
+      @media (min-width: 641px) {
+        .payroll-card {
+          display: none;
+        }
+      }
+    `}</style>
+  </>
+);
 
   // Render Tax/PF Table
  const renderTaxPfTable = () => (
