@@ -4,7 +4,7 @@ import { Eye } from "lucide-react";
 import axios from "axios";
 
 // Configure axios base URL - adjust this to match your backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224/api/adminauth';
+const API_BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224/api/adminauth';
 
 const StudentManagement = () => {
   const [formData, setFormData] = useState({
@@ -61,7 +61,7 @@ const StudentManagement = () => {
   // API Functions
   const registerStudentAPI = async (studentData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/register-student`, studentData, {
+      const response = await axios.post(`${API_BASE_URL}/api/adminauth/register-student`, studentData, {
         headers: {
           'Content-Type': 'application/json',
           // Add authorization header if you have auth tokens
@@ -76,7 +76,7 @@ const StudentManagement = () => {
 
   const updateStudentAPI = async (studentId, studentData) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/update-student/${studentId}`, studentData, {
+      const response = await axios.put(`${API_BASE_URL}/api/adminauth/update-student/${studentId}`, studentData, {
         headers: {
           'Content-Type': 'application/json',
           // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -90,7 +90,7 @@ const StudentManagement = () => {
 
 const fetchStudentsAPI = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/students`, {
+    const response = await axios.get(`${API_BASE_URL}/api/adminauth/students`, {
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
@@ -102,7 +102,7 @@ const fetchStudentsAPI = async () => {
 };
 const fetchAvailableRoomsAPI = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/inventory/available-beds`, {
+    const response = await axios.get(`${API_BASE_URL}/api/adminauth/inventory/available-beds`, {
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
@@ -115,7 +115,7 @@ const fetchAvailableRoomsAPI = async () => {
 
   const deleteStudentAPI = async (studentId) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/delete-student/${studentId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/adminauth/delete-student/${studentId}`, {
         headers: {
           // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
@@ -317,7 +317,7 @@ const fetchAvailableRoomsAPI = async () => {
 
   const fetchRoomDetailsAPI = async (roomObjectId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/inventory/${roomObjectId}`, {
+    const response = await axios.get(`${API_BASE_URL}/api/adminauth/inventory/${roomObjectId}`, {
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
