@@ -447,69 +447,104 @@ const Refunds = () => {
 
         {/* Refunds Table */}
         <div className="overflow-x-auto">
-          <style jsx>{`
-            .refund-table th {
-              position: relative;
-            }
-            .refund-table th:not(:last-child)::after {
-              content: "";
-              position: absolute;
-              right: 0;
-              top: 6px;
-              bottom: 6px;
-              width: 1px;
-              background-color: #000000;
-            }
-          `}</style>
-          <table className="refund-table w-full bg-[#A4B494] rounded-md overflow-hidden text-xs sm:text-sm text-left border-separate border-spacing-0 min-w-[600px]">
-            <thead>
-              <tr className="text-black">
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Date</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">
-                  Recipient Name
-                </th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Amount</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Reason</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">Status</th>
-                <th className="px-2 sm:px-4 py-2 bg-white font-bold">
-                  Processed By
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-black">
-              {filteredRefunds.length > 0 ? (
-                filteredRefunds.map((refund, idx) => (
-                  <tr
-                    key={idx}
-                    className="hover:bg-[#9BA085] transition-colors duration-200"
-                  >
-                    <td className="px-2 sm:px-4 py-2">{refund.date}</td>
-                    <td className="px-2 sm:px-4 py-2">
-                      {refund.recipientName}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2">{refund.amount}</td>
-                    <td className="px-2 sm:px-4 py-2">{refund.reason}</td>
-                    <td className="px-2 sm:px-4 py-2">
-                      <span className={getStatusBadge(refund.status)}>
-                        {refund.status}
-                      </span>
-                    </td>
-                    <td className="px-2 sm:px-4 py-2">{refund.processedBy}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-gray-600"
-                  >
-                    No refunds found matching your search criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+  <style jsx>{`
+    .refund-table th {
+      position: relative;
+    }
+    .refund-table th:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background-color: #000000;
+    }
+    @media (max-width: 640px) {
+      .refund-table {
+        display: none;
+      }
+      .refund-card {
+        display: block;
+      }
+    }
+    @media (min-width: 641px) {
+      .refund-card {
+        display: none;
+      }
+    }
+  `}</style>
+
+  {/* Table View (Desktop & Tablet) */}
+  <table className="refund-table w-full bg-[#A4B494] rounded-md overflow-hidden text-xs sm:text-sm text-left border-separate border-spacing-0 min-w-[600px]">
+    <thead>
+      <tr className="text-black">
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Date</th>
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Recipient Name</th>
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Amount</th>
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Reason</th>
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Status</th>
+        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Processed By</th>
+      </tr>
+    </thead>
+    <tbody className="text-black">
+      {filteredRefunds.length > 0 ? (
+        filteredRefunds.map((refund, idx) => (
+          <tr key={idx} className="hover:bg-[#9BA085] transition-colors duration-200">
+            <td className="px-2 sm:px-4 py-2">{refund.date}</td>
+            <td className="px-2 sm:px-4 py-2">{refund.recipientName}</td>
+            <td className="px-2 sm:px-4 py-2">{refund.amount}</td>
+            <td className="px-2 sm:px-4 py-2">{refund.reason}</td>
+            <td className="px-2 sm:px-4 py-2">
+              <span className={getStatusBadge(refund.status)}>{refund.status}</span>
+            </td>
+            <td className="px-2 sm:px-4 py-2">{refund.processedBy}</td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan={6} className="px-4 py-8 text-center text-gray-600">
+            No refunds found matching your search criteria.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+
+  {/* Card View (Mobile Only) */}
+  <div className="refund-card space-y-4">
+    {filteredRefunds.length > 0 ? (
+      filteredRefunds.map((refund, idx) => (
+        <div key={idx} className="bg-[#A4B494] rounded-md p-4 text-sm shadow-md">
+          <div className="mb-2">
+            <strong>Date:</strong> {refund.date}
+          </div>
+          <div className="mb-2">
+            <strong>Recipient Name:</strong> {refund.recipientName}
+          </div>
+          <div className="mb-2">
+            <strong>Amount:</strong> {refund.amount}
+          </div>
+          <div className="mb-2">
+            <strong>Reason:</strong> {refund.reason}
+          </div>
+          <div className="mb-2">
+            <strong>Status:</strong>{" "}
+            <span className={getStatusBadge(refund.status)}>{refund.status}</span>
+          </div>
+          <div>
+            <strong>Processed By:</strong> {refund.processedBy}
+          </div>
         </div>
+      ))
+    ) : (
+      <div className="text-center text-gray-600 py-8">
+        No refunds found matching your search criteria.
+      </div>
+    )}
+  </div>
+</div>
+
       </div>
 
       {/* Filter Modal */}
