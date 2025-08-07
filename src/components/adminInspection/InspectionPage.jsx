@@ -287,9 +287,9 @@ Generated on: ${new Date().toLocaleString()}
   };
 
   return (
-    <div className="bg-white text-black w-full max-w-7xl mx-auto p-6 space-y-10 min-h-screen my-10">
-      <h2 className="text-2xl font-bold mb-4 text-black">
-        <span className="border-l-4 border-[#4F8CCF] pl-2 ml-2">
+    <div className="bg-white text-black w-full max-w-7xl mx-auto p-6 space-y-10 min-h-screen mt-10">
+      <h2 className="text-2xl font-bold mb-4 text-black ">
+        <span className="border-l-4 border-[#4F8CCF] pl-2 ml-2 ">
           Hostel Inspections
         </span>
       </h2>
@@ -480,120 +480,158 @@ Generated on: ${new Date().toLocaleString()}
         </div>
       </form>
 
-      {/* Inspection Table */}
-      <section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
-        <h2 className="text-black text-lg font-semibold mb-3 ml-2">
-          Upcoming Inspections
-        </h2>
+{/* Inspection Table */}
+<section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
+  <h2 className="text-black text-lg font-semibold mb-3 ml-2">
+    Upcoming Inspections
+  </h2>
 
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
-          <div className="min-w-full inline-block overflow-hidden rounded-t-2xl border">
-            <table className="min-w-full text-black text-xs sm:text-sm md:text-base table-fixed">
-              <thead>
-                <tr className="bg-white border-b">
-                  {tableHeaders.map((header, i) => (
-                    <th
-                      key={i}
-                      className="text-center font-semibold py-3 px-2 whitespace-nowrap w-[12.5%]"
-                    >
-                      {header.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {fetchLoading ? (
-                  <tr>
-                    <td colSpan={tableHeaders.length} className="text-center py-8">
-                      Loading inspections...
-                    </td>
-                  </tr>
-                ) : upcomingInspections.length === 0 ? (
-                  <tr>
-                    <td colSpan={tableHeaders.length} className="text-center py-8">
-                      No inspections found. Create your first inspection above.
-                    </td>
-                  </tr>
-                ) : (
-                  upcomingInspections.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-black/5 transition">
-                      {tableHeaders.map((column, cellIndex) => {
-                        if (column.key === "actions") {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              <div className="flex justify-center items-center gap-2 sm:gap-3">
-                                <Eye
-                                  className="w-4 h-4 text-black cursor-pointer hover:text-blue-600"
-                                  onClick={() => handleViewDetails(row)}
-                                  title="View Details"
-                                />
-                                <span className="text-gray-400">|</span>
-                                <Download
-                                  className="w-4 h-4 text-black cursor-pointer hover:text-green-600"
-                                  onClick={() => handleDownload(row)}
-                                  title="Download Report"
-                                />
-                              </div>
-                            </td>
-                          );
-                        }
-
-                        if (column.key === "status") {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              <span
-                                className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg cursor-pointer transition-colors ${
-                                  statusStyles[row.status] ??
-                                  "bg-gray-300 text-black"
-                                }`}
-                                onClick={() => {
-                                  const newStatus = row.status === 'Scheduled' ? 'Completed' : 'Scheduled';
-                                  handleStatusUpdate(row.id, newStatus);
-                                }}
-                                title="Click to toggle status"
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                          );
-                        }
-
-                        if (column.key === "id") {
-                          return (
-                            <td
-                              key={cellIndex}
-                              className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
-                            >
-                              <span title={row[column.key]}>
-                                {row[column.key]?.substring(0, 8)}...
-                              </span>
-                            </td>
-                          );
-                        }
-
-                        return (
-                          <td
-                            key={cellIndex}
-                            className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]"
+  {/* Desktop Table View */}
+  <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 hidden sm:block">
+    <div className="min-w-full inline-block overflow-hidden rounded-t-2xl border">
+      <table className="min-w-full text-black text-xs sm:text-sm md:text-base table-fixed">
+        <thead>
+          <tr className="bg-white border-b">
+            {tableHeaders.map((header, i) => (
+              <th key={i} className="text-center font-semibold py-3 px-2 whitespace-nowrap w-[12.5%]">
+                {header.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {fetchLoading ? (
+            <tr>
+              <td colSpan={tableHeaders.length} className="text-center py-8">
+                Loading inspections...
+              </td>
+            </tr>
+          ) : upcomingInspections.length === 0 ? (
+            <tr>
+              <td colSpan={tableHeaders.length} className="text-center py-8">
+                No inspections found. Create your first inspection above.
+              </td>
+            </tr>
+          ) : (
+            upcomingInspections.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-black/5 transition">
+                {tableHeaders.map((column, cellIndex) => {
+                  if (column.key === "actions") {
+                    return (
+                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
+                        <div className="flex justify-center items-center gap-2 sm:gap-3">
+                          <span
+                            className="w-4 h-4 cursor-pointer hover:text-blue-600"
+                            onClick={() => handleViewDetails(row)}
+                            title="View Details"
                           >
-                            {row[column.key]}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                            🔍
+                          </span>
+                          <span className="text-gray-400">|</span>
+                          <span
+                            className="w-4 h-4 cursor-pointer hover:text-green-600"
+                            onClick={() => handleDownload(row)}
+                            title="Download Report"
+                          >
+                            💾
+                          </span>
+                        </div>
+                      </td>
+                    );
+                  }
+
+                  if (column.key === "status") {
+                    return (
+                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
+                        <span
+                          className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg cursor-pointer transition-colors ${
+                            statusStyles[row.status] ?? "bg-gray-300 text-black"
+                          }`}
+                          onClick={() => {
+                            const newStatus = row.status === 'Scheduled' ? 'Completed' : 'Scheduled';
+                            handleStatusUpdate(row.id, newStatus);
+                          }}
+                          title="Click to toggle status"
+                        >
+                          {row.status}
+                        </span>
+                      </td>
+                    );
+                  }
+
+                  if (column.key === "id") {
+                    return (
+                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
+                        <span title={row[column.key]}>
+                          {row[column.key]?.substring(0, 8)}...
+                        </span>
+                      </td>
+                    );
+                  }
+
+                  return (
+                    <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
+                      {row[column.key]}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {/* Mobile Card View */}
+  <div className="space-y-4 sm:hidden">
+    {fetchLoading ? (
+      <div className="text-center py-8">Loading inspections...</div>
+    ) : upcomingInspections.length === 0 ? (
+      <div className="text-center py-8">No inspections found. Create your first inspection above.</div>
+    ) : (
+      upcomingInspections.map((row, index) => (
+        <div key={index} className="bg-white rounded-xl p-4 shadow-md">
+          {tableHeaders.map((column, i) => (
+            column.key !== "actions" && (
+              <div key={i} className="mb-2">
+                <strong>{column.label}:</strong> {column.key === "id" ? `${row[column.key]?.substring(0, 8)}...` : row[column.key]}
+              </div>
+            )
+          ))}
+
+          <div className="flex items-center gap-5 mt-3">
+            <span
+              className="cursor-pointer hover:text-blue-600"
+              onClick={() => handleViewDetails(row)}
+              title="View Details"
+            >
+              🔍
+            </span>
+            <span
+              className="cursor-pointer hover:text-green-600"
+              onClick={() => handleDownload(row)}
+              title="Download Report"
+            >
+              💾
+            </span>
+            <span
+              className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${statusStyles[row.status] ?? "bg-gray-300 text-black"}`}
+              onClick={() => {
+                const newStatus = row.status === 'Scheduled' ? 'Completed' : 'Scheduled';
+                handleStatusUpdate(row.id, newStatus);
+              }}
+              title="Click to toggle status"
+            >
+              {row.status}
+            </span>
           </div>
         </div>
-      </section>
+      ))
+    )}
+  </div>
+</section>
+  
 
       {selectedInspection && (
         <InspectionModal

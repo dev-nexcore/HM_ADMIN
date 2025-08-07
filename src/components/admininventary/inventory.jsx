@@ -267,126 +267,118 @@ const handleEditSave = async () => {
       </div>
 
       {/* Table */}
-      <div className="px-4 sm:px-6">
-        <div className="overflow-x-auto bg-white shadow-[0_4px_20px_rgba(0,0,0,0.2)] rounded-xl">
-          <table className="w-full min-w-[700px] text-center border-collapse">
-            <thead>
-              <tr className="bg-[#A4B494] text-black text-sm">
-                <th className="px-0 py-2 rounded-tl-lg">
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">Item Name</span>
-                    <div className="h-6 w-px bg-black ml-4"></div>
-                  </div>
-                </th>
-                <th className="px-0 py-4">
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">Barcode ID</span>
-                    <div className="h-6 w-px bg-black ml-4"></div>
-                  </div>
-                </th>
-                <th className="px-0 py-4">
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">Category</span>
-                    <div className="h-6 w-px bg-black ml-4"></div>
-                  </div>
-                </th>
-                <th className="px-0 py-4">
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">Location</span>
-                    <div className="h-6 w-px bg-black ml-4"></div>
-                  </div>
-                </th>
-                <th className="px-0 py-4">
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">Status</span>
-                    <div className="h-6 w-px bg-black ml-4"></div>
-                  </div>
-                </th>
-                <th className="px-4 py-4 text-center rounded-tr-lg">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white text-sm">
-              {inventory
-                .filter(
-                  (item) =>
-                    (statusFilter === "All Status" ||
-                      item.status === statusFilter) &&
-                    (categoryFilter === "All Categories" ||
-                      item.category === categoryFilter) &&
-                    (item.itemName
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                      item.barcodeId
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()))
-                )
-                .map((item) => (
-                  <tr key={item.barcodeId} className="hover:bg-gray-100">
-                    {hiddenRows[item.barcode] ? (
-                      <>
-                        <td colSpan={5} className="italic text-gray-400 py-4">
-                          Hidden
-                        </td>
-                        <td className="px-4 py-2 flex justify-center gap-2">
-                          {/* Eye Slash (Hide) Icon */}
-                          <div
-                            className="cursor-pointer text-gray-600 hover:text-red-600"
-                            onClick={() => toggleVisibility(item.barcodeId)}
-                          >
-                            <svg width="28" height="19" viewBox="0 0 28 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M14 15C15.5625 15 16.8906 14.4531 17.9844 13.3594C19.0781 12.2656 19.625 10.9375 19.625 9.375C19.625 7.8125 19.0781 6.48438 17.9844 5.39062C16.8906 4.29688 15.5625 3.75 14 3.75C12.4375 3.75 11.1094 4.29688 10.0156 5.39062C8.92188 6.48438 8.375 7.8125 8.375 9.375C8.375 10.9375 8.92188 12.2656 10.0156 13.3594C11.1094 14.4531 12.4375 15 14 15ZM14 12.75C13.0625 12.75 12.2656 12.4219 11.6094 11.7656C10.9531 11.1094 10.625 10.3125 10.625 9.375C10.625 8.4375 10.9531 7.64062 11.6094 6.98438C12.2656 6.32812 13.0625 6 14 6C14.9375 6 15.7344 6.32812 16.3906 6.98438C17.0469 7.64062 17.375 8.4375 17.375 9.375C17.375 10.3125 17.0469 11.1094 16.3906 11.7656C15.7344 12.4219 14.9375 12.75 14 12.75ZM14 18.75C10.9583 18.75 8.1875 17.901 5.6875 16.2031C3.1875 14.5052 1.375 12.2292 0.25 9.375C1.375 6.52083 3.1875 4.24479 5.6875 2.54688C8.1875 0.848958 10.9583 0 14 0C17.0417 0 19.8125 0.848958 22.3125 2.54688C24.8125 4.24479 26.625 6.52083 27.75 9.375C26.625 12.2292 24.8125 14.5052 22.3125 16.2031C19.8125 17.901 17.0417 18.75 14 18.75ZM14 16.25C16.3542 16.25 18.5156 15.6302 20.4844 14.3906C22.4531 13.151 23.9583 11.4792 25 9.375C23.9583 7.27083 22.4531 5.59896 20.4844 4.35938C18.5156 3.11979 16.3542 2.5 14 2.5C11.6458 2.5 9.48438 3.11979 7.51562 4.35938C5.54688 5.59896 4.04167 7.27083 3 9.375C4.04167 11.4792 5.54688 13.151 7.51562 14.3906C9.48438 15.6302 11.6458 16.25 14 16.25Z" fill="#1C1B1F"/>
-                            </svg>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-2">{item.itemName}</td>
-                        <td className="px-4 py-2">{item.barcodeId}</td>
-                        <td className="px-4 py-2">{item.category}</td>
-                        <td className="px-4 py-2">{item.location}</td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${
-                              statusColor[item.status]
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 flex justify-center gap-3">
-                          {/* Eye Icon (Show) */}
-                          <div
-                            className="cursor-pointer text-gray-600 hover:text-blue-600"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C1B1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                              <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                          </div>
+       <div className="px-4 sm:px-6">
 
-                          <div className="w-[1px] h-5 bg-gray-400" />
+      
+      {/* ✅ Desktop Table View with Styled Background */}
+<div className="hidden sm:block rounded-2xl bg-[#BEC5AD] p-4 shadow-xl">
+  <div className="overflow-x-auto rounded-xl">
+    <table className="w-full min-w-[700px] text-center border-collapse">
+      <thead>
+        <tr className="bg-white text-black text-sm">
+          {["Item Name", "Barcode ID", "Category", "Location", "Status", "Action"].map((header, idx) => (
+            <th
+              key={idx}
+              className={`px-0 py-2 ${
+                idx === 0 ? "rounded-tl-lg" : ""
+              } ${idx === 5 ? "rounded-tr-lg" : ""}`}
+            >
+              <div className="flex items-center pl-4 pr-4">
+                <span className="flex-1">{header}</span>
+                {idx < 5 && <div className="h-6 w-px bg-black ml-4"></div>}
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="bg-white text-sm">
+        {inventory
+          .filter(
+            (item) =>
+              (statusFilter === "All Status" || item.status === statusFilter) &&
+              (categoryFilter === "All Categories" || item.category === categoryFilter) &&
+              (item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
+          )
+          .map((item) => (
+            <tr key={item.barcodeId} className="hover:bg-gray-100">
+              <td className="px-4 py-2">{item.itemName}</td>
+              <td className="px-4 py-2">{item.barcodeId}</td>
+              <td className="px-4 py-2">{item.category}</td>
+              <td className="px-4 py-2">{item.location}</td>
+              <td className="px-4 py-2">
+                <span
+                  className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${
+                    statusColor[item.status]
+                  }`}
+                >
+                  {item.status}
+                </span>
+              </td>
+              <td className="px-4 py-2 flex justify-center gap-3">
+                {/* View Icon */}
+                <div
+                  className="cursor-pointer text-gray-600 hover:text-blue-600"
+                  onClick={() => handleViewDetails(item)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </div>
 
-                          {/* Edit Icon */}
-                          <div
-                            className="cursor-pointer text-gray-600 hover:text-green-600"
-                            onClick={() => handleEditClick(item)}
-                          >
-                            <svg width="18" height="18" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z" fill="#1C1B1F"/>
-                            </svg>
-                          </div>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+                <div className="w-[1px] h-5 bg-gray-400" />
+
+                {/* Edit Icon */}
+                <div
+                  className="cursor-pointer text-gray-600 hover:text-green-600"
+                  onClick={() => handleEditClick(item)}
+                >
+                  <svg width="18" height="18" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z" fill="currentColor"/>
+                  </svg>
+                </div>
+              </td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+      {/* Mobile Card View */}
+      {/* ✅ Mobile Card View with Background */}
+<div className="sm:hidden rounded-2xl bg-[#BEC5AD] p-4 shadow-xl space-y-4">
+  {inventory
+    .filter(
+      (item) =>
+        (statusFilter === "All Status" || item.status === statusFilter) &&
+        (categoryFilter === "All Categories" || item.category === categoryFilter) &&
+        (item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .map((item) => (
+      <div key={item.barcodeId} className="bg-white rounded-xl shadow-md p-4">
+        <div className="mb-2"><strong>Item Name:</strong> {item.itemName}</div>
+        <div className="mb-2"><strong>Barcode ID:</strong> {item.barcodeId}</div>
+        <div className="mb-2"><strong>Category:</strong> {item.category}</div>
+        <div className="mb-2"><strong>Location:</strong> {item.location}</div>
+        <div className="mb-2">
+          <strong>Status:</strong>{" "}
+          <span className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]}`}>
+            {item.status}
+          </span>
+        </div>
+        <div className="flex justify-start gap-3 mt-2">
+          <button onClick={() => handleViewDetails(item)} className="text-blue-600 text-xs hover:underline">View</button>
+          <button onClick={() => handleEditClick(item)} className="text-green-600 text-xs hover:underline">Edit</button>
         </div>
       </div>
+    ))}
+</div>
 
+    </div>
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">

@@ -515,7 +515,7 @@ const Refunds = () => {
   <div className="refund-card space-y-4">
     {filteredRefunds.length > 0 ? (
       filteredRefunds.map((refund, idx) => (
-        <div key={idx} className="bg-[#A4B494] rounded-md p-4 text-sm shadow-md">
+        <div key={idx} className="bg-[white] rounded-md p-4 text-sm shadow-md">
           <div className="mb-2">
             <strong>Date:</strong> {refund.date}
           </div>
