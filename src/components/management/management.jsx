@@ -849,9 +849,9 @@ useEffect(() => {
         
         {/* Edit Student Modal (conditionally rendered when editing) */}
         {showEditModal && editingStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
-              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
+              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] "
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
             >
               <button
@@ -881,7 +881,7 @@ useEffect(() => {
 
         {/* Student Details Modal */}
         {showDetailsModal && studentDetailsData && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
               className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
