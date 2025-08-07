@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 const API_BASE = process.env.NEXT_PUBLIC_PROD_API_URL
 
+
+
 const HostelNotices = () => {
   const [form, setForm] = useState({
     template: "",
@@ -355,7 +357,7 @@ const[formErrors,setFormErrors] = useState(null);
                   {form.date || ""}
                 </div>
                 {!form.date && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.1em] md:tracking-[0.4em] pointer-events-none select-none">
+                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
                     d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                   </div>
                 )}
@@ -447,9 +449,10 @@ const[formErrors,setFormErrors] = useState(null);
 
 
       {/* Edit Popup Modal */}
+      {/* Edit Popup Modal */}
       {isPopupOpen && (
-        <div className="fixed inset-0 bg-black/30 bg-opacity-20 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/30 bg-opacity-20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-hidden">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-black font-[Poppins]">
                 Edit Notice
@@ -628,9 +631,9 @@ const[formErrors,setFormErrors] = useState(null);
                 <label className="block mb-1 text-black ml-2 font-[Poppins] font-medium">
                   Issue Date
                 </label>
-                <div className="relative flex items-center">
-                  <div className="relative w-[300px] max-w-full">
-                    <input
+                <div className="flex items-center gap-3 w-full">
+                  <div className="relative flex-1">
+                    <input 
                       ref={editDateInputRef}
                       type="date"
                       name="editIssueDate"
@@ -659,11 +662,11 @@ const[formErrors,setFormErrors] = useState(null);
                       className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
                       style={{ colorScheme: "light" }}
                     />
-                    <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]">
+                    <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] w-full">
                       {editingNotice?.date || ""}
                     </div>
                     {!editingNotice?.date && (
-                      <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.4em] pointer-events-none select-none">
+                      <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.4em] pointer-events-none select-none overflow-hidden text-ellipsis whitespace-nowrap pr-4">
                         d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                       </div>
                     )}
@@ -671,7 +674,7 @@ const[formErrors,setFormErrors] = useState(null);
                   <button
                     type="button"
                     onClick={handleEditCalendarClick}
-                    className="ml-3 p-2  rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform"
+                    className="p-2 rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform flex-shrink-0"
                     title="Open Calendar"
                   >
                     <svg
@@ -722,7 +725,6 @@ const[formErrors,setFormErrors] = useState(null);
           </div>
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/30 bg-opacity-20 backdrop-blur-md flex items-center justify-center z-50 p-4">
