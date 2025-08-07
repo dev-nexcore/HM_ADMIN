@@ -355,7 +355,7 @@ const[formErrors,setFormErrors] = useState(null);
                   {form.date || ""}
                 </div>
                 {!form.date && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.1em] md:tracking-[0.4em] pointer-events-none select-none">
+                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
                     d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                   </div>
                 )}

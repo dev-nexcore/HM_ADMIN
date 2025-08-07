@@ -1011,69 +1011,63 @@ const handleSaveItem = async () => {
         </div>
 
         {/* Purchase Date */}
-        <div className="mt-6 sm:mt-8 w-full px-2">
+       <div className="mt-6 sm:mt-8 w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
             Purchase Date
           </label>
-          <div className="relative flex items-center">
-            <div className="relative w-[300px] max-w-full">
-              <div className="relative w-[300px]">
-                {/* Hidden native date input */}
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  name="purchaseDate"
-                  value={
-                    formData.purchaseDate
-                      ? formData.purchaseDate.split("-").reverse().join("-")
-                      : ""
+          <div className="flex items-center gap-3 w-full">
+            <div className="relative flex-1">
+              {/* Hidden native date input */}
+              <input
+                ref={dateInputRef}
+                type="date"
+                name="purchaseDate"
+                value={
+                  formData.purchaseDate
+                    ? formData.purchaseDate.split("-").reverse().join("-")
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const selectedDate = new Date(e.target.value);
+                    const formattedDate = `${selectedDate
+                      .getDate()
+                      .toString()
+                      .padStart(2, "0")}-${(selectedDate.getMonth() + 1)
+                      .toString()
+                      .padStart(2, "0")}-${selectedDate.getFullYear()}`;
+                    setFormData((prev) => ({
+                      ...prev,
+                      purchaseDate: formattedDate,
+                    }));
+                  } else {
+                    setFormData((prev) => ({ ...prev, purchaseDate: "" }));
                   }
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      const selectedDate = new Date(e.target.value);
-                      const formattedDate = `${selectedDate
-                        .getDate()
-                        .toString()
-                        .padStart(2, "0")}-${(selectedDate.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0")}-${selectedDate.getFullYear()}`;
-                      setFormData((prev) => ({
-                        ...prev,
-                        purchaseDate: formattedDate,
-                      }));
-                    } else {
-                      setFormData((prev) => ({ ...prev, purchaseDate: "" }));
-                    }
-                  }}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
-                  style={{ colorScheme: "light" }}
-                />
-                {/* Styled fake input that displays the selected date */}
-                <div
-                  className="bg-white rounded-[10px] px-4
-           h-[38px] flex items-center font-[Poppins] font-semibold text-[15px]
-           tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]"
-                >
-                  {formData.purchaseDate || ""}
-                </div>
-                {/* Placeholder spacing */}
-                {!formData.purchaseDate && (
-                  <div
-                    className="absolute top-1/2 left-4 -translate-y-1/2 z-0
-            text-gray-500 font-[Poppins] font-semibold text-[15px]
-            tracking-[0.3em] pointer-events-none select-none"
-                  >
-                    {
-                      "d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"
-                    }
-                  </div>
-                )}
+                }}
+                className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                style={{ colorScheme: "light" }}
+              />
+              {/* Styled fake input that displays the selected date */}
+              <div
+                className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] w-full"
+              >
+                {formData.purchaseDate || ""}
               </div>
+              {/* Placeholder spacing */}
+              {!formData.purchaseDate && (
+                <div
+                  className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[15px] tracking-[0.1em] md:tracking-[0.3em] pointer-events-none select-none overflow-hidden text-ellipsis whitespace-nowrap pr-4"
+                >
+                  {
+                    "d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"
+                  }
+                </div>
+              )}
             </div>
             <button
               type="button"
               onClick={handleCalendarClick}
-              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+              className="p-2 rounded-lg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0"
               title="Open Calendar"
             >
               <svg
@@ -1104,7 +1098,6 @@ const handleSaveItem = async () => {
             </button>
           </div>
         </div>
-
         {/* Upload Receipt */}
         <div className="mt-6 sm:mt-8 w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
