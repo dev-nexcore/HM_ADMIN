@@ -85,7 +85,7 @@ const ForgotPassword = () => {
         {/* Top white section with logo - Responsive sizing */}
         <div className="w-full flex flex-col items-center justify-center bg-white pt-2 pb-10 sm:pb-8 md:pb-10 rounded-b-[20px] relative z-0">
           <img
-            src="/photos/logo.png"
+            src="/photos/logo2.png"
             alt="Logo"
             className="w-[200px] h-[180px] xs:w-[220px] xs:h-[200px] sm:w-[260px] sm:h-[240px] md:w-[300px] md:h-[280px] bg-white p-3 sm:p-4 rounded-lg object-contain"
           />
