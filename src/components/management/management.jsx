@@ -187,133 +187,151 @@ const fetchAvailableRoomsAPI = async () => {
   };
 
   // Submit handler for new student registration
-  const handleSubmit = async () => {
-    const newErrors = validateForm(formData);
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+const handleSubmit = async () => {
+  const newErrors = validateForm(formData);
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      // Prepare data for backend (matching your backend structure)
-      const studentData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        studentId: formData.studentId,
-        contactNumber: formData.contactNumber,
-        roomBedNumber: formData.roomBedNumber || "Not Assigned",
-        email: formData.email,
-        admissionDate: formData.admissionDate,
-        feeStatus: formData.feeStatus,
-        emergencyContactName: formData.emergencyContactName,
-        emergencyContactNumber: formData.emergencyContactNumber,
-      };
+  setLoading(true);
+  try {
+    // Prepare data for backend (matching your backend structure)
+    const studentData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      studentId: formData.studentId,
+      contactNumber: formData.contactNumber,
+      roomBedNumber: formData.roomBedNumber || "Not Assigned",
+      email: formData.email,
+      admissionDate: formData.admissionDate,
+      feeStatus: formData.feeStatus,
+      emergencyContactName: formData.emergencyContactName,
+      emergencyContactNumber: formData.emergencyContactNumber,
+    };
 
-      const response = await registerStudentAPI(studentData);
-      
-      // Add new student to local state
-      const newStudent = {
-        id: formData.studentId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        name: `${formData.firstName} ${formData.lastName}`,
-        room: formData.roomBedNumber || "Not Assigned",
-        contact: formData.contactNumber,
-        email: formData.email,
-        emergencyContactNumber: formData.emergencyContactNumber,
-        admissionDate: formData.admissionDate,
-        emergencyContactName: formData.emergencyContactName,
-        feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
-        dues: "₹ 0/-",
-      };
-      
-      setStudents((prev) => [...prev, newStudent]);
-      resetForm();
-      alert(`Student registered successfully! Password: ${response.student?.password || 'Check email for credentials'}`);
-    } catch (error) {
-      console.error('Error registering student:', error);
-      alert(error.message || 'Error registering student. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const response = await registerStudentAPI(studentData);
+    
+    // Find the selected room details for display
+    const selectedRoom = availableRooms.find(room => room._id === formData.roomBedNumber);
+    const roomDisplay = selectedRoom 
+      ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
+      : formData.roomBedNumber || "Not Assigned";
+    
+    // Add new student to local state
+    const newStudent = {
+      id: formData.studentId,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      name: `${formData.firstName} ${formData.lastName}`,
+      room: roomDisplay, // Use the formatted display name
+      contact: formData.contactNumber,
+      email: formData.email,
+      emergencyContactNumber: formData.emergencyContactNumber,
+      admissionDate: formData.admissionDate,
+      emergencyContactName: formData.emergencyContactName,
+      feeStatus: formData.feeStatus, // Keep the original status (Paid/Unpaid)
+      dues: "₹ 0/-",
+      roomDetails: selectedRoom,
+      roomObjectId: formData.roomBedNumber
+    };
+    
+    setStudents((prev) => [...prev, newStudent]);
+    resetForm();
+    alert(`Student registered successfully! Password: ${response.student?.password || 'Check email for credentials'}`);
+  } catch (error) {
+    console.error('Error registering student:', error);
+    alert(error.message || 'Error registering student. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Edit handler: pre-fills form and sets editing state
-  const handleEdit = (studentId) => {
-    const student = students.find((s) => s.id === studentId);
-    if (student) {
-      setFormData({
-        firstName: student.firstName || student.name?.split(' ')[0] || '',
-        lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || '',
-        studentId: student.id,
-        contactNumber: student.contact,
-        email: student.email || "",
-        roomBedNumber: student.room,
-        emergencyContactNumber: student.emergencyContactNumber || "",
-        admissionDate: student.admissionDate || "",
-        emergencyContactName: student.emergencyContactName || "",
-        feeStatus: student.feeStatus === "Available" ? "Paid" : "Unpaid",
-      });
-      setEditingStudent(studentId);
-      setErrors({});
-      setShowEditModal(true);
-    }
-  };
+ // Edit handler: pre-fills form and sets editing state
+const handleEdit = (studentId) => {
+  const student = students.find((s) => s.id === studentId);
+  if (student) {
+    setFormData({
+      firstName: student.firstName || student.name?.split(' ')[0] || '',
+      lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || '',
+      studentId: student.id,
+      contactNumber: student.contact,
+      email: student.email || "",
+      roomBedNumber: student.roomObjectId || student.room, // Use ObjectId if available
+      emergencyContactNumber: student.emergencyContactNumber || "",
+      admissionDate: student.admissionDate || "",
+      emergencyContactName: student.emergencyContactName || "",
+      feeStatus: student.feeStatus, // Keep the original fee status (don't convert)
+    });
+    setEditingStudent(studentId);
+    setErrors({});
+    setShowEditModal(true);
+  }
+};
 
   // Update handler for editing student
-  const handleUpdate = async () => {
-    const newErrors = validateForm(formData, true);
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+// Update handler for editing student
+const handleUpdate = async () => {
+  const newErrors = validateForm(formData, true);
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const studentData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        contactNumber: formData.contactNumber,
-        email: formData.email,
-        roomBedNumber: formData.roomBedNumber,
-        emergencyContactNumber: formData.emergencyContactNumber,
-        admissionDate: formData.admissionDate,
-        emergencyContactName: formData.emergencyContactName,
-        feeStatus: formData.feeStatus,
-      };
+  setLoading(true);
+  try {
+    const studentData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      contactNumber: formData.contactNumber,
+      email: formData.email,
+      roomBedNumber: formData.roomBedNumber,
+      emergencyContactNumber: formData.emergencyContactNumber,
+      admissionDate: formData.admissionDate,
+      emergencyContactName: formData.emergencyContactName,
+      feeStatus: formData.feeStatus,
+    };
 
-      await updateStudentAPI(editingStudent, studentData);
+    await updateStudentAPI(editingStudent, studentData);
 
-      // Update local state
-      setStudents((prev) =>
-        prev.map((student) =>
-          student.id === editingStudent
-            ? {
-                ...student,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                name: `${formData.firstName} ${formData.lastName}`,
-                contact: formData.contactNumber,
-                email: formData.email,
-                room: formData.roomBedNumber || student.room,
-                emergencyContactNumber: formData.emergencyContactNumber,
-                admissionDate: formData.admissionDate,
-                emergencyContactName: formData.emergencyContactName,
-                feeStatus: formData.feeStatus === "Paid" ? "Available" : "In Use",
-              }
-            : student
-        )
-      );
-      resetForm();
-      alert("Student updated successfully!");
-    } catch (error) {
-      console.error('Error updating student:', error);
-      alert(error.message || 'Error updating student. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Find the selected room details for display
+    const selectedRoom = availableRooms.find(room => room._id === formData.roomBedNumber);
+    const roomDisplay = selectedRoom 
+      ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
+      : formData.roomBedNumber || "Not Assigned";
+
+    // Update local state
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === editingStudent
+          ? {
+              ...student,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              name: `${formData.firstName} ${formData.lastName}`,
+              contact: formData.contactNumber,
+              email: formData.email,
+              room: roomDisplay, // Use formatted display name
+              emergencyContactNumber: formData.emergencyContactNumber,
+              admissionDate: formData.admissionDate,
+              emergencyContactName: formData.emergencyContactName,
+              feeStatus: formData.feeStatus, // Keep original status
+              roomDetails: selectedRoom,
+              roomObjectId: formData.roomBedNumber
+            }
+          : student
+      )
+    );
+    resetForm();
+    alert("Student updated successfully!");
+  } catch (error) {
+    console.error('Error updating student:', error);
+    alert(error.message || 'Error updating student. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchRoomDetailsAPI = async (roomObjectId) => {
   try {
@@ -419,31 +437,32 @@ useEffect(() => {
   };
 
   // Fee status style
-  const getFeeStatusStyle = (status) => ({
-    width: "120px",
-    height: "26px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "8px",
-    fontFamily: "Poppins",
-    fontWeight: "600",
-    textAlign: "center",
-    background:
-      status === "In Use"
-        ? "#FF9D00"
-        : status === "Available"
-        ? "#22C55E"
-        : "#FFFFFF",
-    color:
-      status === "In Use"
-        ? "#FFFFFF"
-        : status === "Available"
-        ? "#FFFFFF"
-        : "#000000",
-    fontSize: "12px",
-    lineHeight: "16px",
-  });
+// Fee status style
+const getFeeStatusStyle = (status) => ({
+  width: "120px",
+  height: "26px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "8px",
+  fontFamily: "Poppins",
+  fontWeight: "600",
+  textAlign: "center",
+  background:
+    status === "Paid"
+      ? "#22C55E"  // Green for Paid
+      : status === "Unpaid"
+      ? "#FF9D00"  // Orange for Unpaid
+      : status === "Partial"
+      ? "#F59E0B"  // Yellow for Partial
+      : "#FFFFFF",
+  color:
+    status === "Paid" || status === "Unpaid" || status === "Partial"
+      ? "#FFFFFF"
+      : "#000000",
+  fontSize: "12px",
+  lineHeight: "16px",
+});
 
   // Input field style
   const inputStyle = {
