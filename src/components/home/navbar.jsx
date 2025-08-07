@@ -107,18 +107,16 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
         )}
 
         {/* Profile Button */}
-        <button
+         <button
           onClick={handleProfileClick}
-          className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-white rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 overflow-hidden group cursor-pointer"
+          className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-white rounded-full border border-gray-300 flex-shrink-0 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 overflow-hidden group cursor-pointer"
           aria-label="View Profile"
         >
           {!loading && profileImage ? (
-            <Image
-              src={profileImage}
-              alt="Profile"
-              width={40}
-              height={40}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200 rounded-full"
+            <img 
+              src={profileImage} 
+              alt="Profile" 
+              className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-200"
             />
           ) : (
             <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-gray-600 group-hover:text-[#A4B494] transition-colors duration-200" />

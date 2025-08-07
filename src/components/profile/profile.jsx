@@ -4,12 +4,12 @@
 import React, { useState, useEffect } from "react";
 
 export default function AdminProfile() {
-  const [profileImage, setProfileImage] = useState("/admin-avatar.png");
+  const [profileImage, setProfileImage] = useState("/photos/profile.jpg");
   const [adminInfo, setAdminInfo] = useState({
-    name: "John Doe",
+    name: "Raheem",
     email: "admin@example.com",
     phone: "+91 9876543210",
-    role: "Super Admin",
+    role: "Admin",
     location: "Mumbai, India"
   });
   const [isEditing, setIsEditing] = useState(false);

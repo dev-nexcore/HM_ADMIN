@@ -269,97 +269,29 @@ const handleEditSave = async () => {
       {/* Table */}
        <div className="px-4 sm:px-6">
 
-      {/* Desktop Table View */}
-      <div className="overflow-x-auto bg-white shadow-[0_4px_20px_rgba(0,0,0,0.2)] rounded-xl hidden sm:block">
-        <table className="w-full min-w-[700px] text-center border-collapse">
-          <thead>
-            <tr className="bg-[#A4B494] text-black text-sm">
-              {['Item Name', 'Barcode ID', 'Category', 'Location', 'Status', 'Action'].map((header, idx) => (
-                <th key={idx} className={`px-0 py-2 ${idx === 0 ? 'rounded-tl-lg' : ''} ${idx === 5 ? 'rounded-tr-lg' : ''}`}>
-                  <div className="flex items-center pl-4 pr-4">
-                    <span className="flex-1">{header}</span>
-                    {idx < 5 && <div className="h-6 w-px bg-black ml-4"></div>}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white text-sm">
-            {inventory
-              .filter(
-                (item) =>
-                  (statusFilter === "All Status" || item.status === statusFilter) &&
-                  (categoryFilter === "All Categories" || item.category === categoryFilter) &&
-                  (item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
-              )
-              .map((item) => (
-                <tr key={item.barcodeId} className="hover:bg-gray-100">
-                  {hiddenRows[item.barcodeId] ? (
-                    <>
-                      <td colSpan={5} className="italic text-gray-400 py-4">Hidden</td>
-                      <td className="px-4 py-2 flex justify-center gap-2">
-                        <div
-                          className="cursor-pointer text-gray-600 hover:text-red-600"
-                          onClick={() => toggleVisibility(item.barcodeId)}
-                        >
-                          {/* Eye Slash Icon */}
-                          [EyeSlashSVG]
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-4 py-2">{item.itemName}</td>
-                      <td className="px-4 py-2">{item.barcodeId}</td>
-                      <td className="px-4 py-2">{item.category}</td>
-                      <td className="px-4 py-2">{item.location}</td>
-                      <td className="px-4 py-2">
-                        <span className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]}`}>{item.status}</span>
-                      </td>
-                      <td className="px-4 py-2 flex justify-center gap-3">
-                      
-
-                        
-                        <div className="cursor-pointer text-gray-600 hover:text-green-600" onClick={() => handleEditClick(item)}>
-                        <td className="px-4 py-2 flex justify-center gap-3">
-  {/* View Icon */}
-  <div
-    className="cursor-pointer text-gray-600 hover:text-blue-600"
-    onClick={() => handleViewDetails(item)}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  </div>
-
-  <div className="w-[1px] h-5 bg-gray-400" />
-
-  {/* Edit Icon */}
-  <div
-    className="cursor-pointer text-gray-600 hover:text-green-600"
-    onClick={() => handleEditClick(item)}
-  >
-    <svg width="18" height="18" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z" fill="currentColor"/>
-    </svg>
-  </div>
-  </td>
-  </div>
-                      
-
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="space-y-4 sm:hidden">
+      
+      {/* ✅ Desktop Table View with Styled Background */}
+<div className="hidden sm:block rounded-2xl bg-[#BEC5AD] p-4 shadow-xl">
+  <div className="overflow-x-auto rounded-xl">
+    <table className="w-full min-w-[700px] text-center border-collapse">
+      <thead>
+        <tr className="bg-white text-black text-sm">
+          {["Item Name", "Barcode ID", "Category", "Location", "Status", "Action"].map((header, idx) => (
+            <th
+              key={idx}
+              className={`px-0 py-2 ${
+                idx === 0 ? "rounded-tl-lg" : ""
+              } ${idx === 5 ? "rounded-tr-lg" : ""}`}
+            >
+              <div className="flex items-center pl-4 pr-4">
+                <span className="flex-1">{header}</span>
+                {idx < 5 && <div className="h-6 w-px bg-black ml-4"></div>}
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="bg-white text-sm">
         {inventory
           .filter(
             (item) =>
@@ -369,21 +301,83 @@ const handleEditSave = async () => {
                 item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
           )
           .map((item) => (
-            <div key={item.barcodeId} className="bg-white rounded-xl shadow-md p-4">
-              <div className="mb-2"><strong>Item Name:</strong> {item.itemName}</div>
-              <div className="mb-2"><strong>Barcode ID:</strong> {item.barcodeId}</div>
-              <div className="mb-2"><strong>Category:</strong> {item.category}</div>
-              <div className="mb-2"><strong>Location:</strong> {item.location}</div>
-              <div className="mb-2">
-                <strong>Status:</strong> <span className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]}`}>{item.status}</span>
-              </div>
-              <div className="flex justify-start gap-3 mt-2">
-                <button onClick={() => handleViewDetails(item)} className="text-blue-600 text-xs hover:underline">View</button>
-                <button onClick={() => handleEditClick(item)} className="text-green-600 text-xs hover:underline">Edit</button>
-              </div>
-            </div>
+            <tr key={item.barcodeId} className="hover:bg-gray-100">
+              <td className="px-4 py-2">{item.itemName}</td>
+              <td className="px-4 py-2">{item.barcodeId}</td>
+              <td className="px-4 py-2">{item.category}</td>
+              <td className="px-4 py-2">{item.location}</td>
+              <td className="px-4 py-2">
+                <span
+                  className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${
+                    statusColor[item.status]
+                  }`}
+                >
+                  {item.status}
+                </span>
+              </td>
+              <td className="px-4 py-2 flex justify-center gap-3">
+                {/* View Icon */}
+                <div
+                  className="cursor-pointer text-gray-600 hover:text-blue-600"
+                  onClick={() => handleViewDetails(item)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </div>
+
+                <div className="w-[1px] h-5 bg-gray-400" />
+
+                {/* Edit Icon */}
+                <div
+                  className="cursor-pointer text-gray-600 hover:text-green-600"
+                  onClick={() => handleEditClick(item)}
+                >
+                  <svg width="18" height="18" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z" fill="currentColor"/>
+                  </svg>
+                </div>
+              </td>
+            </tr>
           ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+      {/* Mobile Card View */}
+      {/* ✅ Mobile Card View with Background */}
+<div className="sm:hidden rounded-2xl bg-[#BEC5AD] p-4 shadow-xl space-y-4">
+  {inventory
+    .filter(
+      (item) =>
+        (statusFilter === "All Status" || item.status === statusFilter) &&
+        (categoryFilter === "All Categories" || item.category === categoryFilter) &&
+        (item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .map((item) => (
+      <div key={item.barcodeId} className="bg-white rounded-xl shadow-md p-4">
+        <div className="mb-2"><strong>Item Name:</strong> {item.itemName}</div>
+        <div className="mb-2"><strong>Barcode ID:</strong> {item.barcodeId}</div>
+        <div className="mb-2"><strong>Category:</strong> {item.category}</div>
+        <div className="mb-2"><strong>Location:</strong> {item.location}</div>
+        <div className="mb-2">
+          <strong>Status:</strong>{" "}
+          <span className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]}`}>
+            {item.status}
+          </span>
+        </div>
+        <div className="flex justify-start gap-3 mt-2">
+          <button onClick={() => handleViewDetails(item)} className="text-blue-600 text-xs hover:underline">View</button>
+          <button onClick={() => handleEditClick(item)} className="text-green-600 text-xs hover:underline">Edit</button>
+        </div>
       </div>
+    ))}
+</div>
+
     </div>
       {/* Upload Modal */}
       {showUploadModal && (
