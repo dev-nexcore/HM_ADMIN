@@ -160,6 +160,7 @@ export default function StaffSalaryContent() {
       }));
     }
   };
+  
   // Save Edited Deductions
   const handleSaveDeductions = () => {
     setStaffData(prev => 
@@ -699,10 +700,30 @@ export default function StaffSalaryContent() {
 
       {/* Main Content */}
        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        {/* Header with red line */}
+        {/* Header with blue line */}
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 bg-[#4F8CCF]"></div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff Salary</h1>
+        </div>
+
+        {/* Mobile Tab Buttons - Show only on mobile, right below header */}
+        <div className="flex sm:hidden gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab("payroll")}
+            className={`cursor-pointer flex-1 px-3 py-2.5 rounded-md text-xs font-semibold transition-all duration-200 shadow-[0_6px_4px_-1px_rgba(0,0,0,0.6)] ${
+              activeTab === "payroll" ? "bg-[#ADCE8C] text-black" : "bg-[#BEC5AD] text-black"
+            }`}
+          >
+            Payroll Management
+          </button>
+          <button
+            onClick={() => setActiveTab("taxpf")}
+            className={`cursor-pointer flex-1 px-3 py-2.5 rounded-md text-xs font-semibold transition-all duration-200 shadow-[0_6px_4px_-1px_rgba(0,0,0,0.6)] ${
+              activeTab === "taxpf" ? "bg-[#ADCE8C] text-black" : "bg-[#BEC5AD] text-black"
+            }`}
+          >
+            Tax,PF & Loan Distribution
+          </button>
         </div>
 
         {/* Summary Cards */}
@@ -724,8 +745,8 @@ export default function StaffSalaryContent() {
           </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-5">
+        {/* Desktop Tab Buttons - Show only on desktop */}
+        <div className="hidden sm:flex gap-3 sm:gap-5">
           <button
             onClick={() => setActiveTab("payroll")}
             className={`cursor-pointer px-3 sm:px-4 py-2.5 rounded-md text-xs sm:text-sm font-semibold transition-all duration-200 shadow-[0_6px_4px_-1px_rgba(0,0,0,0.6)] ${
