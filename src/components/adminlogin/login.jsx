@@ -167,7 +167,7 @@ const AdminLogin = () => {
             mounted ? 'scale-100 opacity-100 rotate-0' : 'scale-75 opacity-0 rotate-12'
           }`}>
             <img
-              src="/photos/logo.png"
+              src="/photos/logo1.svg"
               alt="Logo"
               className="w-[200px] h-[180px] xs:w-[220px] xs:h-[200px] sm:w-[260px] sm:h-[240px] md:w-[300px] md:h-[280px] bg-white p-3 sm:p-4 rounded-lg object-contain hover:scale-105 transition-transform duration-300 ease-in-out shadow-md"
             />
