@@ -308,14 +308,14 @@ const[formErrors,setFormErrors] = useState(null);
           )}
         </div>
 
-        <div className="w-full mt-6 font-[Poppins] flex flex-wrap items-center justify-between gap-4">
+      <div className="w-full mt-6 font-[Poppins] flex flex-wrap items-center justify-between gap-4">
           {/* Issue Date */}
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="block mb-1 text-black ml-2 font-[Poppins] font-medium">
               Issue Date
             </label>
             <div className="relative flex items-center">
-              <div className="relative w-[300px] max-w-full">
+              <div className="relative w-full sm:w-[300px] max-w-full">
                 <input
                   ref={dateInputRef}
                   type="date"
@@ -355,7 +355,7 @@ const[formErrors,setFormErrors] = useState(null);
                   {form.date || ""}
                 </div>
                 {!form.date && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.4em] pointer-events-none select-none">
+                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.1em] md:tracking-[0.4em] pointer-events-none select-none">
                     d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                   </div>
                 )}
@@ -363,7 +363,7 @@ const[formErrors,setFormErrors] = useState(null);
               <button
                 type="button"
                 onClick={handleCalendarClick}
-                className="ml-3 p-2 cursor-pointer  rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform"
+                className="ml-3 p-2 cursor-pointer rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform flex-shrink-0"
                 title="Open Calendar"
               >
                 <svg
