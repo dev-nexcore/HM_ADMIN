@@ -29,6 +29,7 @@ const handleLogin = async (e) => {
     const response = await axios.post(
       "/api/auth/login",                // <-- note the /api/ prefix
       { adminId, password },
+      {baseUrl: '' },
       { headers: { "Content-Type": "application/json", Accept: "application/json" }, baseURL: "" }
     );
 
