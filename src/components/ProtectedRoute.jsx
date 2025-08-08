@@ -14,39 +14,45 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
   useEffect(() => {
     let isMounted = true;
 
-    const checkAuth = async () => {
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/verify`,
-          { withCredentials: true }
-        );
 
-        if (!isMounted) return;
-
-        const data = res.data;
-
-        if (data?.isAuthenticated) {
-          setIsAuthenticated(true);
-          setUserRole(data.user?.role);
-
-          // Role-based gate
-          if (requiredRoles.length > 0 && !requiredRoles.includes(data.user?.role)) {
-            router.replace('/unauthorized');
-            return;
-          }
-        } else {
-          // Not authenticated
-          router.replace(`/admin-login?callbackUrl=${encodeURIComponent(pathname)}`);
-          return;
+const checkAuth = async () => {
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/verify`,
+      {
+        withCredentials: true,
+        headers: {
+          "Accept": "application/json",
         }
-      } catch (err) {
-        // API or network error -> treat as unauthenticated
-        router.replace(`/admin-login?callbackUrl=${encodeURIComponent(pathname)}`);
-        return;
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
-    };
+    );
+
+    if (!isMounted) return;
+
+    const data = response.data;
+
+    if (data?.isAuthenticated) {
+      setIsAuthenticated(true);
+      setUserRole(data.user?.role);
+
+      // Role-based access control
+      if (requiredRoles.length > 0 && !requiredRoles.includes(data.user?.role)) {
+        router.replace('/unauthorized');
+        return;
+      }
+    } else {
+      // Not authenticated
+      window.location.href = `/admin-login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+  } catch (error) {
+    console.error('Auth check error:', error);
+    window.location.href = `/admin-login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+    return;
+  } finally {
+    if (isMounted) setIsLoading(false);
+  }
+};
 
     checkAuth();
     return () => { isMounted = false; };

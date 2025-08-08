@@ -35,27 +35,27 @@ export async function POST(request) {
       );
     }
 
-    const { email, password } = await request.json();
+    const { adminId, password } = await request.json();
 
     // Basic validation
-    if (!email || !password) {
+    if (!adminId || !password) {
       return NextResponse.json(
         { 
           success: false,
-          error: 'Email and password are required' 
+          error: 'adminId and password are required' 
         },
         { status: 400 }
       );
     }
 
     // Validate credentials
-    const user = await validateCredentials(email, password);
+    const user = await validateCredentials(adminId, password);
 
     if (!user) {
       return NextResponse.json(
         { 
           success: false,
-          error: 'Invalid email or password' 
+          error: 'Invalid adminId or password' 
         },
         { status: 401 }
       );
@@ -65,7 +65,7 @@ export async function POST(request) {
     const token = jwt.sign(
       { 
         userId: user.id,
-        email: user.email,
+        adminId: user.adminId,
         role: user.role,
         name: user.name
       },
@@ -79,7 +79,7 @@ export async function POST(request) {
         success: true,
         user: {
           id: user.id,
-          email: user.email,
+          adminId: user.adminId,
           name: user.name,
           role: user.role
         }

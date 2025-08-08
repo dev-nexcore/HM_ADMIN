@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 // Prevent caching of this endpoint
 export const dynamic = 'force-dynamic';
 
-export async function GET(request) {
+export async function GET() {
   try {
     // Get the token from cookies
     const token = cookies().get('adminToken')?.value;
@@ -51,8 +51,7 @@ export async function GET(request) {
     return new NextResponse(
       JSON.stringify({
         isAuthenticated: true,
-        userId: decoded.userId,
-        email: decoded.email,
+        adminId: decoded.adminId,
         role: decoded.role || 'user',
         name: decoded.name
       }),

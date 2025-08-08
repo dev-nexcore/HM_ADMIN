@@ -18,40 +18,43 @@ const AdminLogin = () => {
   }, []);
 
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg("");
-  
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
-        {
-          email: adminId, // Make sure this matches backend field
-          password,
-        },
-        {
-          withCredentials: true, // important for cookies
-          headers: {
-            "Content-Type": "application/json",
-          },
+
+
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setErrorMsg("");
+
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
+      {
+        adminId, // Make sure this matches your backend's expected field name
+        password,
+      },
+      {
+        withCredentials: true, // Important for cookies
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
         }
-      );
-  
-      // On successful login
-      const urlParams = new URLSearchParams(window.location.search);
-      const callbackUrl = urlParams.get("callbackUrl") || "/dashboard";
-      window.location.href = callbackUrl;
-  
-    } catch (error) {
-      console.error("Login error:", error);
-      setErrorMsg(
-        error.response?.data?.message || "Login failed. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      }
+    );
+
+    // On successful login
+    const urlParams = new URLSearchParams(window.location.search);
+    const callbackUrl = urlParams.get("callbackUrl") || "/dashboard";
+    window.location.href = callbackUrl;
+
+  } catch (error) {
+    console.error("Login error:", error);
+    setErrorMsg(
+      error.response?.data?.message || "Login failed. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-[#A4B494] overflow-hidden">
