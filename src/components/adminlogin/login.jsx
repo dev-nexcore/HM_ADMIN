@@ -27,18 +27,9 @@ const handleLogin = async (e) => {
 
   try {
     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
-      {
-        adminId, // Make sure this matches your backend's expected field name
-        password,
-      },
-      {
-        withCredentials: true, // Important for cookies
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        }
-      }
+      "/api/auth/login",                // <-- note the /api/ prefix
+      { adminId, password },
+      { headers: { "Content-Type": "application/json", Accept: "application/json" }, baseURL: "" }
     );
 
     // On successful login

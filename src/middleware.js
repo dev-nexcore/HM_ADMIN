@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
 // List of public routes that don't require authentication
-const publicRoutes = ['/login', '/forget-password', '/unauthorized'];
+const publicRoutes = ['/', '/forget-password', '/unauthorized'];
 
 // List of protected routes that require authentication
 const protectedRoutes = [
@@ -82,7 +82,7 @@ export async function middleware(request) {
       
     } catch (error) {
       // Clear invalid token and redirect to login
-      const response = NextResponse.redirect(new URL('/login', request.url));
+      const response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('adminToken');
       return response;
     }

@@ -5,68 +5,55 @@ import axios from 'axios';
 import LoadingOverlay from './LoadingOverlay';
 
 const ProtectedRoute = ({ children, requiredRoles = [] }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userRole, setUserRole] = useState(null);
+  const [ready, setReady] = useState(false);
+  const [role, setRole] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
+    const checkAuth = async () => {
+      try {
+        // Call Next API route instead of backend
+        const res = await axios.get('/api/auth/verify', {
+          headers: { Accept: 'application/json' },
+        });
 
-const checkAuth = async () => {
-  try {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/verify`,
-      {
-        withCredentials: true,
-        headers: {
-          "Accept": "application/json",
+        const data = res.data;
+
+        if (cancelled) return;
+
+        if (data?.isAuthenticated) {
+          setRole(data.role || null);
+
+          // Role check if needed
+          if (requiredRoles.length > 0 && !requiredRoles.includes(data.role)) {
+            router.replace('/unauthorized');
+            return;
+          }
+
+          setReady(true);
+        } else {
+          const url = new URL('/', window.location.origin);
+          url.searchParams.set('callbackUrl', pathname);
+          router.replace(url.toString());
         }
+      } catch (err) {
+        console.error('Auth check error:', err);
+        const url = new URL('/', window.location.origin);
+        url.searchParams.set('callbackUrl', pathname);
+        router.replace(url.toString());
       }
-    );
-
-    if (!isMounted) return;
-
-    const data = response.data;
-
-    if (data?.isAuthenticated) {
-      setIsAuthenticated(true);
-      setUserRole(data.user?.role);
-
-      // Role-based access control
-      if (requiredRoles.length > 0 && !requiredRoles.includes(data.user?.role)) {
-        router.replace('/unauthorized');
-        return;
-      }
-    } else {
-      // Not authenticated
-      window.location.href = `/admin-login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-  } catch (error) {
-    console.error('Auth check error:', error);
-    window.location.href = `/admin-login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
-    return;
-  } finally {
-    if (isMounted) setIsLoading(false);
-  }
-};
+    };
 
     checkAuth();
-    return () => { isMounted = false; };
+    return () => { cancelled = true; };
   }, [pathname, requiredRoles, router]);
 
-  if (isLoading) {
-    return <LoadingOverlay isLoading={true} text="Verifying session..." />;
-  }
+  // if (!ready) return <LoadingOverlay isLoading={true} text="Verifying session..." />;
 
-  if (isAuthenticated && (requiredRoles.length === 0 || (userRole && requiredRoles.includes(userRole)))) {
-    return children;
-  }
-
-  return <LoadingOverlay isLoading={true} text="Redirecting..." />;
+  return children;
 };
 
 export default ProtectedRoute;
