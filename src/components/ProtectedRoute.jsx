@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import axios from 'axios';
 import LoadingOverlay from './LoadingOverlay';
 
 const ProtectedRoute = ({ children, requiredRoles = [] }) => {
@@ -15,73 +16,50 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
 
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/verify', {
-          credentials: 'include',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/verify`,
+          { withCredentials: true }
+        );
 
         if (!isMounted) return;
 
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.isAuthenticated) {
-            setIsAuthenticated(true);
-            setUserRole(data.role);
-            
-            // Check role-based access
-            if (requiredRoles.length > 0 && !requiredRoles.includes(data.role)) {
-              router.replace('/unauthorized');
-              return;
-            }
-          } else {
-            // Not authenticated, redirect to login
-            const callbackUrl = encodeURIComponent(pathname);
-            router.replace(`/login?callbackUrl=${callbackUrl}`);
+        const data = res.data;
+
+        if (data?.isAuthenticated) {
+          setIsAuthenticated(true);
+          setUserRole(data.user?.role);
+
+          // Role-based gate
+          if (requiredRoles.length > 0 && !requiredRoles.includes(data.user?.role)) {
+            router.replace('/unauthorized');
             return;
           }
         } else {
-          // API error, redirect to login
-          const callbackUrl = encodeURIComponent(pathname);
-          router.replace(`/login?callbackUrl=${callbackUrl}`);
+          // Not authenticated
+          router.replace(`/admin-login?callbackUrl=${encodeURIComponent(pathname)}`);
           return;
         }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-        if (isMounted) {
-          const callbackUrl = encodeURIComponent(pathname);
-          router.replace(`/login?error=auth_failed&callbackUrl=${callbackUrl}`);
-        }
+      } catch (err) {
+        // API or network error -> treat as unauthenticated
+        router.replace(`/admin-login?callbackUrl=${encodeURIComponent(pathname)}`);
         return;
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
     checkAuth();
-
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [pathname, requiredRoles, router]);
 
-  // Show loading overlay while checking auth
   if (isLoading) {
     return <LoadingOverlay isLoading={true} text="Verifying session..." />;
   }
 
-  // Only render children if authenticated and has required role
   if (isAuthenticated && (requiredRoles.length === 0 || (userRole && requiredRoles.includes(userRole)))) {
     return children;
   }
 
-  // If not authenticated or unauthorized, don't render anything (will redirect)
   return <LoadingOverlay isLoading={true} text="Redirecting..." />;
 };
 

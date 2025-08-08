@@ -17,50 +17,42 @@ const AdminLogin = () => {
     setMounted(true);
   }, []);
 
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
-    
+  
     try {
-      const response = await fetch('/api/adminauth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
+        {
+          email: adminId, // Make sure this matches backend field
+          password,
         },
-        body: JSON.stringify({ adminId, password }),
-        credentials: 'same-origin' // Include cookies
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle rate limiting and account lockout
-        if (response.status === 429) {
-          setErrorMsg(data.error || 'Too many login attempts. Please try again later.');
-        } else if (response.status === 401) {
-          setErrorMsg(
-            data.remainingAttempts > 0 
-              ? `Invalid credentials. ${data.remainingAttempts} attempts remaining.`
-              : 'Account temporarily locked. Please try again later.'
-          );
-        } else {
-          setErrorMsg(data.error || 'Login failed. Please try again.');
+        {
+          withCredentials: true, // important for cookies
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-        return;
-      }
-
-      // On successful login, redirect to dashboard
-      router.push('/dashboard');
-      
+      );
+  
+      // On successful login
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackUrl = urlParams.get("callbackUrl") || "/dashboard";
+      window.location.href = callbackUrl;
+  
     } catch (error) {
-      console.error('Login error:', error);
-      setErrorMsg('An error occurred during login. Please try again.');
+      console.error("Login error:", error);
+      setErrorMsg(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-[#A4B494] overflow-hidden">
       {/* Desktop Layout - Enhanced with animations */}
