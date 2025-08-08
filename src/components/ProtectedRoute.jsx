@@ -1,51 +1,88 @@
-// components/ProtectedRoute.js
-"use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import LoadingOverlay from './LoadingOverlay';
 
-const ProtectedRoute = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
+const ProtectedRoute = ({ children, requiredRoles = [] }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const adminToken = localStorage.getItem("adminToken");
-      const adminInfo = localStorage.getItem("adminInfo");
+    let isMounted = true;
 
-      if (!adminToken || !adminInfo) {
-        // No valid authentication, redirect to login
-        router.push("/admin-login"); // Change this to match your login route
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/verify', {
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        if (!isMounted) return;
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.isAuthenticated) {
+            setIsAuthenticated(true);
+            setUserRole(data.role);
+            
+            // Check role-based access
+            if (requiredRoles.length > 0 && !requiredRoles.includes(data.role)) {
+              router.replace('/unauthorized');
+              return;
+            }
+          } else {
+            // Not authenticated, redirect to login
+            const callbackUrl = encodeURIComponent(pathname);
+            router.replace(`/login?callbackUrl=${callbackUrl}`);
+            return;
+          }
+        } else {
+          // API error, redirect to login
+          const callbackUrl = encodeURIComponent(pathname);
+          router.replace(`/login?callbackUrl=${callbackUrl}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+        if (isMounted) {
+          const callbackUrl = encodeURIComponent(pathname);
+          router.replace(`/login?error=auth_failed&callbackUrl=${callbackUrl}`);
+        }
         return;
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-
-      // If authenticated, allow access
-      setIsAuthenticated(true);
-      setIsLoading(false);
     };
 
     checkAuth();
-  }, [router]);
 
-  // Show loading spinner while checking authentication
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname, requiredRoles, router]);
+
+  // Show loading overlay while checking auth
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-8 h-8 border-4 border-[#4F8CCF] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isLoading={true} text="Verifying session..." />;
   }
 
-  // If not authenticated, return null (will redirect)
-  if (!isAuthenticated) {
-    return null;
+  // Only render children if authenticated and has required role
+  if (isAuthenticated && (requiredRoles.length === 0 || (userRole && requiredRoles.includes(userRole)))) {
+    return children;
   }
 
-  // If authenticated, render the protected content
-  return children;
+  // If not authenticated or unauthorized, don't render anything (will redirect)
+  return <LoadingOverlay isLoading={true} text="Redirecting..." />;
 };
 
 export default ProtectedRoute;

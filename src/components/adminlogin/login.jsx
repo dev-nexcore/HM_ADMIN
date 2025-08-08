@@ -21,18 +21,41 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+    
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/login`,
-        { adminId, password }
-      );
-      const { token, refreshToken, admin } = response.data;
-      localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminRefreshToken", refreshToken);
-      localStorage.setItem("adminInfo", JSON.stringify(admin));
-      router.push("/dashboard");
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ adminId, password }),
+        credentials: 'same-origin' // Include cookies
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle rate limiting and account lockout
+        if (response.status === 429) {
+          setErrorMsg(data.error || 'Too many login attempts. Please try again later.');
+        } else if (response.status === 401) {
+          setErrorMsg(
+            data.remainingAttempts > 0 
+              ? `Invalid credentials. ${data.remainingAttempts} attempts remaining.`
+              : 'Account temporarily locked. Please try again later.'
+          );
+        } else {
+          setErrorMsg(data.error || 'Login failed. Please try again.');
+        }
+        return;
+      }
+
+      // On successful login, redirect to dashboard
+      router.push('/dashboard');
+      
     } catch (error) {
-      setErrorMsg(error.response?.data?.message || "Login failed. Try again.");
+      console.error('Login error:', error);
+      setErrorMsg('An error occurred during login. Please try again.');
     } finally {
       setLoading(false);
     }
