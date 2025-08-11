@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import axios from "axios";
+import api from "@/lib/api";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setSuccessMsg("");
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/forgot-password`, { email });
+      const response = await api.post(`/api/adminauth/forgot-password`, { email });
       setSuccessMsg("OTP has been sent to your email");
     } catch (error) {
       setErrorMsg(error.response?.data?.message || "Failed to send OTP. Please try again.");

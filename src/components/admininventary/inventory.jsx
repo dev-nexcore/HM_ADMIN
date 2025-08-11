@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
-import axios from "axios";
+import api from "@/lib/api";
 
 
 
@@ -110,7 +110,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
   const handleDeleteItem = async (barcodeId) => {
   try {
-    await axios.delete(`${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${barcodeId}`);
+    await api.delete(`/api/adminauth/inventory/${barcodeId}`);
     setInventory((prev) => prev.filter((item) => item.barcodeId !== barcodeId));
   } catch (error) {
     console.error("Failed to delete inventory item:", error);
@@ -126,8 +126,8 @@ const handleUploadReceipt = async (e) => {
   formData.append("receipt", file);
 
   try {
-    const { data } = await axios.put(
-      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${selectedItem._id}/receipt`,
+    const { data } = await api.put(
+      `/api/adminauth/inventory/${selectedItem._id}/receipt`,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
@@ -147,8 +147,8 @@ const handleUploadReceipt = async (e) => {
 
 const handleEditSave = async () => {
   try {
-    const { data } = await axios.put(
-      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/${editData._id}`,
+    const { data } = await api.put(
+      `/api/adminauth/inventory/${editData._id}`,
       editData
     );
     setInventory((prev) =>
@@ -723,8 +723,8 @@ const handleSaveItem = async () => {
       formDataToSend.append("receipt", formData.receipt);
     }
 
-    const { data } = await axios.post(
-      `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory/add`,
+    const { data } = await api.post(
+      `/api/adminauth/inventory/add`,
       formDataToSend,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
@@ -1168,8 +1168,8 @@ export default function InventoryManagement() {
 
   const fetchInventory = async () => {
     try {
-      const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/inventory`
+      const { data } = await api.get(
+        `/api/adminauth/inventory`
       );
       setInventory(data.items);
     } catch (error) {

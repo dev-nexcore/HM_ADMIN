@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, Mail } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/api";
 
 const statusStyles = {
   pending: "bg-orange-500 text-white",
@@ -36,7 +36,7 @@ export default function LeaveRequestsPage() {
         }
       }
 
-      const res = await axios.get(url, {
+      const res = await api.get(url, {
         params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -79,8 +79,8 @@ export default function LeaveRequestsPage() {
       if (action === "approve" || action === "reject") {
         const status = action === "approve" ? "approved" : "rejected";
 
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/leaves/${id}/status`,
+        await api.put(
+          `/api/adminauth/leaves/${id}/status`,
           {
             status,
             adminComments: "",

@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { Eye, Download } from "lucide-react";
 import Image from "next/image";
 import InspectionModal from "./InspectionModal";
-import axios from "axios";
-
-// Configure axios base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224/api/adminauth';
+import api from "@/lib/api";
 
 const statusStyles = {
   Scheduled: "bg-[#FF9D00] text-white",
@@ -35,7 +32,7 @@ export default function InspectionPage() {
   // API Functions
   const createInspectionAPI = async (inspectionData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/adminauth/inspections`, inspectionData, {
+      const response = await api.post(`/api/adminauth/inspections`, inspectionData, {
         headers: {
           'Content-Type': 'application/json',
           // Add authorization header if you have auth tokens
@@ -50,7 +47,7 @@ export default function InspectionPage() {
 
   const fetchInspectionsAPI = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/adminauth/inspections`, {
+      const response = await api.get(`/api/adminauth/inspections`, {
         headers: {
           // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
@@ -63,7 +60,7 @@ export default function InspectionPage() {
 
   const updateInspectionStatusAPI = async (inspectionId, status) => {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/api/adminauth/inspections/${inspectionId}/status`, 
+      const response = await api.patch(`/api/adminauth/inspections/${inspectionId}/status`, 
         { status }, 
         {
           headers: {
@@ -80,7 +77,7 @@ export default function InspectionPage() {
 
   const deleteInspectionAPI = async (inspectionId) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/api/adminauth/inspections/${inspectionId}`, {
+      const response = await api.delete(`/api/adminauth/inspections/${inspectionId}`, {
         headers: {
           // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }

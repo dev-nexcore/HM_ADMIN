@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FaSearch, FaFilter, FaDownload, FaSpinner, FaEye } from "react-icons/fa";
-import axios from "axios";
+import api from "@/lib/api";
 
 export default function AuditLogsSection() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +50,7 @@ export default function AuditLogsSection() {
         ...(filtersObj.endDate && { endDate: filtersObj.endDate })
       };
 
-      const response = await axios.get(`${API_BASE}/api/adminauth/audit-logs`, { params });
+      const response = await api.get(`/api/adminauth/audit-logs`, { params });
       
       if (response.data) {
         setLogs(response.data.logs || []);
@@ -68,7 +68,7 @@ export default function AuditLogsSection() {
   // Fetch statistics
   const fetchStatistics = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/adminauth/audit-logs/statistics`);
+      const response = await api.get(`/api/adminauth/audit-logs/statistics`);
       setStatistics(response.data);
     } catch (err) {
       console.error('Error fetching statistics:', err);
@@ -85,7 +85,7 @@ export default function AuditLogsSection() {
         ...(activeFilters.endDate && { endDate: activeFilters.endDate })
       };
 
-      const response = await axios.get(`${API_BASE}/api/adminauth/audit-logs/export/csv`, {
+      const response = await api.get(`/api/adminauth/audit-logs/export/csv`, {
         params,
         responseType: 'blob'
       });

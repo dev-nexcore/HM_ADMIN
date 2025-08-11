@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
-
+import api from "@/lib/api";
 export default function TicketsSection() {
   const [openTickets, setOpenTickets] = useState([]);
   const [resolvedTickets, setResolvedTickets] = useState([]);
@@ -15,8 +14,8 @@ export default function TicketsSection() {
   // Fetch open complaints/tickets
   const fetchOpenTickets = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/complaints/open`,
+      const response = await api.get(
+        `/api/adminauth/complaints/open`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -49,8 +48,8 @@ export default function TicketsSection() {
   // Fetch resolved complaints/tickets
   const fetchResolvedTickets = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/complaints/resolved`,
+      const response = await api.get(
+        `/api/adminauth/complaints/resolved`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -84,8 +83,8 @@ export default function TicketsSection() {
   // Fetch ticket details with attachments
   const fetchTicketDetails = async (ticketId) => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/complaints/${ticketId}`,
+      const response = await api.get(
+        `/api/adminauth/complaints/${ticketId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -111,8 +110,8 @@ export default function TicketsSection() {
   // View attachment
   const viewAttachment = async (complaintId, attachmentId, filename, mimeType) => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/complaints/${complaintId}/attachments/${attachmentId}`,
+      const response = await api.get(
+        `/api/adminauth/complaints/${complaintId}/attachments/${attachmentId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -156,8 +155,8 @@ export default function TicketsSection() {
     setActionLoading(prev => ({ ...prev, [`approve_${index}`]: true }));
 
     try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/complaints/${complaintId}/status`,
+      await api.put(
+        `/api/adminauth/complaints/${complaintId}/status`,
         {
           status: "resolved",
           adminNotes: "Complaint has been approved and resolved by admin."

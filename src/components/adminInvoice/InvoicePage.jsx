@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import InvoiceSection from "./InvoiceSection";
-import axios from "axios";
+import api from "@/lib/api";
 import InvoiceModal from "./invoiceModal";
 
 export default function InvoicePage() {

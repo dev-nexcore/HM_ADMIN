@@ -1,8 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
-const API_BASE = process.env.NEXT_PUBLIC_PROD_API_URL
-
+import api from "@/lib/api";
 
 
 const HostelNotices = () => {
@@ -22,7 +20,7 @@ const HostelNotices = () => {
   const fetchNotices = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`${API_BASE}/api/adminauth/notices`, { params: filters });
+      const { data } = await api.get("/api/adminauth/notices", { params: filters });
       if (data.success) setNotices(data.notices);
     } catch (err) {
       console.error("Failed to fetch notices:", err);
@@ -41,7 +39,7 @@ const[formErrors,setFormErrors] = useState(null);
   
   const handleIssueNotice = async () => {
     try {
-      await axios.post(`${API_BASE}/api/adminauth/issue-notice`, {
+      await api.post("/api/adminauth/issue-notice", {
         template: form.template,
         title: form.title,
         message: form.message,
@@ -59,7 +57,7 @@ const[formErrors,setFormErrors] = useState(null);
   const handleDeleteNotice = async (id) => {
     if (!window.confirm("Are you sure you want to delete this notice?")) return;
     try {
-      await axios.delete(`${API_BASE}/api/adminauth/notices/${id}`);
+      await api.delete(`/api/adminauth/notices/${id}`);
       setNotices(prev => prev.filter(n => n.id !== id));
     } catch (err) {
       console.error("Failed to delete notice:", err);

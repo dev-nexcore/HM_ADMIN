@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaRupeeSign } from "react-icons/fa";
-import axios from "axios";
+import api from "@/lib/api";
 
 
 const Dashboard = () => {
@@ -19,8 +19,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCheckInOutStatus = async () => {
       try {
-        const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/todays-checkin-checkout`,
+        const { data } = await api.get(
+          `/api/adminauth/todays-checkin-checkout`,
         );
         setCheckInOutData(data);
       } catch (error) {
@@ -30,8 +30,8 @@ const Dashboard = () => {
 
     const fetchBedOccupancyStatus = async () => {
       try {
-        const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/bed-occupancy-status`,
+        const { data } = await api.get(
+          `/api/adminauth/bed-occupancy-status`,
         );
         setBedData(data);
       } catch (error) {
