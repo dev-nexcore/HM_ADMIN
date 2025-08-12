@@ -1533,7 +1533,7 @@ console.log(formData);
                     src={
                       generatedItem.qrCodeUrl.startsWith('http')
                         ? generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')
-                        : `http://localhost:5224${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
+                        : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224'}${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
                     }
                     alt="Generated QR Code"
                     className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
