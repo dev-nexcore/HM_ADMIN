@@ -816,6 +816,14 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
 // AddNewItem component integrated within the same file
 function AddNewItem({ onBackToInventory, onItemAdded }) {
+  // Track the current origin for QR code generation (avoids SSR/undefined issues)
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
   const dateInputRef = useRef(null);
   const [formData, setFormData] = useState({
     itemName: "",
@@ -1527,15 +1535,15 @@ console.log(formData);
               </p>
 
               {/* QR Code Preview */}
-              {generatedItem && generatedItem.publicSlug && (
+              {generatedItem && generatedItem.publicSlug && origin && (
                 <div className="mb-4 flex flex-col items-center">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/inventory/item/' + generatedItem.publicSlug)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(origin + '/inventory/item/' + generatedItem.publicSlug)}`}
                     alt="Generated QR Code"
                     className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
                   />
                   <div className="mt-2 text-xs break-all text-gray-500">
-                    {window.location.origin + '/inventory/item/' + generatedItem.publicSlug}
+                    {origin + '/inventory/item/' + generatedItem.publicSlug}
                   </div>
                 </div>
               )}
