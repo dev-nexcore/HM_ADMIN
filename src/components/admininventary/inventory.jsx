@@ -1538,15 +1538,15 @@ formDataToSend.append("floor", formData.floor);
                 {JSON.stringify(generatedItem, null, 2)}
               </pre>
               {/* QR Code Preview */}
-              {generatedItem && generatedItem.publicSlug && origin && (
+              {generatedItem && ((generatedItem.publicUrl) || (generatedItem.publicSlug && origin)) && (
                 <div className="mb-4 flex flex-col items-center">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(origin + '/inventory/item/' + generatedItem.publicSlug)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatedItem.publicUrl || (origin + '/inventory/item/' + generatedItem.publicSlug))}`}
                     alt="Generated QR Code"
                     className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
                   />
                   <div className="mt-2 text-xs break-all text-gray-500">
-                    {origin + '/inventory/item/' + generatedItem.publicSlug}
+                    {generatedItem.publicUrl || (origin + '/inventory/item/' + generatedItem.publicSlug)}
                   </div>
                 </div>
               )}
