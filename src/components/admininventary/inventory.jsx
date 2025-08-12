@@ -1534,15 +1534,27 @@ formDataToSend.append("floor", formData.floor);
               </p>
 
               {/* QR Code Preview */}
-              {generatedItem && ((generatedItem.publicUrl) || (generatedItem.publicSlug && origin)) && (
+              {generatedItem && (generatedItem.publicUrl || generatedItem.qrCodeUrl) && (
                 <div className="mb-4 flex flex-col items-center">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatedItem.publicUrl || (origin + '/inventory/item/' + generatedItem.publicSlug))}`}
-                    alt="Generated QR Code"
-                    className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-                  />
+                  {generatedItem.publicUrl ? (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatedItem.publicUrl)}`}
+                      alt="Generated QR Code"
+                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                    />
+                  ) : (
+                    <img
+                      src={
+                        generatedItem.qrCodeUrl.startsWith('http')
+                          ? generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')
+                          : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224'}${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
+                      }
+                      alt="Generated QR Code"
+                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                    />
+                  )}
                   <div className="mt-2 text-xs break-all text-gray-500">
-                    {generatedItem.publicUrl || (origin + '/inventory/item/' + generatedItem.publicSlug)}
+                    {generatedItem.publicUrl || generatedItem.qrCodeUrl}
                   </div>
                 </div>
               )}
