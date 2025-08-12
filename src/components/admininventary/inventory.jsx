@@ -1482,7 +1482,6 @@ formDataToSend.append("floor", formData.floor);
           >
             Cancel
           </button>
-console.log(formData);
 
           <button
             onClick={handleGenerateQR}
