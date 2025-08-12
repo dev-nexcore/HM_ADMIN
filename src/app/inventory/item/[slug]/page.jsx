@@ -15,11 +15,11 @@ export default function ItemDetailPage() {
       setError(null);
       try {
         // Use your backend API URL from env variable
-        const apiUrl = process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:5224";
-        const res = await fetch(`${apiUrl}/api/adminauth/inventory/item/${slug}`);
-        if (!res.ok) throw new Error("Item not found");
-        const data = await res.json();
-        setItem(data.item);
+  const apiUrl = process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:5224";
+  const res = await fetch(`${apiUrl}/api/adminauth/public/${slug}`);
+  if (!res.ok) throw new Error("Item not found");
+  const data = await res.json();
+  setItem(data.item);
       } catch (err) {
         setError(err.message || "Failed to fetch item");
       } finally {
