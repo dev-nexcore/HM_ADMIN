@@ -1534,6 +1534,10 @@ console.log(formData);
                 QR code has been generated for {generatedItem.itemName}
               </p>
 
+              {/* Debug: Show generatedItem object for troubleshooting */}
+              <pre style={{fontSize:12, color:'#888', background:'#f7f7f7', padding:8, borderRadius:6, marginBottom:8, textAlign:'left', maxWidth:'100%', overflowX:'auto'}}>
+                {JSON.stringify(generatedItem, null, 2)}
+              </pre>
               {/* QR Code Preview */}
               {generatedItem && generatedItem.publicSlug && origin && (
                 <div className="mb-4 flex flex-col items-center">
