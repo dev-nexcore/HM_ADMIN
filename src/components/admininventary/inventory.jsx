@@ -1527,17 +1527,30 @@ console.log(formData);
               </p>
 
               {/* QR Code Preview */}
-              {generatedItem.qrCodeUrl && (
-                <div className="mb-4">
-                  <img
-                    src={
-                      generatedItem.qrCodeUrl.startsWith('http')
-                        ? generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')
-                        : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224'}${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
-                    }
-                    alt="Generated QR Code"
-                    className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-                  />
+              {generatedItem.publicSlug && (
+                <div className="mb-4 flex flex-col items-center">
+                  {/* Show QR code image if available, else generate QR code dynamically */}
+                  {generatedItem.qrCodeUrl ? (
+                    <img
+                      src={
+                        generatedItem.qrCodeUrl.startsWith('http')
+                          ? generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')
+                          : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224'}${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
+                      }
+                      alt="Generated QR Code"
+                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                    />
+                  ) : (
+                    // Fallback: Generate QR code dynamically if qrCodeUrl is not present
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/inventory/item/' + generatedItem.publicSlug)}`}
+                      alt="Generated QR Code"
+                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                    />
+                  )}
+                  <div className="mt-2 text-xs break-all text-gray-500">
+                    {window.location.origin + '/inventory/item/' + generatedItem.publicSlug}
+                  </div>
                 </div>
               )}
 
