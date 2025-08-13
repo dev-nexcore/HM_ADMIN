@@ -1,60 +1,53 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, use } from "react";
 import { Eye } from "lucide-react";
 import api from "@/lib/api";
 
 
 const StudentManagement = () => {
+const getTodaysDate = () => {
+  const today = new Date();
+  const day = today.getDate().toString().padStart(2, '0');
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const year = today.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    studentId: "",
     contactNumber: "",
     email: "",
-    roomBedNumber: "",
+    roomNumber: "",
+    bedNumber: "",
     emergencyContactNumber: "",
-    admissionDate: "",
+    admissionDate: getTodaysDate(),
     emergencyContactName: "",
     feeStatus: "",
   });
-  const dateInputRef = useRef(null);
   const [editingStudent, setEditingStudent] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
-  const [students, setStudents] = useState([
-    {
-      id: "STU-001",
-      firstName: "Shahid",
-      lastName: "Ansari",
-      name: "Shahid Ansari",
-      room: "Room-A-101",
-      contact: "+91 8888888888",
-      email: "shahid.ansari@example.com",
-      emergencyContactNumber: "+91 9999999999",
-      admissionDate: "15-08-2023",
-      emergencyContactName: "Parent A",
-      feeStatus: "In Use",
-      dues: "₹ 2,000/-",
-    },
-    {
-      id: "STU-002",
-      firstName: "Ayesha",
-      lastName: "Khan",
-      name: "Ayesha Khan",
-      room: "Room-A-101",
-      contact: "+91 8888888888",
-      email: "ayesha.khan@example.com",
-      emergencyContactNumber: "+91 9999999998",
-      admissionDate: "20-09-2023",
-      emergencyContactName: "Parent B",
-      feeStatus: "Available",
-      dues: "₹ 2,000/-",
-    },
-  ]);
+const [availableRoomNumbers, setAvailableRoomNumbers] = useState([]); // Add this new one
+  const [students, setStudents] = useState([]);
+// Add this state variable after the existing ones
+const [studentsWithoutParents, setStudentsWithoutParents] = useState([]);
   const [errors, setErrors] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [studentDetailsData, setStudentDetailsData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Add these new state variables after the existing ones
+const [activeTab, setActiveTab] = useState("student"); // "student" or "parent"
+const [parentFormData, setParentFormData] = useState({
+  firstName: "",
+  lastName: "",
+  email: "",
+  contactNumber: "",
+  studentId: "",
+});
+const [parentErrors, setParentErrors] = useState({});
+const [parentLoading, setParentLoading] = useState(false);
 
   // API Functions
   const registerStudentAPI = async (studentData) => {
@@ -71,6 +64,20 @@ const StudentManagement = () => {
       throw error.response?.data || { message: 'Failed to register student' };
     }
   };
+
+  const registerParentAPI = async (parentData) => {
+  try {
+    const response = await api.post(`/api/adminauth/register-parent`, parentData, {
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to register parent' };
+  }
+};
 
   const updateStudentAPI = async (studentId, studentData) => {
     try {
@@ -98,9 +105,35 @@ const fetchStudentsAPI = async () => {
     throw error.response?.data || { message: 'Failed to fetch students' };
   }
 };
+
+const fetchStudentsWithoutParentsAPI = async () => {
+  try {
+    const response = await api.get(`/api/adminauth/students-without-parents`, {
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch students without parents' };
+  }
+};
+
 const fetchAvailableRoomsAPI = async () => {
   try {
     const response = await api.get(`/api/adminauth/inventory/available-beds`, {
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch available rooms' };
+  }
+};
+const fetchAvailableRoomsNumbersAPI = async () => {
+  try {
+    const response = await api.get(`/api/adminauth/inventory/available-rooms`, {
       headers: {
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
@@ -150,9 +183,7 @@ const fetchAvailableRoomsAPI = async () => {
     if (!data.lastName.trim()) {
       newErrors.lastName = "Last Name is required.";
     }
-    if (!data.studentId.trim()) {
-      newErrors.studentId = "Student ID is required.";
-    }
+   
     if (!data.contactNumber.trim()) {
       newErrors.contactNumber = "Contact Number is required.";
     }
@@ -166,23 +197,23 @@ const fetchAvailableRoomsAPI = async () => {
   };
 
   // Reset form
-  const resetForm = () => {
-    setFormData({
-      firstName: "",
-      lastName: "",
-      studentId: "",
-      contactNumber: "",
-      email: "",
-      roomBedNumber: "",
-      emergencyContactNumber: "",
-      admissionDate: "",
-      emergencyContactName: "",
-      feeStatus: "",
-    });
-    setEditingStudent(null);
-    setErrors({});
-    setShowEditModal(false);
-  };
+ const resetForm = () => {
+  setFormData({
+    firstName: "",
+    lastName: "",
+    contactNumber: "",
+    email: "",
+    roomNumber: "",
+    bedNumber: "",
+    emergencyContactNumber: "",
+    admissionDate: getTodaysDate(), // Reset to today's date
+    emergencyContactName: "",
+    feeStatus: "",
+  });
+  setEditingStudent(null);
+  setErrors({});
+  setShowEditModal(false);
+};
 
   // Submit handler for new student registration
 const handleSubmit = async () => {
@@ -194,13 +225,14 @@ const handleSubmit = async () => {
 
   setLoading(true);
   try {
-    // Prepare data for backend (matching your backend structure)
+    // Prepare data for backend - combine room and bed if both are provided
+    const roomBedNumber = formData.bedNumber || "Not Assigned";
+    
     const studentData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
-      studentId: formData.studentId,
       contactNumber: formData.contactNumber,
-      roomBedNumber: formData.roomBedNumber || "Not Assigned",
+      roomBedNumber: roomBedNumber,
       email: formData.email,
       admissionDate: formData.admissionDate,
       feeStatus: formData.feeStatus,
@@ -211,27 +243,27 @@ const handleSubmit = async () => {
     const response = await registerStudentAPI(studentData);
     
     // Find the selected room details for display
-    const selectedRoom = availableRooms.find(room => room._id === formData.roomBedNumber);
+    const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
     const roomDisplay = selectedRoom 
       ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
-      : formData.roomBedNumber || "Not Assigned";
+      : formData.bedNumber || "Not Assigned";
     
     // Add new student to local state
     const newStudent = {
-      id: formData.studentId,
+      id: response.student.studentId,
       firstName: formData.firstName,
       lastName: formData.lastName,
       name: `${formData.firstName} ${formData.lastName}`,
-      room: roomDisplay, // Use the formatted display name
+      room: roomDisplay,
       contact: formData.contactNumber,
       email: formData.email,
       emergencyContactNumber: formData.emergencyContactNumber,
       admissionDate: formData.admissionDate,
       emergencyContactName: formData.emergencyContactName,
-      feeStatus: formData.feeStatus, // Keep the original status (Paid/Unpaid)
+      feeStatus: formData.feeStatus,
       dues: "₹ 0/-",
       roomDetails: selectedRoom,
-      roomObjectId: formData.roomBedNumber
+      roomObjectId: formData.bedNumber
     };
     
     setStudents((prev) => [...prev, newStudent]);
@@ -250,17 +282,20 @@ const handleSubmit = async () => {
 const handleEdit = (studentId) => {
   const student = students.find((s) => s.id === studentId);
   if (student) {
+    // Extract room number from room details if available
+    const roomNumber = student.roomDetails?.roomNo || "";
+    
     setFormData({
       firstName: student.firstName || student.name?.split(' ')[0] || '',
       lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || '',
-      studentId: student.id,
       contactNumber: student.contact,
       email: student.email || "",
-      roomBedNumber: student.roomObjectId || student.room, // Use ObjectId if available
+      roomNumber: roomNumber, // Set room number
+      bedNumber: student.roomObjectId || "", // Set bed ID
       emergencyContactNumber: student.emergencyContactNumber || "",
       admissionDate: student.admissionDate || "",
       emergencyContactName: student.emergencyContactName || "",
-      feeStatus: student.feeStatus, // Keep the original fee status (don't convert)
+      feeStatus: student.feeStatus,
     });
     setEditingStudent(studentId);
     setErrors({});
@@ -284,7 +319,7 @@ const handleUpdate = async () => {
       lastName: formData.lastName,
       contactNumber: formData.contactNumber,
       email: formData.email,
-      roomBedNumber: formData.roomBedNumber,
+      roomBedNumber: formData.bedNumber, // Use bed number
       emergencyContactNumber: formData.emergencyContactNumber,
       admissionDate: formData.admissionDate,
       emergencyContactName: formData.emergencyContactName,
@@ -294,10 +329,10 @@ const handleUpdate = async () => {
     await updateStudentAPI(editingStudent, studentData);
 
     // Find the selected room details for display
-    const selectedRoom = availableRooms.find(room => room._id === formData.roomBedNumber);
+    const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
     const roomDisplay = selectedRoom 
       ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
-      : formData.roomBedNumber || "Not Assigned";
+      : formData.bedNumber || "Not Assigned";
 
     // Update local state
     setStudents((prev) =>
@@ -310,13 +345,13 @@ const handleUpdate = async () => {
               name: `${formData.firstName} ${formData.lastName}`,
               contact: formData.contactNumber,
               email: formData.email,
-              room: roomDisplay, // Use formatted display name
+              room: roomDisplay,
               emergencyContactNumber: formData.emergencyContactNumber,
               admissionDate: formData.admissionDate,
               emergencyContactName: formData.emergencyContactName,
-              feeStatus: formData.feeStatus, // Keep original status
+              feeStatus: formData.feeStatus,
               roomDetails: selectedRoom,
-              roomObjectId: formData.roomBedNumber
+              roomObjectId: formData.bedNumber
             }
           : student
       )
@@ -328,6 +363,81 @@ const handleUpdate = async () => {
     alert(error.message || 'Error updating student. Please try again.');
   } finally {
     setLoading(false);
+  }
+};
+
+// Add these handlers after the existing ones
+const handleParentInputChange = (e) => {
+  const { name, value } = e.target;
+  setParentFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+  // Clear error for the field being typed into
+  if (parentErrors[name]) {
+    setParentErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[name];
+      return newErrors;
+    });
+  }
+};
+
+const validateParentForm = (data) => {
+  const newErrors = {};
+  if (!data.firstName.trim()) {
+    newErrors.firstName = "First Name is required.";
+  }
+  if (!data.lastName.trim()) {
+    newErrors.lastName = "Last Name is required.";
+  }
+  if (!data.email.trim()) {
+    newErrors.email = "Email is required.";
+  } else if (!/\S+@\S+\.\S+/.test(data.email)) {
+    newErrors.email = "Email is invalid.";
+  }
+  if (!data.contactNumber.trim()) {
+    newErrors.contactNumber = "Contact Number is required.";
+  }
+  if (!data.studentId.trim()) {
+    newErrors.studentId = "Student ID is required.";
+  }
+  return newErrors;
+};
+
+const resetParentForm = () => {
+  setParentFormData({
+    firstName: "",
+    lastName: "",
+    email: "",
+    contactNumber: "",
+    studentId: "",
+  });
+  setParentErrors({});
+};
+
+const handleParentSubmit = async () => {
+  const newErrors = validateParentForm(parentFormData);
+  if (Object.keys(newErrors).length > 0) {
+    setParentErrors(newErrors);
+    return;
+  }
+
+  setParentLoading(true);
+  try {
+    const response = await registerParentAPI(parentFormData);
+    
+    // ADD THIS: Refresh the students without parents list
+    const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
+    setStudentsWithoutParents(studentsWithoutParentsData.students || []);
+    
+    resetParentForm();
+    alert(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
+  } catch (error) {
+    console.error('Error registering parent:', error);
+    alert(error.message || 'Error registering parent. Please try again.');
+  } finally {
+    setParentLoading(false);
   }
 };
 
@@ -406,9 +516,17 @@ useEffect(() => {
       // Load students
       await loadStudents();
       
-      // Load available rooms
-      const roomsData = await fetchAvailableRoomsAPI();
-      setAvailableRooms(roomsData.availableBeds || []);
+      // Load available beds
+      const bedsData = await fetchAvailableRoomsAPI();
+      setAvailableRooms(bedsData.availableBeds || []);
+
+      // Load available room numbers
+      const roomsData = await fetchAvailableRoomsNumbersAPI();
+      setAvailableRoomNumbers(roomsData.availableRooms || []);
+
+      // ADD THIS: Load students without parents
+      const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
+      setStudentsWithoutParents(studentsWithoutParentsData.students || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -427,12 +545,14 @@ useEffect(() => {
     }
   };
 
-  // Calendar click handler
-  const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      dateInputRef.current.showPicker();
-    }
-  };
+  // Add this function after your existing handlers
+const getBedsForRoom = (roomNumber) => {
+  if (!roomNumber) return availableRooms;
+  return availableRooms.filter(bed => bed.roomNo === roomNumber);
+};
+
+
+ 
 
   // Fee status style
 // Fee status style
@@ -542,29 +662,7 @@ const getFeeStatusStyle = (status) => ({
           )}
         </div>
         
-        {/* Student ID */}
-        <div className="w-full px-2">
-          <label className="block mb-1 text-black ml-2" style={labelStyle}>
-            Student ID
-          </label>
-          <input
-            type="text"
-            name="studentId"
-            value={formData.studentId}
-            onChange={handleInputChange}
-            placeholder="Enter Student ID"
-            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.studentId ? "border-red-500" : ""
-            }`}
-            style={inputStyle}
-            disabled={isEditMode}
-            required
-          />
-          {errors.studentId && (
-            <p className="text-red-500 text-xs mt-1 ml-2">{errors.studentId}</p>
-          )}
-        </div>
-        
+       
         {/* Contact Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -611,49 +709,101 @@ const getFeeStatusStyle = (status) => ({
           )}
         </div>
         
-        {/* Room/Bed Number */}
-        <div className="w-full px-2">
-          <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
-            Room/Bed Number
-          </label>
-          <div className="relative w-full sm:max-w-[530px] h-[40px]">
-         <select
-  name="roomBedNumber"
-  value={formData.roomBedNumber}
-  onChange={handleInputChange}
-  className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-    formData.roomBedNumber === "" ? "text-[#0000008A]" : "text-black"
-  }`}
-  style={{
-    WebkitAppearance: "none",
-    MozAppearance: "none",
-    appearance: "none", 
-    boxShadow: "0px 4px 10px 0px #00000040",
-  }}
->
-  <option value="" disabled hidden>
-    Select Room/Bed
-  </option>
-  {availableRooms.map((room) => (
-    <option key={room._id} value={room._id}>
-      {room.barcodeId} - Floor {room.floor}, Room {room.roomNo}
-    </option>
-  ))}
-</select>
-            <svg
-              className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
+      
+{/* Room Number */}
+<div className="w-full px-2">
+  <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
+    Room Number
+  </label>
+  <div className="relative w-full sm:max-w-[530px] h-[40px]">
+    <select
+      name="roomNumber"
+      value={formData.roomNumber}
+      onChange={(e) => {
+        handleInputChange(e);
+        // Clear bed selection when room changes
+        setFormData(prev => ({ ...prev, bedNumber: "" }));
+      }}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        formData.roomNumber === "" ? "text-[#0000008A]" : "text-black"
+      }`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none", 
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+    >
+      <option value="" disabled hidden>
+        Select Room
+      </option>
+      {availableRoomNumbers.map((room) => (
+        <option key={room._id} value={room._id}>
+          Room {room._id} - Floor {room.floor}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
+</div>
+
+{/* Bed Number */}
+<div className="w-full px-2">
+  <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
+    Bed Number
+  </label>
+  <div className="relative w-full sm:max-w-[530px] h-[40px]">
+    <select
+      name="bedNumber"
+      value={formData.bedNumber}
+      onChange={handleInputChange}
+      disabled={!formData.roomNumber}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        !formData.roomNumber ? "bg-gray-100 cursor-not-allowed" : ""
+      } ${
+        formData.bedNumber === "" ? "text-[#0000008A]" : "text-black"
+      }`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none", 
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+    >
+      <option value="" disabled hidden>
+        {!formData.roomNumber ? "Select Room First" : "Select Bed"}
+      </option>
+      {getBedsForRoom(formData.roomNumber).map((bed) => (
+        <option key={bed._id} value={bed._id}>
+          {bed.barcodeId}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
+</div>
         
         {/* Emergency Contact Number */}
         <div className="w-full px-2">
@@ -671,87 +821,52 @@ const getFeeStatusStyle = (status) => ({
           />
         </div>
         
-        {/* Admission Date */}
-        <div className="w-full px-2">
-          <label className="block mb-2 text-black ml-2" style={labelStyle}>
-            Admission Date
-          </label>
-          <div className="relative flex items-center">
-            <div className="relative w-[300px] max-w-full">
-              <div className="relative w-full">
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  name="admissionDate"
-                  value={
-                    formData.admissionDate
-                      ? formData.admissionDate.split("-").reverse().join("-")
-                      : ""
-                  }
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      const selectedDate = new Date(e.target.value);
-                      const formattedDate = `${selectedDate
-                        .getDate()
-                        .toString()
-                        .padStart(2, "0")}-${(selectedDate.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0")}-${selectedDate.getFullYear()}`;
-                      setFormData((prev) => ({
-                        ...prev,
-                        admissionDate: formattedDate,
-                      }));
-                    } else {
-                      setFormData((prev) => ({ ...prev, admissionDate: "" }));
-                    }
-                  }}
-                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20"
-                  style={{ colorScheme: "light" }}
-                />
-                <div className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]">
-                  {formData.admissionDate || ""}
-                </div>
-                {!formData.admissionDate && (
-                  <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-500 font-[Poppins] font-semibold text-[10px] md:text-[15px] tracking-[0.3em] pointer-events-none select-none">
-                    {"d\u00A0d\u00A0-\u00A0m\u00A0m\u00A0-\u00A0y\u00A0y\u00A0y\u00A0y"}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCalendarClick}
-              className="ml-3 p-2 rounded-lg flex items-center justify-center cursor-pointer relative z-30 hover:scale-110 transition-transform"
-              title="Open Calendar"
-            >
-              <svg
-                width="30"
-                height="30"
-                viewBox="0 0 30 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <mask
-                  id="mask0_370_4"
-                  style={{ maskType: "alpha" }}
-                  maskUnits="userSpaceOnUse"
-                  x="0"
-                  y="0"
-                  width="30"
-                  height="30"
-                >
-                  <rect width="30" height="30" fill="#D9D9D9" />
-                </mask>
-                <g mask="url(#mask0_370_4)">
-                  <path
-                    d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 21.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 16.6042 21.1302 16.901 20.8906 17.1406C20.651 17.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
-                    fill="#1C1B1F"
-                  />
-                </g>
-              </svg>
-            </button>
-          </div>
+      {/* Admission Date */}
+<div className="w-full px-2">
+  <label className="block mb-2 text-black ml-2" style={labelStyle}>
+    Admission Date
+  </label>
+  <div className="relative flex items-center">
+    <div className="relative w-[300px] max-w-full">
+      <div className="relative w-full">
+        <div className="bg-gray-100 rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] cursor-not-allowed">
+          {formData.admissionDate}
         </div>
+      </div>
+    </div>
+    <div className="ml-3 p-2 rounded-lg flex items-center justify-center relative z-30">
+      <svg
+        width="30"
+        height="30"
+        viewBox="0 0 30 30"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ opacity: 0.5 }}
+      >
+        <mask
+          id="mask0_370_4"
+          style={{ maskType: "alpha" }}
+          maskUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width="30"
+          height="30"
+        >
+          <rect width="30" height="30" fill="#D9D9D9" />
+        </mask>
+        <g mask="url(#mask0_370_4)">
+          <path
+            d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 21.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 16.6042 21.1302 16.901 20.8906 17.1406C20.651 17.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
+            fill="#1C1B1F"
+          />
+        </g>
+      </svg>
+    </div>
+  </div>
+  <p className="text-xs text-gray-600 mt-1 ml-2">
+    Admission date is automatically set to today's date
+  </p>
+</div>
         
         {/* Emergency Contact Name */}
         <div className="w-full px-2">
@@ -833,6 +948,178 @@ const getFeeStatusStyle = (status) => ({
     </>
   );
 
+  // Add this function after the formContent function
+const parentFormContent = () => (
+  <>
+    <h2
+      className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
+      style={{ fontFamily: "Inter", fontWeight: "700" }}
+    >
+      Register Parent Account
+    </h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+      {/* First Name */}
+      <div className="w-full px-2">
+        <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          First Name
+        </label>
+        <input
+          type="text"
+          name="firstName"
+          value={parentFormData.firstName}
+          onChange={handleParentInputChange}
+          placeholder="Enter First Name"
+          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+            parentErrors.firstName ? "border-red-500" : ""
+          }`}
+          style={inputStyle}
+          required
+        />
+        {parentErrors.firstName && (
+          <p className="text-red-500 text-xs mt-1 ml-2">
+            {parentErrors.firstName}
+          </p>
+        )}
+      </div>
+      
+      {/* Last Name */}
+      <div className="w-full px-2">
+        <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          Last Name
+        </label>
+        <input
+          type="text"
+          name="lastName"
+          value={parentFormData.lastName}
+          onChange={handleParentInputChange}
+          placeholder="Enter Last Name"
+          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+            parentErrors.lastName ? "border-red-500" : ""
+          }`}
+          style={inputStyle}
+          required
+        />
+        {parentErrors.lastName && (
+          <p className="text-red-500 text-xs mt-1 ml-2">
+            {parentErrors.lastName}
+          </p>
+        )}
+      </div>
+      
+      {/* Email */}
+      <div className="w-full px-2">
+        <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          E-Mail
+        </label>
+        <input
+          type="email"
+          name="email"
+          value={parentFormData.email}
+          onChange={handleParentInputChange}
+          placeholder="Enter E-Mail"
+          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+            parentErrors.email ? "border-red-500" : ""
+          }`}
+          style={inputStyle}
+          required
+        />
+        {parentErrors.email && (
+          <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.email}</p>
+        )}
+      </div>
+      
+      {/* Contact Number */}
+      <div className="w-full px-2">
+        <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          Contact Number
+        </label>
+        <input
+          type="tel"
+          name="contactNumber"
+          value={parentFormData.contactNumber}
+          onChange={handleParentInputChange}
+          placeholder="Enter Phone Number"
+          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+            parentErrors.contactNumber ? "border-red-500" : ""
+          }`}
+          style={inputStyle}
+          required
+        />
+        {parentErrors.contactNumber && (
+          <p className="text-red-500 text-xs mt-1 ml-2">
+            {parentErrors.contactNumber}
+          </p>
+        )}
+      </div>
+      
+    {/* Student ID */}
+<div className="w-full px-2 md:col-span-2">
+  <label className="block mb-1 text-black ml-2" style={labelStyle}>
+    Student ID
+  </label>
+  <div className="relative w-full h-[40px]">
+    <select
+      name="studentId"
+      value={parentFormData.studentId}
+      onChange={handleParentInputChange}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        parentFormData.studentId === "" ? "text-[#0000008A]" : "text-black"
+      } ${parentErrors.studentId ? "border-red-500" : ""}`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none", 
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+      required
+    >
+      <option value="" disabled hidden>
+        Select Student ID
+      </option>
+      {studentsWithoutParents.map((student) => (
+        <option key={student.studentId} value={student.studentId}>
+          {student.studentId} - {student.firstName} {student.lastName}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
+  {parentErrors.studentId && (
+    <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.studentId}</p>
+  )}
+</div>
+    </div>
+    
+    {/* Submit Button */}
+    <div className="flex justify-center">
+      <button
+        onClick={handleParentSubmit}
+        disabled={parentLoading}
+        className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${
+          parentLoading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+        style={{
+          fontWeight: "600",
+          fontSize: "15px",
+        }}
+      >
+        {parentLoading ? "Registering..." : "Register Parent"}
+      </button>
+    </div>
+  </>
+);
+
   return (
     <div
       className="bg-white min-h-screen"
@@ -854,15 +1141,44 @@ const getFeeStatusStyle = (status) => ({
           </h1>
         </div>
         
-        {/* Registration Form (conditionally rendered when not editing) */}
-        {!editingStudent && (
-          <div
-            className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto"
-            style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-          >
-            {formContent(false)}
-          </div>
-        )}
+     {/* Tabbed Registration Forms (conditionally rendered when not editing) */}
+{!editingStudent && (
+  <div className="w-full max-w-7xl mx-auto">
+    {/* Tab Navigation */}
+    <div className="flex mb-4">
+      <button
+        onClick={() => setActiveTab("student")}
+        className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${
+          activeTab === "student"
+            ? "bg-[#BEC5AD] text-black border-b-2 border-[#4F8CCF]"
+            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+        }`}
+        style={{ fontFamily: "Poppins", fontWeight: "600" }}
+      >
+        Register Student
+      </button>
+      <button
+        onClick={() => setActiveTab("parent")}
+        className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${
+          activeTab === "parent"
+            ? "bg-[#BEC5AD] text-black border-b-2 border-[#4F8CCF]"
+            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+        }`}
+        style={{ fontFamily: "Poppins", fontWeight: "600" }}
+      >
+        Register Parent
+      </button>
+    </div>
+    
+    {/* Tab Content */}
+    <div
+      className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8"
+      style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+    >
+      {activeTab === "student" ? formContent(false) : parentFormContent()}
+    </div>
+  </div>
+)}
         
         {/* Edit Student Modal (conditionally rendered when editing) */}
         {showEditModal && editingStudent && (
