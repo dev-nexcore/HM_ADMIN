@@ -163,48 +163,57 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
               </div>
 
               {/* QR Code Section */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
-                  QR Code
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  {item.qrCodeUrl ? (
-                    <div className="space-y-3">
-                      <img 
-                        src={item.qrCodeUrl && item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `http://localhost:5224${item.qrCodeUrl || ''}`}
-                        alt="QR Code"
-                        className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-                      />
-                      <p className="text-sm text-gray-600">
-                        Scan this QR code to view item details
-                      </p>
-                      <button
-                        onClick={handleDownloadQR}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <QrCode size={16} />
-                        Download QR Code
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="w-32 h-32 bg-gray-200 border border-gray-300 rounded-lg mx-auto flex items-center justify-center">
-                        <QrCode size={48} className="text-gray-400" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        No QR code generated yet
-                      </p>
-                      <button
-                        onClick={handleGenerateQR}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <QrCode size={16} />
-                        Generate QR Code
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+             // Replace the QR Code section with:
+<div>
+  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
+    QR Code
+  </h3>
+  <div className="bg-gray-50 p-4 rounded-lg text-center">
+    {item.qrCodeUrl ? (
+      <div className="space-y-3">
+        <img 
+          src={item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `${window.location.protocol}//${window.location.host}${item.qrCodeUrl}`}
+          alt="QR Code"
+          className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+          onError={(e) => {
+            console.error('QR Code image failed to load:', e.target.src);
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }}
+        />
+        <div style={{display: 'none'}} className="text-red-500 text-sm">
+          QR Code image failed to load
+        </div>
+        <p className="text-sm text-gray-600">
+          Scan this QR code to view item details
+        </p>
+        <button
+          onClick={handleDownloadQR}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+        >
+          <QrCode size={16} />
+          Download QR Code
+        </button>
+      </div>
+    ) : (
+      <div className="space-y-3">
+        <div className="w-32 h-32 bg-gray-200 border border-gray-300 rounded-lg mx-auto flex items-center justify-center">
+          <QrCode size={48} className="text-gray-400" />
+        </div>
+        <p className="text-sm text-gray-600">
+          No QR code generated yet
+        </p>
+        <button
+          onClick={handleGenerateQR}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
+        >
+          <QrCode size={16} />
+          Generate QR Code
+        </button>
+      </div>
+    )}
+  </div>
+</div>
 
               {/* Receipt Section */}
               {item.receiptUrl && (

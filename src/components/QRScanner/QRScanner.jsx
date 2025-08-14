@@ -9,7 +9,7 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  const streamRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,28 +23,34 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
 
     return () => {
       stopCamera();
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     };
   }, [isOpen]);
 
   const requestCameraPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
+      // Check if we're on a mobile device and prefer back camera
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' }, // Prefer back camera
           width: { ideal: 640 },
           height: { ideal: 480 }
-        } 
-      });
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
-          setCameraPermission('granted');
-          setScanning(true);
-          startScanning();
+          videoRef.current.play().then(() => {
+            setCameraPermission('granted');
+            setScanning(true);
+            startScanning();
+          }).catch(err => {
+            console.error('Error playing video:', err);
+            setError('Error starting camera video');
+          });
         };
       }
     } catch (err) {
@@ -55,19 +61,19 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
 
   const startScanning = () => {
-    const scanFrame = () => {
+    const scanInterval = setInterval(() => {
       if (!scanning || !videoRef.current || !canvasRef.current) {
+        clearInterval(scanInterval);
         return;
       }
 
@@ -80,23 +86,20 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const qrCode = detectQRCode(imageData);
-        
-        if (qrCode) {
-          handleQRCodeDetected(qrCode);
-          return;
-        }
+        // Try to detect QR code using browser's BarcodeDetector
+        detectQRCode().then(qrCode => {
+          if (qrCode) {
+            clearInterval(scanInterval);
+            handleQRCodeDetected(qrCode);
+          }
+        }).catch(err => {
+          console.debug('QR detection error:', err);
+        });
       }
-
-      animationRef.current = requestAnimationFrame(scanFrame);
-    };
-
-    scanFrame();
+    }, 500); // Scan every 500ms
   };
 
-  // Simple QR code detection using browser's built-in BarcodeDetector if available
-  const detectQRCode = async (imageData) => {
+  const detectQRCode = async () => {
     try {
       if ('BarcodeDetector' in window) {
         const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
@@ -106,9 +109,12 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
         if (barcodes.length > 0) {
           return barcodes[0].rawValue;
         }
+      } else {
+        // Fallback for browsers without BarcodeDetector
+        console.log('BarcodeDetector not supported');
       }
     } catch (error) {
-      console.debug('BarcodeDetector not supported or failed:', error);
+      console.debug('BarcodeDetector failed:', error);
     }
     return null;
   };
@@ -135,8 +141,8 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
         slug = data;
       }
       
-      // Fetch item details
-      const response = await fetch(`/api/inventory/public/${slug}`);
+      // Fetch item details using your API
+      const response = await fetch(`/api/adminauth/inventory/qr/${slug}`);
       const result = await response.json();
       
       if (result.success) {
@@ -167,38 +173,8 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
   const resetScanner = () => {
     setError('');
     setLoading(false);
+    setCameraPermission(null);
     requestCameraPermission();
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    try {
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = async () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        context.drawImage(img, 0, 0);
-        
-        const qrCode = await detectQRCode();
-        if (qrCode) {
-          handleQRCodeDetected(qrCode);
-        } else {
-          setError('No QR code found in the uploaded image');
-          setLoading(false);
-        }
-      };
-      
-      img.src = URL.createObjectURL(file);
-    } catch (error) {
-      setError('Error processing uploaded image');
-      setLoading(false);
-    }
   };
 
   if (!isOpen) return null;
@@ -231,7 +207,6 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
                 className="w-full h-64 bg-gray-200 rounded-lg object-cover"
               />
               
-              {/* Hidden canvas for QR detection */}
               <canvas
                 ref={canvasRef}
                 style={{ display: 'none' }}
@@ -240,7 +215,6 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
               {/* Scanner overlay */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 border-blue-500 rounded-lg bg-transparent">
-                  {/* Corner indicators */}
                   <div className="relative w-full h-full">
                     <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>
                     <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></div>
@@ -248,7 +222,6 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
                     <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></div>
                   </div>
                   
-                  {/* Scanning animation */}
                   {scanning && (
                     <div className="absolute inset-0 overflow-hidden rounded-lg">
                       <div className="absolute w-full h-1 bg-blue-500 opacity-75 animate-pulse"
@@ -304,7 +277,7 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
                 <div className="text-center">
                   <div className="animate-pulse">
                     <Camera size={48} className="text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">Initializing camera...</p>
+                    <p className="text-gray-600">Starting camera...</p>
                   </div>
                 </div>
               )}
@@ -318,42 +291,26 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
           </div>
         )}
 
-        {/* File Upload Option */}
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 mb-2">Or upload QR code image:</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-        </div>
-
         {/* Manual Input Alternative */}
         <div className="border-t pt-4">
           <p className="text-sm text-gray-600 mb-2">Or enter manually:</p>
-          <div className="flex gap-2">
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
             <input
               type="text"
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
               placeholder="Enter QR code URL or slug"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleManualSubmit(e);
-                }
-              }}
             />
             <button
-              onClick={handleManualSubmit}
+              type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1 disabled:opacity-50"
               disabled={!manualInput.trim() || loading}
             >
               <Search size={16} />
               Search
             </button>
-          </div>
+          </form>
         </div>
 
         {/* Instructions */}
@@ -363,11 +320,10 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
           <p>• Ensure the entire QR code is visible in the frame</p>
           <p>• Allow camera permissions when prompted</p>
           {!('BarcodeDetector' in window) && (
-            <p className="text-orange-600">• For best results, use a modern browser with QR detection support</p>
+            <p className="text-orange-600">• For best results, use Chrome/Edge browser</p>
           )}
         </div>
 
-        {/* CSS for scanning animation */}
         <style jsx>{`
           @keyframes scan {
             0% {
@@ -389,4 +345,3 @@ const QRScanner = ({ isOpen, onClose, onScanResult }) => {
 };
 
 export default QRScanner;
-

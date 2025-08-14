@@ -30,7 +30,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [scannedItem, setScannedItem] = useState(null);
+
   const fileInputRef = useRef(null);
 
   const toggleVisibility = (barcode) => {
@@ -70,6 +72,49 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       alert(`Receipt uploaded for ${data.item.itemName}`);
     } catch (error) {
       console.error("Failed to upload receipt:", error);
+    }
+  };
+
+  const generateMonthlyStockReport = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/api/adminauth/inventory/stock-report", {
+        headers: {
+          "Content-Type": "application/json",
+          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        responseType: "blob", // This is important for file downloads with axios
+      });
+
+      // For axios, check response.status instead of response.ok
+      if (response.status === 200) {
+        const blob = response.data; // axios already gives you the blob in response.data
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+
+        // Generate filename with current month and year
+        const now = new Date();
+        const monthYear = now.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        link.download = `Monthly_Stock_Report_${monthYear}.xlsx`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        alert("Stock report downloaded successfully!");
+      } else {
+        alert("Failed to generate stock report");
+      }
+    } catch (error) {
+      console.error("Error generating stock report:", error);
+      alert("Error generating stock report");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,11 +167,11 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
   const handleDownloadQR = async (item) => {
     try {
-      const response = await fetch(
+      const response = await api.get(
         `/api/adminauth/inventory/${item._id}/qr-code/download`
       );
-      if (response.ok) {
-        const blob = await response.blob();
+      if (response.data) {
+        const blob = response.data;
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -174,36 +219,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
               Scan QR Code
             </button>
 
-            {/* Upload Receipt */}
-            <button
-              onClick={triggerFileInput}
-              className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
-            >
-              <svg
-                width="17"
-                height="16"
-                viewBox="0 0 21 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9.05147 14.783V4.82777L5.87557 8.00367L4.16547 6.23249L10.273 0.125L16.3805 6.23249L14.6704 8.00367L11.4945 4.82777V14.783H9.05147ZM2.94397 19.669C2.27215 19.669 1.69703 19.4298 1.21861 18.9513C0.740187 18.4729 0.500977 17.8978 0.500977 17.226V13.5615H2.94397V17.226H17.602V13.5615H20.045V17.226C20.045 17.8978 19.8057 18.4729 19.3273 18.9513C18.8489 19.4298 18.2738 19.669 17.602 19.669H2.94397Z"
-                  fill="white"
-                />
-              </svg>
-              Upload Receipt
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleUploadReceipt}
-              accept=".pdf,.jpg,.jpeg,.png"
-              className="hidden"
-            />
-
             {/* Generate Monthly Stock Report */}
             <button
-              onClick={() => setShowReportModal(true)}
+              onClick={generateMonthlyStockReport}
               className="flex items-center gap-2 bg-white border border-gray-300 cursor-pointer text-black px-4 py-1.5 rounded shadow-md font-base w-full sm:w-auto"
             >
               <svg
@@ -223,7 +241,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 
             {/* Add New Item */}
             <button
-              onClick={onAddNewItem}
+              onClick={onAddNewItem} // Use the prop function instead
               className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded shadow-md w-full sm:w-auto"
             >
               <svg
@@ -301,8 +319,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                   ].map((header, idx) => (
                     <th
                       key={idx}
-                      className={`px-0 py-2 ${idx === 0 ? "rounded-tl-lg" : ""
-                        } ${idx === 6 ? "rounded-tr-lg" : ""}`}
+                      className={`px-0 py-2 ${
+                        idx === 0 ? "rounded-tl-lg" : ""
+                      } ${idx === 6 ? "rounded-tr-lg" : ""}`}
                     >
                       <div className="flex items-center pl-4 pr-4">
                         <span className="flex-1">{header}</span>
@@ -337,8 +356,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                       <td className="px-4 py-2">{item.location}</td>
                       <td className="px-4 py-2">
                         <span
-                          className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]
-                            }`}
+                          className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${
+                            statusColor[item.status]
+                          }`}
                         >
                           {item.status}
                         </span>
@@ -450,8 +470,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                 <div className="mb-2">
                   <strong>Status:</strong>{" "}
                   <span
-                    className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]
-                      }`}
+                    className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${
+                      statusColor[item.status]
+                    }`}
                   >
                     {item.status}
                   </span>
@@ -645,8 +666,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                   <p>
                     <span className="font-semibold">Status:</span>
                     <span
-                      className={`inline-block ml-2 px-2 py-1 text-xs rounded ${statusColor[selectedItem.status] || "bg-gray-200"
-                        }`}
+                      className={`inline-block ml-2 px-2 py-1 text-xs rounded ${
+                        statusColor[selectedItem.status] || "bg-gray-200"
+                      }`}
                     >
                       {selectedItem.status}
                     </span>
@@ -818,6 +840,17 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
 function AddNewItem({ onBackToInventory, onItemAdded }) {
   // Track the current origin for QR code generation (avoids SSR/undefined issues)
   const [origin, setOrigin] = useState("");
+  const [availableLocations] = useState([
+    "Main Building",
+    "Kitchen",
+    "Mess Hall",
+    "Recreation Room",
+    "Study Hall",
+  ]);
+  const [availableRoomsForInventory, setAvailableRoomsForInventory] = useState(
+    []
+  );
+  const [availableFloors, setAvailableFloors] = useState([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -842,6 +875,42 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [generatedItem, setGeneratedItem] = useState(null);
+
+  const fetchAvailableRoomsForInventory = async () => {
+    try {
+      const response = await api.get(
+        "/api/adminauth/inventory/available-rooms-floors",
+        {
+          headers: {
+            // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+        }
+      );
+      const data = await response.data;
+      return data;
+    } catch (error) {
+      console.error("Error fetching available rooms:", error);
+      return { rooms: [], floors: [] };
+    }
+  };
+
+  const generateBarcodeId = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `${formData.itemName
+      ?.toUpperCase()
+      .replace(/\s+/g, "")}${timestamp}${random}`;
+  };
+
+  useEffect(() => {
+    const loadAvailableRoomsFloors = async () => {
+      const data = await fetchAvailableRoomsForInventory();
+      setAvailableRoomsForInventory(data.rooms || []);
+      setAvailableFloors(data.floors || []);
+    };
+
+    loadAvailableRoomsFloors();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -883,13 +952,13 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       newErrors.category = "Category is required.";
     }
 
-      if (!formData.roomNo.trim()) {
-    newErrors.roomNo = "Room No is required.";
-  }
-  
-  if (!formData.floor.trim()) {
-    newErrors.floor = "Floor is required.";
-  }
+    if (!formData.roomNo.trim()) {
+      newErrors.roomNo = "Room No is required.";
+    }
+
+    if (!formData.floor.trim()) {
+      newErrors.floor = "Floor is required.";
+    }
 
     return newErrors;
   };
@@ -940,8 +1009,8 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       if (formData.receipt) {
         formDataToSend.append("receipt", formData.receipt);
       }
-           formDataToSend.append("roomNo", formData.roomNo);
-formDataToSend.append("floor", formData.floor);
+      formDataToSend.append("roomNo", formData.roomNo);
+      formDataToSend.append("floor", formData.floor);
 
       const { data } = await api.post(
         `/api/adminauth/inventory/add`,
@@ -989,8 +1058,8 @@ formDataToSend.append("floor", formData.floor);
       if (formData.receipt) {
         formDataToSend.append("receipt", formData.receipt);
       }
-           formDataToSend.append("roomNo", formData.roomNo);
-formDataToSend.append("floor", formData.floor);
+      formDataToSend.append("roomNo", formData.roomNo);
+      formDataToSend.append("floor", formData.floor);
 
       const { data } = await api.post(
         `/api/adminauth/inventory/add`,
@@ -1021,11 +1090,11 @@ formDataToSend.append("floor", formData.floor);
     if (!generatedItem) return;
 
     try {
-      const response = await fetch(
+      const response = await api.get(
         `/api/adminauth/inventory/${generatedItem._id}/qr-code/download`
       );
-      if (response.ok) {
-        const blob = await response.blob();
+      if (response.data) {
+        const blob = response.data;
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -1087,6 +1156,29 @@ formDataToSend.append("floor", formData.floor);
         </h1>
       </div>
 
+      <div className="mb-4">
+        <button
+          onClick={onBackToInventory}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          Back to Inventory List
+        </button>
+      </div>
+
       {/* Main Form Container */}
       <div
         className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto"
@@ -1111,8 +1203,9 @@ formDataToSend.append("floor", formData.floor);
               onChange={handleInputChange}
               placeholder="Enter Item Name"
               className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black
-              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.itemName ? "border-2 border-red-500" : ""
-                }`}
+              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+                errors.itemName ? "border-2 border-red-500" : ""
+              }`}
               style={inputStyle}
               required
             />
@@ -1125,51 +1218,70 @@ formDataToSend.append("floor", formData.floor);
 
           {/* Location */}
           <div className="w-full px-2">
-            <label className="block mb-1 text-black ml-2" style={labelStyle}>
-              Location
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              placeholder="Enter Location"
-              className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black
-              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.location ? "border-2 border-red-500" : ""
-                }`}
-              style={inputStyle}
-              required
-            />
-            {errors.location && (
-              <p className="text-red-500 text-xs mt-1 ml-2">
-                {errors.location}
-              </p>
-            )}
-          </div>
+  <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
+    Location
+  </label>
+  <div className="relative w-full sm:max-w-[530px] h-[40px]">
+    <select
+      name="location"
+      value={formData.location}
+      onChange={handleInputChange}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        formData.location === "" ? "text-[#0000008A]" : "text-black"
+      } ${errors.location ? "border-2 border-red-500" : ""}`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none",
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+      required
+    >
+      <option value="" disabled hidden>
+        Select Location
+      </option>
+      {availableLocations.map((location) => (
+        <option key={location} value={location}>
+          {location}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
+  {errors.location && (
+    <p className="text-red-500 text-xs mt-1 ml-2">{errors.location}</p>
+  )}
+</div>
 
-          {/* Barcode ID */}
-          <div className="w-full px-2">
-            <label className="block mb-1 text-black ml-2" style={labelStyle}>
-              Barcode ID
-            </label>
-            <input
-              type="text"
-              name="barcodeId"
-              value={formData.barcodeId}
-              onChange={handleInputChange}
-              placeholder="Enter Barcode ID"
-              className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black
-              font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.barcodeId ? "border-2 border-red-500" : ""
-                }`}
-              style={inputStyle}
-              required
-            />
-            {errors.barcodeId && (
-              <p className="text-red-500 text-xs mt-1 ml-2">
-                {errors.barcodeId}
-              </p>
-            )}
-          </div>
+{/* Barcode ID - Updated to match input style */}
+<div className="w-full px-2">
+  <label className="block mb-1 text-black ml-2" style={labelStyle}>
+    Barcode ID
+  </label>
+  <input
+    type="text"
+    name="barcodeId"
+    value={formData.barcodeId || generateBarcodeId()}
+    readOnly
+    className="w-full px-4 bg-gray-100 rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] cursor-not-allowed"
+    style={inputStyle}
+    placeholder="Auto-generated"
+  />
+  <p className="text-xs text-gray-600 mt-1 ml-2">
+    Barcode ID is automatically generated
+  </p>
+</div>
 
           {/* Status */}
           <div className="w-full px-2">
@@ -1183,8 +1295,9 @@ formDataToSend.append("floor", formData.floor);
                 onChange={handleInputChange}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
       text-[12px] leading-[22px] font-semibold font-[Poppins]
-      ${formData.status === "" ? "text-[#0000008A]" : "text-black"} ${errors.status ? "border-2 border-red-500" : ""
-                  }`}
+      ${formData.status === "" ? "text-[#0000008A]" : "text-black"} ${
+                  errors.status ? "border-2 border-red-500" : ""
+                }`}
                 style={{
                   WebkitAppearance: "none",
                   MozAppearance: "none",
@@ -1231,8 +1344,9 @@ formDataToSend.append("floor", formData.floor);
                 onChange={handleInputChange}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none
       text-[12px] leading-[22px] font-semibold font-[Poppins]
-      ${formData.category === "" ? "text-[#0000008A]" : "text-black"} ${errors.category ? "border-2 border-red-500" : ""
-                  }`}
+      ${formData.category === "" ? "text-[#0000008A]" : "text-black"} ${
+                  errors.category ? "border-2 border-red-500" : ""
+                }`}
                 style={{
                   WebkitAppearance: "none",
                   MozAppearance: "none",
@@ -1287,56 +1401,99 @@ formDataToSend.append("floor", formData.floor);
           </div>
 
           {/* Room No */}
-<div className="w-full px-2">
-  <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          <div className="w-full px-2">
+  <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
     Room No
   </label>
-  <input
-    type="text"
-    name="roomNo"
-    value={formData.roomNo}
-    onChange={handleInputChange}
-    placeholder="Enter Room No"
-    className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black
-    font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-      errors.roomNo ? "border-2 border-red-500" : ""
-    }`}
-    style={inputStyle}
-    required
-  />
+  <div className="relative w-full sm:max-w-[530px] h-[40px]">
+    <select
+      name="roomNo"
+      value={formData.roomNo}
+      onChange={handleInputChange}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        formData.roomNo === "" ? "text-[#0000008A]" : "text-black"
+      } ${errors.roomNo ? "border-2 border-red-500" : ""}`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none",
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+    >
+      <option value="" disabled hidden>
+        Select Room Number
+      </option>
+      {availableRoomsForInventory.map((room) => (
+        <option key={room} value={room}>
+          Room {room}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
   {errors.roomNo && (
-    <p className="text-red-500 text-xs mt-1 ml-2">
-      {errors.roomNo}
-    </p>
+    <p className="text-red-500 text-xs mt-1 ml-2">{errors.roomNo}</p>
   )}
 </div>
 
-{/* Floor */}
+{/* Floor - Updated to match other dropdowns */}
 <div className="w-full px-2">
-  <label className="block mb-1 text-black ml-2" style={labelStyle}>
+  <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
     Floor
   </label>
-  <input
-    type="text"
-    name="floor"
-    value={formData.floor}
-    onChange={handleInputChange}
-    placeholder="Enter Floor"
-    className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black
-    font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-      errors.floor ? "border-2 border-red-500" : ""
-    }`}
-    style={inputStyle}
-    required
-  />
+  <div className="relative w-full sm:max-w-[530px] h-[40px]">
+    <select
+      name="floor"
+      value={formData.floor}
+      onChange={handleInputChange}
+      className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+        formData.floor === "" ? "text-[#0000008A]" : "text-black"
+      } ${errors.floor ? "border-2 border-red-500" : ""}`}
+      style={{
+        WebkitAppearance: "none",
+        MozAppearance: "none",
+        appearance: "none",
+        boxShadow: "0px 4px 10px 0px #00000040",
+      }}
+    >
+      <option value="" disabled hidden>
+        Select Floor
+      </option>
+      {availableFloors.map((floor) => (
+        <option key={floor} value={floor}>
+          Floor {floor}
+        </option>
+      ))}
+    </select>
+    <svg
+      className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  </div>
   {errors.floor && (
-    <p className="text-red-500 text-xs mt-1 ml-2">
-      {errors.floor}
-    </p>
+    <p className="text-red-500 text-xs mt-1 ml-2">{errors.floor}</p>
   )}
 </div>
         </div>
-
 
         {/* Description */}
         <div className="mt-6 sm:mt-8 w-full px-2">
@@ -1383,8 +1540,8 @@ formDataToSend.append("floor", formData.floor);
                       .getDate()
                       .toString()
                       .padStart(2, "0")}-${(selectedDate.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0")}-${selectedDate.getFullYear()}`;
+                      .toString()
+                      .padStart(2, "0")}-${selectedDate.getFullYear()}`;
                     setFormData((prev) => ({
                       ...prev,
                       purchaseDate: formattedDate,
@@ -1534,30 +1691,42 @@ formDataToSend.append("floor", formData.floor);
               </p>
 
               {/* QR Code Preview */}
-              {generatedItem && (generatedItem.publicUrl || generatedItem.qrCodeUrl) && (
-                <div className="mb-4 flex flex-col items-center">
-                  {generatedItem.publicUrl ? (
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatedItem.publicUrl)}`}
-                      alt="Generated QR Code"
-                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-                    />
-                  ) : (
-                    <img
-                      src={
-                        generatedItem.qrCodeUrl.startsWith('http')
-                          ? generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')
-                          : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224'}${generatedItem.qrCodeUrl.replace('/public/qrcodes', '/qrcodes')}`
-                      }
-                      alt="Generated QR Code"
-                      className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-                    />
-                  )}
-                  <div className="mt-2 text-xs break-all text-gray-500">
-                    {generatedItem.publicUrl || generatedItem.qrCodeUrl}
+              {generatedItem &&
+                (generatedItem.publicUrl || generatedItem.qrCodeUrl) && (
+                  <div className="mb-4 flex flex-col items-center">
+                    {generatedItem.publicUrl ? (
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                          generatedItem.publicUrl
+                        )}`}
+                        alt="Generated QR Code"
+                        className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                      />
+                    ) : (
+                      <img
+                        src={
+                          generatedItem.qrCodeUrl.startsWith("http")
+                            ? generatedItem.qrCodeUrl.replace(
+                                "/public/qrcodes",
+                                "/qrcodes"
+                              )
+                            : `${
+                                process.env.NEXT_PUBLIC_PROD_API_URL ||
+                                "http://localhost:5224"
+                              }${generatedItem.qrCodeUrl.replace(
+                                "/public/qrcodes",
+                                "/qrcodes"
+                              )}`
+                        }
+                        alt="Generated QR Code"
+                        className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
+                      />
+                    )}
+                    <div className="mt-2 text-xs break-all text-gray-500">
+                      {generatedItem.publicUrl || generatedItem.qrCodeUrl}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
