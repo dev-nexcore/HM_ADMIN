@@ -165,29 +165,33 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
     }
   };
 
-  const handleDownloadQR = async (item) => {
-    try {
-      const response = await api.get(
-        `/api/adminauth/inventory/${item._id}/qr-code/download`
-      );
-      if (response.data) {
-        const blob = response.data;
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${item.itemName}-QR.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert("Failed to download QR code");
+ const handleDownloadQR = async (item) => {
+  try {
+    const response = await api.get(
+      `/api/adminauth/inventory/${item._id}/qr-code/download`,
+      { 
+        responseType: 'blob' // This is crucial for downloading files
       }
-    } catch (error) {
-      console.error("Error downloading QR code:", error);
-      alert("Error downloading QR code");
+    );
+    
+    if (response.data) {
+      const blob = new Blob([response.data], { type: 'image/png' }); // Explicitly create blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${item.itemName}-QR.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } else {
+      alert("Failed to download QR code");
     }
-  };
+  } catch (error) {
+    console.error("Error downloading QR code:", error);
+    alert("Error downloading QR code");
+  }
+};
 
   const handleQRScanResult = (item) => {
     setScannedItem(item);
@@ -700,40 +704,87 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
             </div>
 
             {/* QR Code Section */}
-            <div className="mt-6">
-              <h4 className="font-bold text-lg mb-2">QR Code</h4>
-              <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
-                {selectedItem.qrCodeUrl ? (
-                  <div className="flex flex-col items-center">
-                    <img
-                      src={selectedItem.qrCodeUrl}
-                      alt="QR Code"
-                      className="w-32 h-32 border border-gray-300 rounded-lg mb-2"
-                    />
-                    <p className="mb-2">QR Code generated</p>
-                    <button
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
-                      onClick={() => handleDownloadQR(selectedItem)}
-                    >
-                      <Download size={16} />
-                      Download QR Code
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <QrCode size={48} className="text-gray-400 mb-2" />
-                    <p className="mb-2">No QR code generated</p>
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
-                      onClick={() => handleGenerateQR(selectedItem)}
-                    >
-                      <QrCode size={16} />
-                      Generate QR Code
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+           {/* QR Code Section - FIXED */}
+<div className="mt-6">
+  <h4 className="font-bold text-lg mb-2">QR Code</h4>
+  <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
+    {selectedItem.qrCodeUrl ? (
+      <div className="flex flex-col items-center">
+        <img
+          src={(() => {
+            // Construct the correct URL for QR code
+            const baseUrl = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224';
+            let qrPath = selectedItem.qrCodeUrl;
+            
+            // If it's already a complete URL, use it
+            if (qrPath.startsWith('http')) {
+              return qrPath;
+            }
+            
+            // Clean up the path and construct proper URL
+            if (qrPath.startsWith('/')) qrPath = qrPath.substring(1);
+            if (qrPath.startsWith('public/')) qrPath = qrPath.substring(7);
+            if (!qrPath.startsWith('qrcodes/')) qrPath = `qrcodes/${qrPath}`;
+            
+            return `${baseUrl}/${qrPath}`;
+          })()}
+          alt="QR Code"
+          className="w-32 h-32 border border-gray-300 rounded-lg mb-2"
+          onError={(e) => {
+            console.error('QR code failed to load. Trying alternative URLs...');
+            const filename = selectedItem.qrCodeUrl.split('/').pop();
+            const baseUrl = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224';
+            const alternatives = [
+              `${baseUrl}/qrcodes/${filename}`,
+              `${baseUrl}/public/qrcodes/${filename}`,
+              `${baseUrl}${selectedItem.qrCodeUrl}`,
+            ];
+            
+            // Try alternative URLs
+            const currentSrc = e.target.src;
+            const nextAlt = alternatives.find(alt => alt !== currentSrc);
+            
+            if (nextAlt) {
+              console.log('Trying alternative URL:', nextAlt);
+              e.target.src = nextAlt;
+            } else {
+              // All alternatives failed, show error
+              console.error('All QR code URL attempts failed');
+              e.target.style.display = 'none';
+              e.target.nextElementSibling.style.display = 'block';
+            }
+          }}
+          onLoad={() => {
+            console.log('QR code loaded successfully');
+          }}
+        />
+        <div style={{ display: 'none' }} className="w-32 h-32 border border-red-300 rounded-lg mb-2 flex items-center justify-center bg-red-50">
+          <span className="text-red-500 text-xs text-center">QR Code<br/>Load Failed</span>
+        </div>
+        <p className="mb-2">QR Code generated</p>
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
+          onClick={() => handleDownloadQR(selectedItem)}
+        >
+          <Download size={16} />
+          Download QR Code
+        </button>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center">
+        <QrCode size={48} className="text-gray-400 mb-2" />
+        <p className="mb-2">No QR code generated</p>
+        <button
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+          onClick={() => handleGenerateQR(selectedItem)}
+        >
+          <QrCode size={16} />
+          Generate QR Code
+        </button>
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Receipt Section */}
             <div className="mt-6">
@@ -847,9 +898,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     "Recreation Room",
     "Study Hall",
   ]);
-  const [availableRoomsForInventory, setAvailableRoomsForInventory] = useState(
-    []
-  );
+  const [availableRoomsForInventory, setAvailableRoomsForInventory] = useState([]);
   const [availableFloors, setAvailableFloors] = useState([]);
 
   useEffect(() => {
@@ -857,6 +906,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       setOrigin(window.location.origin);
     }
   }, []);
+
   const dateInputRef = useRef(null);
   const [formData, setFormData] = useState({
     itemName: "",
@@ -894,13 +944,26 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     }
   };
 
+  // Fixed barcode generation function
   const generateBarcodeId = () => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
-    return `${formData.itemName
-      ?.toUpperCase()
-      .replace(/\s+/g, "")}${timestamp}${random}`;
+    const itemPrefix = formData.itemName
+      ? formData.itemName.toUpperCase().replace(/\s+/g, "").substring(0, 3)
+      : "ITM";
+    return `${itemPrefix}${timestamp}${random}`;
   };
+
+  // Auto-generate barcode when item name changes
+  useEffect(() => {
+    if (formData.itemName) {
+      const newBarcodeId = generateBarcodeId();
+      setFormData(prev => ({
+        ...prev,
+        barcodeId: newBarcodeId
+      }));
+    }
+  }, [formData.itemName]);
 
   useEffect(() => {
     const loadAvailableRoomsFloors = async () => {
@@ -928,7 +991,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     }
   };
 
-  // Validation function
+  // Fixed validation function
   const validateForm = () => {
     const newErrors = {};
 
@@ -960,7 +1023,8 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       newErrors.floor = "Floor is required.";
     }
 
-    return newErrors;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleFileChange = (e) => {
@@ -988,103 +1052,111 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
     onBackToInventory();
   };
 
-  const handleGenerateQR = async () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  // Fixed handleGenerateQR function
+const handleGenerateQR = async () => {
+  console.log("Generate QR & Save button clicked"); // Debug log
+  
+  if (!validateForm()) {
+    console.log("Form validation failed", errors); // Debug log
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("itemName", formData.itemName);
+    formDataToSend.append("barcodeId", formData.barcodeId);
+    formDataToSend.append("category", formData.category);
+    formDataToSend.append("location", formData.location);
+    formDataToSend.append("status", formData.status);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("purchaseDate", formData.purchaseDate);
+    formDataToSend.append("purchaseCost", formData.purchaseCost);
+    if (formData.receipt) {
+      formDataToSend.append("receipt", formData.receipt);
     }
+    formDataToSend.append("roomNo", formData.roomNo);
+    formDataToSend.append("floor", formData.floor);
 
-    setIsSubmitting(true);
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("itemName", formData.itemName);
-      formDataToSend.append("barcodeId", formData.barcodeId);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("location", formData.location);
-      formDataToSend.append("status", formData.status);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("purchaseDate", formData.purchaseDate);
-      formDataToSend.append("purchaseCost", formData.purchaseCost);
-      if (formData.receipt) {
-        formDataToSend.append("receipt", formData.receipt);
-      }
-      formDataToSend.append("roomNo", formData.roomNo);
-      formDataToSend.append("floor", formData.floor);
+    console.log("Sending data to API"); // Debug log
+    const { data } = await api.post(
+      `/api/adminauth/inventory/add`,
+      formDataToSend,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
 
-      const { data } = await api.post(
-        `/api/adminauth/inventory/add`,
-        formDataToSend,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
-      if (data.success) {
-        setGeneratedItem(data.item);
-        setShowSuccessModal(true);
-        if (onItemAdded) {
-          onItemAdded(data.item);
-        }
+    if (data.success) {
+      console.log("Item added successfully", data.item); // Debug log
+      setGeneratedItem(data.item);
+      setShowSuccessModal(true);
+      if (onItemAdded) {
+        onItemAdded(data.item);
       }
-    } catch (error) {
-      console.error("Failed to add inventory item:", error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("Failed to add item. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-
-  const handleSaveItem = async () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  } catch (error) {
+    console.error("Failed to add inventory item:", error);
+    if (error.response?.data?.message) {
+      alert(error.response.data.message);
+    } else {
+      alert("Failed to add item. Please try again.");
     }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-    setIsSubmitting(true);
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("itemName", formData.itemName);
-      formDataToSend.append("barcodeId", formData.barcodeId);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("location", formData.location);
-      formDataToSend.append("status", formData.status);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("purchaseDate", formData.purchaseDate);
-      formDataToSend.append("purchaseCost", formData.purchaseCost);
-      if (formData.receipt) {
-        formDataToSend.append("receipt", formData.receipt);
-      }
-      formDataToSend.append("roomNo", formData.roomNo);
-      formDataToSend.append("floor", formData.floor);
+  // Fixed handleSaveItem function
+  // const handleSaveItem = async () => {
+  //   console.log("Save Item button clicked"); // Debug log
+    
+  //   if (!validateForm()) {
+  //     console.log("Form validation failed", errors); // Debug log
+  //     return;
+  //   }
 
-      const { data } = await api.post(
-        `/api/adminauth/inventory/add`,
-        formDataToSend,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+  //   setIsSubmitting(true);
+  //   try {
+  //     const formDataToSend = new FormData();
+  //     formDataToSend.append("itemName", formData.itemName);
+  //     formDataToSend.append("barcodeId", formData.barcodeId);
+  //     formDataToSend.append("category", formData.category);
+  //     formDataToSend.append("location", formData.location);
+  //     formDataToSend.append("status", formData.status);
+  //     formDataToSend.append("description", formData.description);
+  //     formDataToSend.append("purchaseDate", formData.purchaseDate);
+  //     formDataToSend.append("purchaseCost", formData.purchaseCost);
+  //     if (formData.receipt) {
+  //       formDataToSend.append("receipt", formData.receipt);
+  //     }
+  //     formDataToSend.append("roomNo", formData.roomNo);
+  //     formDataToSend.append("floor", formData.floor);
 
-      if (data.success) {
-        if (onItemAdded) {
-          onItemAdded(data.item);
-        }
-        alert("Item saved successfully!");
-        onBackToInventory();
-      }
-    } catch (error) {
-      console.error("Failed to add inventory item:", error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("Failed to add item. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     console.log("Sending data to API"); // Debug log
+  //     const { data } = await api.post(
+  //       `/api/adminauth/inventory/add`,
+  //       formDataToSend,
+  //       { headers: { "Content-Type": "multipart/form-data" } }
+  //     );
+
+  //     if (data.success) {
+  //       console.log("Item saved successfully", data.item); // Debug log
+  //       if (onItemAdded) {
+  //         onItemAdded(data.item);
+  //       }
+  //       alert("Item saved successfully!");
+  //       onBackToInventory();
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to add inventory item:", error);
+  //     if (error.response?.data?.message) {
+  //       alert(error.response.data.message);
+  //     } else {
+  //       alert("Failed to add item. Please try again.");
+  //     }
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const handleDownloadQR = async () => {
     if (!generatedItem) return;
@@ -1627,52 +1699,44 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-          <button
-            onClick={handleCancel}
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-white text-black cursor-pointer rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] disabled:opacity-50"
-            style={{
-              fontWeight: "600",
-              fontSize: "15px",
-            }}
-          >
-            Cancel
-          </button>
+        {/* Buttons */}
+<div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+  <button
+    type="button"
+    onClick={handleCancel}
+    disabled={isSubmitting}
+    className="px-6 py-2 bg-white text-black cursor-pointer rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] disabled:opacity-50"
+    style={{
+      fontWeight: "600",
+      fontSize: "15px",
+    }}
+  >
+    Cancel
+  </button>
 
-          <button
-            onClick={handleGenerateQR}
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-green-600 cursor-pointer text-white rounded-[10px] shadow hover:bg-green-700 transition-colors font-[Poppins] flex items-center gap-2 justify-center disabled:opacity-50"
-            style={{
-              fontWeight: "600",
-              fontSize: "15px",
-            }}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Processing...
-              </>
-            ) : (
-              <>
-                <QrCode size={16} />
-                Generate QR & Save
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleSaveItem}
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 cursor-pointer text-white rounded-[10px] shadow hover:bg-blue-700 transition-colors font-[Poppins] disabled:opacity-50"
-            style={{
-              fontWeight: "600",
-              fontSize: "15px",
-            }}
-          >
-            {isSubmitting ? "Saving..." : "Save Item"}
-          </button>
-        </div>
+  <button
+    type="button"
+    onClick={handleGenerateQR}
+    disabled={isSubmitting}
+    className="px-6 py-2 bg-green-600 cursor-pointer text-white rounded-[10px] shadow hover:bg-green-700 transition-colors font-[Poppins] flex items-center gap-2 justify-center disabled:opacity-50"
+    style={{
+      fontWeight: "600",
+      fontSize: "15px",
+    }}
+  >
+    {isSubmitting ? (
+      <>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+        Processing...
+      </>
+    ) : (
+      <>
+        <QrCode size={16} />
+        Generate QR & Save Item
+      </>
+    )}
+  </button>
+</div>
       </div>
 
       {/* Success Modal */}
