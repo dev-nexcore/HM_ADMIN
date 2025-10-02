@@ -4,11 +4,9 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 
 const page = () => {
   return (
- <ProtectedRoute>
     <div>
       <TicketsSection/>
     </div>
-    </ProtectedRoute>
   )
 }
 

@@ -4,11 +4,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 const page = () => {
   return (
-    <ProtectedRoute>
+   
     <div>
       <InvoicePage />
     </div>
-    </ProtectedRoute>
   );
 };
 

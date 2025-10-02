@@ -5,10 +5,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function page() {
   return (
-     <ProtectedRoute>
     <div>
       <TicketsSection />
     </div>
-    </ProtectedRoute>
   );
 }

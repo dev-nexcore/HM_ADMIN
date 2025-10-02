@@ -3,11 +3,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Management() {
   return (
- <ProtectedRoute>
     <>
     <StudentManagement/>
     </>
-    </ProtectedRoute>
   );
 }
 

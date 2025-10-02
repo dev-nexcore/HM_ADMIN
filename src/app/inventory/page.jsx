@@ -4,11 +4,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AdminInventory() {
   return (
-<ProtectedRoute>
+
     <>
      <InventoryList/>
     </>
-    </ProtectedRoute>
+    
   );
 }
 
