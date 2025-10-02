@@ -3,11 +3,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AdminDashboard() {
   return (
-     <ProtectedRoute>
+    
     <>
      <Dashboard/>
     </>
-    </ProtectedRoute>
+   
   );
 }
 
