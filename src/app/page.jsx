@@ -1,12 +1,7 @@
-import AdminLogin from "@/components/adminlogin/login";
+// src/app/page.jsx
+import { redirect } from 'next/navigation';
 
-function Login() {
-  return (
-    <>
-      <AdminLogin/>
- 
-    </>
-  );
+export default function HomePage() {
+  // Redirect to /admin for login page
+  redirect('/admin');
 }
-
-export default Login;
