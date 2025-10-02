@@ -7,13 +7,10 @@ import { useState } from "react";
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  // Pages without layout
-  const noLayoutPages = ["/admin", "/forgetpassword", "/admin/login"];
 
-  
-  const hideLayout = noLayoutPages.includes(pathname);
-  
+  // Exclude layout for /admin/login or /forgetpassword pages
+  const hideLayout = pathname.startsWith("/admin") && !pathname.includes("login");
+
   return (
     <>
       {hideLayout ? (
