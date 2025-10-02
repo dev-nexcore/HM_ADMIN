@@ -72,11 +72,12 @@ export async function middleware(request) {
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
       
       // Add CSP header
-      response.headers.set(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' " + 
-        `${process.env.NEXT_PUBLIC_PROD_API_URL || ''}; frame-ancestors 'none'; form-action 'self'; base-uri 'self';`
-      );
+    response.headers.set(
+  'Content-Security-Policy',
+  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' kokanglobal.org; style-src 'self' 'unsafe-inline' kokanglobal.org; img-src 'self' data: blob: kokanglobal.org; font-src 'self' kokanglobal.org; connect-src 'self' " + 
+  `${process.env.NEXT_PUBLIC_PROD_API_URL || ''}; frame-ancestors 'none'; form-action 'self'; base-uri 'self';`
+);
+
 
       return response;
       
