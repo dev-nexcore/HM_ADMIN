@@ -13,8 +13,8 @@ export default function LayoutWrapper({ children }) {
     console.log("Current Path:", pathname);  // Log pathname for debugging
   }, [pathname]);
 
-  // Exclude layout for /admin/login and /forgetpassword pages
-  const hideLayout = pathname === "/admin/login" || pathname === "/forgetpassword";
+  // Exclude layout for /admin/login, /forgetpassword or any path starting with /admin
+  const hideLayout = pathname.startsWith("/admin") && !pathname.includes("/login");
 
   return (
     <>
