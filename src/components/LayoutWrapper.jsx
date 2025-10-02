@@ -9,7 +9,8 @@ export default function LayoutWrapper({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Pages without layout
-  const noLayoutPages = ["/admin", "/forgetpassword"];
+  const noLayoutPages = ["/admin", "/forgetpassword", "/admin/login"];
+
   
   const hideLayout = noLayoutPages.includes(pathname);
   
