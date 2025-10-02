@@ -2,18 +2,24 @@
 import Sidebar from "./home/sidebar";
 import Navbar from "./home/navbar";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Exclude layout for /admin/login or /forgetpassword pages
-  const hideLayout = pathname.startsWith("/admin") && !pathname.includes("login");
+  // Debugging log to inspect the current pathname
+  useEffect(() => {
+    console.log("Current Path:", pathname);  // Log pathname for debugging
+  }, [pathname]);
+
+  // Exclude layout for /admin/login and /forgetpassword pages
+  const hideLayout = pathname === "/admin/login" || pathname === "/forgetpassword";
 
   return (
     <>
       {hideLayout ? (
+        // Only render the page content for these specific pages without layout
         children
       ) : (
         <div className="min-h-screen bg-white">
