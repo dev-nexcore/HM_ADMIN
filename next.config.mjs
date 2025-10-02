@@ -33,35 +33,15 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
-  
   async headers() {
     return [
       {
-        // Apply these headers to all routes
+        // Security headers for all routes (including /admin)
         source: '/:path*',
         headers: securityHeaders,
       },
       {
-        // Apply security headers specifically to the Admin panel routes
-        source: '/admin/:path*', // Adjust the admin panel base path if needed
-        headers: securityHeaders,
-      },
-    ];
-  },
-  
-  // Disable source maps in production for security
-  productionBrowserSourceMaps: false,
-
-  // Enable React Strict Mode for additional development warnings
-  reactStrictMode: true,
-
-  // Disable ETag generation for security
-  generateEtags: false,
-
-  // Security headers for API routes (adjust if needed for admin)
-  async headers() {
-    return [
-      {
+        // CORS headers for API routes
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
@@ -72,12 +52,12 @@ const nextConfig = {
       },
     ];
   },
-  
-  // BasePath and assetPrefix for Admin Panel
-  basePath: '/admin', // Adjust the base path for the Admin Panel
-  assetPrefix: '/admin/', // Static assets for the Admin Panel
-  
-  trailingSlash: true, // Ensures that the URLs have trailing slashes
+  productionBrowserSourceMaps: false,
+  reactStrictMode: true,
+  generateEtags: false,
+  basePath: '/admin',
+  assetPrefix: '/admin/',
+  trailingSlash: true
 };
 
 export default nextConfig;
