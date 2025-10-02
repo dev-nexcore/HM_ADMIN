@@ -5,10 +5,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function page() {
   return (
-    <ProtectedRoute>
+    
     <div>
    <AuditLogsSection/>
     </div>
-    </ProtectedRoute>
+    
   )
 }
