@@ -81,8 +81,12 @@ const AdminLogin = () => {
 
       // Redirect
       const urlParams = new URLSearchParams(window.location.search);
-const callbackUrl = urlParams.get("callbackUrl") || "/dashboard";
-window.location.href = callbackUrl;
+      // If the app is served under /admin (basePath), prefer /admin/dashboard as default.
+      const defaultDashboard = window.location.pathname.startsWith("/admin")
+        ? "/admin/dashboard"
+        : "/dashboard";
+      const callbackUrl = urlParams.get("callbackUrl") || defaultDashboard;
+      window.location.href = callbackUrl;
 
     } catch (error) {
       console.error("Login error:", error);
