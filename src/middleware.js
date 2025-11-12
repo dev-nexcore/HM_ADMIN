@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-// These should NOT have /admin prefix since basePath is removed
+// Routes WITHOUT /admin prefix (basePath handles this automatically)
 const protectedRoutes = [
   '/dashboard',
   '/management',
