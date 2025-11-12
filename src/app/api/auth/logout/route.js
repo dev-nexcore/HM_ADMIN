@@ -1,47 +1,38 @@
 import { NextResponse } from 'next/server';
 
-export async function POST() {
+export const dynamic = 'force-dynamic';
+
+const getBackendUrl = () => process.env.NEXT_PUBLIC_PROD_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+
+export async function POST(request) {
   try {
-    // Create a response that will clear the cookie
-    const response = NextResponse.json(
-      { success: true, message: 'Logged out successfully' },
-      { status: 200 }
-    );
+    const backendBase = getBackendUrl();
+    if (!backendBase) {
+      // still clear local cookie
+      const res = NextResponse.json({ success: true, message: 'Logged out (no backend configured)' }, { status: 200 });
+      res.cookies.set('adminToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', expires: new Date(0), path: '/' });
+      res.cookies.set('adminRefreshToken', '', { path: '/', expires: new Date(0) });
+      return res;
+    }
 
-    // Clear the HTTP-only cookie
-    response.cookies.set('adminToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: new Date(0), // Set to past date to clear the cookie
-      path: '/',
-    });
+    // Forward logout to backend if it exists
+    const resp = await fetch(`${backendBase.replace(/\/$/, '')}/api/adminauth/logout`, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: await request.text().catch(() => null),
+    }).catch(() => null);
 
-    // Clear any other relevant cookies
-    response.cookies.set({
-      name: 'adminRefreshToken',
-      value: '',
-      path: '/',
-      expires: new Date(0)
-    });
+    // Clear cookies locally regardless of backend response
+    const res = NextResponse.json({ success: true, message: 'Logged out' }, { status: 200 });
+    res.cookies.set('adminToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', expires: new Date(0), path: '/' });
+    res.cookies.set('adminRefreshToken', '', { path: '/', expires: new Date(0) });
 
-    return response;
-  } catch (error) {
-    console.error('Logout error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error during logout' },
-      { status: 500 }
-    );
+    return res;
+  } catch (err) {
+    console.error('Proxy logout error:', err);
+    const res = NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 });
+    res.cookies.set('adminToken', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', expires: new Date(0), path: '/' });
+    res.cookies.set('adminRefreshToken', '', { path: '/', expires: new Date(0) });
+    return res;
   }
-}
-
-// Add OPTIONS method for CORS preflight
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
 }

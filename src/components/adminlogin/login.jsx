@@ -151,7 +151,7 @@ window.location.href = callbackUrl;
             }`}
           >
             <img
-              src="/admin/photos/logo1.svg"
+              src="/photos/logo1.svg"
               alt="Logo"
               className="w-[210px] h-[190px] bg-white p-4 rounded-lg mb-14 object-contain hover:scale-110 transition-transform duration-300 ease-in-out shadow-lg"
             />
@@ -322,7 +322,7 @@ window.location.href = callbackUrl;
             }`}
           >
             <img
-              src="/admin/photos/logo1.svg"
+              src="/photos/logo1.svg"
               alt="Logo"
               className="w-[200px] h-[180px] xs:w-[220px] xs:h-[200px] sm:w-[260px] sm:h-[240px] md:w-[300px] md:h-[280px] bg-white p-3 sm:p-4 rounded-lg object-contain hover:scale-105 transition-transform duration-300 ease-in-out shadow-md"
             />
