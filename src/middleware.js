@@ -6,7 +6,6 @@ const publicRoutes = ['/', '/forget-password', '/unauthorized'];
 
 // List of protected routes that require authentication
 const protectedRoutes = [
-  '/dashboard',
   '/management',
   '/inventory',
   '/inspection',
