@@ -2,31 +2,32 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
 // List of public routes that don't require authentication
-const publicRoutes = ['/', '/forget-password', '/unauthorized'];
+// These should match EXACT paths, not prefixes
+const publicRoutes = ['/admin/', '/admin/forget-password', '/admin/unauthorized'];
 
 // List of protected routes that require authentication
 const protectedRoutes = [
-  '/management',
-  '/inventory',
-  '/inspection',
-  '/invoices',
-  '/leave-requests',
-  '/notices',
-  '/profile',
-  '/refunds',
-  '/staffallotment',
-  '/staffsalary',
-  '/tickets',
-  '/api/admin'
+  '/admin/dashboard',
+  '/admin/management',
+  '/admin/inventory',
+  '/admin/inspection',
+  '/admin/invoices',
+  '/admin/leave-requests',
+  '/admin/notices',
+  '/admin/profile',
+  '/admin/refunds',
+  '/admin/staffallotment',
+  '/admin/staffsalary',
+  '/admin/tickets',
+  '/admin/api/admin'
 ];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('adminToken')?.value;
 
-  // Skip middleware for public routes
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  if (isPublicRoute) {
+  // IMPORTANT: Check for exact match on login page first
+  if (pathname === '/admin' || pathname === '/admin/') {
     return NextResponse.next();
   }
 
@@ -37,7 +38,7 @@ export async function middleware(request) {
   if (isProtectedRoute) {
     // If no token, redirect to login
     if (!token) {
-      const loginUrl = new URL('/', request.url);
+      const loginUrl = new URL('/admin/', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -45,11 +46,6 @@ export async function middleware(request) {
     try {
       // Verify the token
       const decoded = jwt.verify(token, process.env.NEXT_SERVER_JWT_SECRET);
-      
-      // Check if user has required role (if needed)
-      // if (pathname.startsWith('/admin') && decoded.role !== 'admin') {
-      //   return NextResponse.redirect(new URL('/unauthorized', request.url));
-      // }
       
       // Clone the request headers and add user info
       const requestHeaders = new Headers(request.headers);
@@ -71,18 +67,17 @@ export async function middleware(request) {
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
       
       // Add CSP header
-    response.headers.set(
-  'Content-Security-Policy',
-  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' kokanglobal.org; style-src 'self' 'unsafe-inline' kokanglobal.org; img-src 'self' data: blob: kokanglobal.org; font-src 'self' kokanglobal.org; connect-src 'self' " + 
-  `${process.env.NEXT_PUBLIC_PROD_API_URL || ''}; frame-ancestors 'none'; form-action 'self'; base-uri 'self';`
-);
-
+      response.headers.set(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' kokanglobal.org; style-src 'self' 'unsafe-inline' kokanglobal.org; img-src 'self' data: blob: kokanglobal.org; font-src 'self' kokanglobal.org; connect-src 'self' " + 
+        `${process.env.NEXT_PUBLIC_PROD_API_URL || ''}; frame-ancestors 'none'; form-action 'self'; base-uri 'self';`
+      );
 
       return response;
       
     } catch (error) {
       // Clear invalid token and redirect to login
-      const response = NextResponse.redirect(new URL('/', request.url));
+      const response = NextResponse.redirect(new URL('/admin/', request.url));
       response.cookies.delete('adminToken');
       return response;
     }
@@ -99,6 +94,6 @@ export const config = {
     // - _next/image (image optimization files)
     // - favicon.ico (favicon file)
     // - public folder
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|photos).*)',
   ],
 };
