@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: '/admin',
-  assetPrefix: '/admin',  // Remove the trailing slash
+  assetPrefix: '/admin',
   trailingSlash: true
 };
 
