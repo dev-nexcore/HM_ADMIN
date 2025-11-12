@@ -81,7 +81,7 @@ const AdminLogin = () => {
 
       // Redirect
       const urlParams = new URLSearchParams(window.location.search);
-      const callbackUrl = urlParams.get("callbackUrl") || "/admin/dashboard";
+      const callbackUrl = urlParams.get("callbackUrl") || "/admin/hello";
       window.location.href = callbackUrl;
 
     } catch (error) {
