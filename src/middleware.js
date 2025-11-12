@@ -1,33 +1,29 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-// List of public routes that don't require authentication
-// These should match EXACT paths, not prefixes
-const publicRoutes = ['/admin/', '/admin/forget-password', '/admin/unauthorized'];
-
-// List of protected routes that require authentication
+// List of protected routes (without /admin prefix since basePath handles it)
 const protectedRoutes = [
-  '/admin/dashboard',
-  '/admin/management',
-  '/admin/inventory',
-  '/admin/inspection',
-  '/admin/invoices',
-  '/admin/leave-requests',
-  '/admin/notices',
-  '/admin/profile',
-  '/admin/refunds',
-  '/admin/staffallotment',
-  '/admin/staffsalary',
-  '/admin/tickets',
-  '/admin/api/admin'
+  '/dashboard',
+  '/management',
+  '/inventory',
+  '/inspection',
+  '/invoices',
+  '/leave-requests',
+  '/notices',
+  '/profile',
+  '/refunds',
+  '/staffallotment',
+  '/staffsalary',
+  '/tickets',
+  '/api/admin'
 ];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('adminToken')?.value;
 
-  // IMPORTANT: Check for exact match on login page first
-  if (pathname === '/admin' || pathname === '/admin/') {
+  // Login page - allow without auth
+  if (pathname === '/' || pathname === '') {
     return NextResponse.next();
   }
 
@@ -38,7 +34,7 @@ export async function middleware(request) {
   if (isProtectedRoute) {
     // If no token, redirect to login
     if (!token) {
-      const loginUrl = new URL('/admin/', request.url);
+      const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -66,18 +62,11 @@ export async function middleware(request) {
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
       
-      // Add CSP header
-      response.headers.set(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' kokanglobal.org; style-src 'self' 'unsafe-inline' kokanglobal.org; img-src 'self' data: blob: kokanglobal.org; font-src 'self' kokanglobal.org; connect-src 'self' " + 
-        `${process.env.NEXT_PUBLIC_PROD_API_URL || ''}; frame-ancestors 'none'; form-action 'self'; base-uri 'self';`
-      );
-
       return response;
       
     } catch (error) {
       // Clear invalid token and redirect to login
-      const response = NextResponse.redirect(new URL('/admin/', request.url));
+      const response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('adminToken');
       return response;
     }
@@ -89,11 +78,6 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    // Match all request paths except for the ones starting with:
-    // - _next/static (static files)
-    // - _next/image (image optimization files)
-    // - favicon.ico (favicon file)
-    // - public folder
     '/((?!_next/static|_next/image|favicon.ico|photos).*)',
   ],
 };
