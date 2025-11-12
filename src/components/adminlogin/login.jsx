@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/lib/api";
+import api from "@/lib/api"; 
 
 const AdminLogin = () => {
   const [step, setStep] = useState(1); // 1 = Enter Admin ID, 2 = Enter OTP

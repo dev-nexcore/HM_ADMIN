@@ -30,6 +30,12 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
+const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+const [bulkFile, setBulkFile] = useState(null);
+const [bulkUploadProgress, setBulkUploadProgress] = useState(0);
+const [bulkUploadStatus, setBulkUploadStatus] = useState('');
+const [selectedItemsForQR, setSelectedItemsForQR] = useState([]);
+const [showBulkQRModal, setShowBulkQRModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scannedItem, setScannedItem] = useState(null);
 
@@ -74,6 +80,71 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
       console.error("Failed to upload receipt:", error);
     }
   };
+
+  // Add this function in InventoryList component
+const handleBulkUpload = async () => {
+  if (!bulkFile) {
+    alert('Please select a file');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', bulkFile);
+
+  try {
+    setBulkUploadStatus('Uploading...');
+    const { data } = await api.post(
+      '/api/adminauth/inventory/bulk-upload',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setBulkUploadProgress(progress);
+        },
+      }
+    );
+
+    if (data.success) {
+      setBulkUploadStatus(`Successfully added ${data.addedCount} items!`);
+      setInventory((prev) => [...prev, ...data.items]);
+      setTimeout(() => {
+        setShowBulkUploadModal(false);
+        setBulkFile(null);
+        setBulkUploadProgress(0);
+        setBulkUploadStatus('');
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Bulk upload failed:', error);
+    setBulkUploadStatus(
+      `Error: ${error.response?.data?.message || 'Upload failed'}`
+    );
+  }
+};
+
+// Add this function to download Excel template
+const downloadBulkTemplate = () => {
+  const template = [
+    ['Item Name', 'Category', 'Location', 'Status', 'Room No', 'Floor', 'Description', 'Purchase Date', 'Purchase Cost'],
+    ['Example Item 1', 'Electronics', 'Main Building', 'Available', '101', '1', 'Sample description', '10-11-2025', '5000'],
+    ['Example Item 2', 'Furniture', 'Kitchen', 'In Use', '102', '1', 'Another description', '09-11-2025', '3000'],
+  ];
+  
+  // Create CSV content
+  const csvContent = template.map(row => row.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'inventory_bulk_upload_template.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
 
   const generateMonthlyStockReport = async () => {
     try {
@@ -193,6 +264,32 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
   }
 };
 
+const handleBulkQRGeneration = async () => {
+  try {
+    setLoading(true);
+    const { data } = await api.post('/api/adminauth/inventory/bulk-qr-generate', {
+      itemIds: selectedItemsForQR
+    });
+    
+    if (data.success) {
+      setInventory(prev => 
+        prev.map(item => {
+          const updated = data.items.find(i => i._id === item._id);
+          return updated || item;
+        })
+      );
+      setSelectedItemsForQR([]);
+      setShowBulkQRModal(false);
+      alert(`Successfully generated ${data.count} QR codes!`);
+    }
+  } catch (error) {
+    console.error('Bulk QR generation failed:', error);
+    alert('Failed to generate QR codes');
+  } finally {
+    setLoading(false);
+  }
+};
+
   const handleQRScanResult = (item) => {
     setScannedItem(item);
     setShowDetailModal(true);
@@ -214,6 +311,15 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
           </div>
 
           <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
+             {selectedItemsForQR.length > 0 && (
+    <button
+      onClick={() => setShowBulkQRModal(true)}
+      className="flex items-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow-md"
+    >
+      <QrCode size={17} />
+      Generate QR for {selectedItemsForQR.length} Items
+    </button>
+  )}
             {/* QR Scanner Button */}
             <button
               onClick={() => setShowQRScanner(true)}
@@ -259,6 +365,21 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
               </svg>
               Add New Item
             </button>
+<button
+  onClick={() => setShowBulkUploadModal(true)}
+  className="flex items-center gap-2 cursor-pointer bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded shadow-md w-full sm:w-auto"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    fill="white"
+    viewBox="0 0 24 24"
+  >
+    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11z"/>
+  </svg>
+  Bulk Upload Items
+</button>
           </div>
         </div>
       </div>
@@ -311,16 +432,30 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
           <div className="overflow-x-auto rounded-xl">
             <table className="w-full min-w-[700px] text-center border-collapse">
               <thead>
-                <tr className="bg-white text-black text-sm">
-                  {[
-                    "Item Name",
-                    "Barcode ID",
-                    "Category",
-                    "Location",
-                    "Status",
-                    "QR Code",
-                    "Action",
-                  ].map((header, idx) => (
+  <tr className="bg-white text-black text-sm">
+    {/* ADD THIS CHECKBOX COLUMN */}
+    <th className="px-2 py-2">
+      <input
+        type="checkbox"
+        onChange={(e) => {
+          if (e.target.checked) {
+            setSelectedItemsForQR(inventory.filter(item => !item.qrCodeUrl).map(item => item._id));
+          } else {
+            setSelectedItemsForQR([]);
+          }
+        }}
+        checked={selectedItemsForQR.length > 0 && selectedItemsForQR.length === inventory.filter(item => !item.qrCodeUrl).length}
+      />
+    </th>
+    {[
+      "Item Name",
+      "Barcode ID",
+      "Category",
+      "Location",
+      "Status",
+      "QR Code",
+      "Action",
+    ].map((header, idx) => (
                     <th
                       key={idx}
                       className={`px-0 py-2 ${
@@ -353,8 +488,24 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                           .includes(searchQuery.toLowerCase()))
                   )
                   .map((item) => (
-                    <tr key={item.barcodeId} className="hover:bg-gray-100">
-                      <td className="px-4 py-2">{item.itemName}</td>
+                   <tr key={item.barcodeId} className="hover:bg-gray-100">
+  {/* ADD THIS CHECKBOX CELL */}
+  <td className="px-2 py-2">
+    {!item.qrCodeUrl && (
+      <input
+        type="checkbox"
+        checked={selectedItemsForQR.includes(item._id)}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setSelectedItemsForQR(prev => [...prev, item._id]);
+          } else {
+            setSelectedItemsForQR(prev => prev.filter(id => id !== item._id));
+          }
+        }}
+      />
+    )}
+  </td>
+  <td className="px-4 py-2">{item.itemName}</td>
                       <td className="px-4 py-2">{item.barcodeId}</td>
                       <td className="px-4 py-2">{item.category}</td>
                       <td className="px-4 py-2">{item.location}</td>
@@ -542,6 +693,79 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
         onEdit={handleEditClick}
       />
 
+        {/* ADD SNIPPET 5 HERE - Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-xl font-bold mb-4">Bulk Upload Items</h3>
+            
+            <div className="mb-4">
+              <button
+                onClick={downloadBulkTemplate}
+                className="text-blue-600 hover:underline text-sm mb-2"
+              >
+                Download Template (CSV)
+              </button>
+              <p className="text-xs text-gray-600 mb-3">
+                Upload a CSV file with columns: Item Name, Category, Location, Status, Room No, Floor, Description, Purchase Date, Purchase Cost
+              </p>
+              
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => setBulkFile(e.target.files[0])}
+                className="mb-4 w-full"
+              />
+              
+              {bulkFile && (
+                <p className="text-sm text-gray-700 mb-2">
+                  Selected: <strong>{bulkFile.name}</strong>
+                </p>
+              )}
+              
+              {bulkUploadProgress > 0 && (
+                <div className="mb-3">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full transition-all"
+                      style={{ width: `${bulkUploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">{bulkUploadProgress}%</p>
+                </div>
+              )}
+              
+              {bulkUploadStatus && (
+                <p className={`text-sm mb-2 ${bulkUploadStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                  {bulkUploadStatus}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowBulkUploadModal(false);
+                  setBulkFile(null);
+                  setBulkUploadProgress(0);
+                  setBulkUploadStatus('');
+                }}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkUpload}
+                disabled={!bulkFile}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
@@ -627,6 +851,32 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory }) => {
                 onClick={handleEditSave}
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+        {showBulkQRModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-xl font-bold mb-4">Generate QR Codes</h3>
+            <p className="mb-4">
+              Generate QR codes for {selectedItemsForQR.length} selected items?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowBulkQRModal(false)}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkQRGeneration}
+                disabled={loading}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded disabled:opacity-50"
+              >
+                {loading ? 'Generating...' : 'Generate'}
               </button>
             </div>
           </div>
@@ -1225,6 +1475,7 @@ const handleGenerateQR = async () => {
           <span className="border-l-4 border-blue-500 pl-2 inline-flex items-center h-[25px]">
             Add new Item
           </span>
+
         </h1>
       </div>
 
@@ -1249,6 +1500,8 @@ const handleGenerateQR = async () => {
           </svg>
           Back to Inventory List
         </button>
+
+          
       </div>
 
       {/* Main Form Container */}

@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, use } from "react";
 import { Eye } from "lucide-react";
 import api from "@/lib/api";
+import Tesseract from "tesseract.js";
 
 
 const StudentManagement = () => {
@@ -44,33 +45,81 @@ const [parentFormData, setParentFormData] = useState({
   firstName: "",
   lastName: "",
   email: "",
+  relation:"",
   contactNumber: "",
   studentId: "",
 });
+
+const [studentDocuments, setStudentDocuments] = useState({
+  aadharCard: null,
+  panCard: null
+});
+const [parentDocuments, setParentDocuments] = useState({
+  aadharCard: null,
+  panCard: null
+});
+const [ocrLoading, setOcrLoading] = useState(false);
+const [ocrProgress, setOcrProgress] = useState(0);
 const [parentErrors, setParentErrors] = useState({});
 const [parentLoading, setParentLoading] = useState(false);
 
-  // API Functions
-  const registerStudentAPI = async (studentData) => {
-    try {
-      const response = await api.post(`/api/adminauth/register-student`, studentData, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if you have auth tokens
-          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to register student' };
-    }
-  };
 
-  const registerParentAPI = async (parentData) => {
+  // API Functions
+ const registerStudentAPI = async (studentData) => {
   try {
-    const response = await api.post(`/api/adminauth/register-parent`, parentData, {
+    // Create FormData for file upload
+    const formData = new FormData();
+    
+    // Add text fields
+    Object.keys(studentData).forEach(key => {
+      if (key !== 'aadharCard' && key !== 'panCard') {
+        formData.append(key, studentData[key]);
+      }
+    });
+    
+    // Add files if they exist
+    if (studentData.aadharCard) {
+      formData.append('aadharCard', studentData.aadharCard);
+    }
+    if (studentData.panCard) {
+      formData.append('panCard', studentData.panCard);
+    }
+    
+    const response = await api.post(`/api/adminauth/register-student`, formData, {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'multipart/form-data',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to register student' };
+  }
+};
+
+ const registerParentAPI = async (parentData) => {
+  try {
+    // Create FormData for file upload
+    const formData = new FormData();
+    
+    // Add text fields
+    Object.keys(parentData).forEach(key => {
+      if (key !== 'aadharCard' && key !== 'panCard') {
+        formData.append(key, parentData[key]);
+      }
+    });
+    
+    // Add files if they exist
+    if (parentData.aadharCard) {
+      formData.append('aadharCard', parentData.aadharCard);
+    }
+    if (parentData.panCard) {
+      formData.append('panCard', parentData.panCard);
+    }
+    
+    const response = await api.post(`/api/adminauth/register-parent`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
         // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
     });
@@ -197,8 +246,320 @@ const fetchAvailableRoomsNumbersAPI = async () => {
     return newErrors;
   };
 
+  // Add these functions after your existing handlers
+
+// Extract information from Aadhar card
+const extractAadharInfo = (text) => {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  let firstName = '';
+  let lastName = '';
+  let dob = '';
+  let aadharNumber = '';
+  let mobileNumber = '';
+  
+  // Extract DOB
+  const dobRegex = /DOB[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i;
+  for (const line of lines) {
+    const match = line.match(dobRegex);
+    if (match) {
+      dob = match[1].replace(/\//g, '-');
+      break;
+    }
+  }
+  
+  // Extract Aadhar number (12 digits)
+  const aadharRegex = /(\d{4}\s*\d{4}\s*\d{4})/;
+  for (const line of lines) {
+    const match = line.match(aadharRegex);
+    if (match) {
+      const number = match[1].replace(/\s/g, '');
+      if (number.length === 12) {
+        aadharNumber = number;
+        break;
+      }
+    }
+  }
+  
+  // Extract Mobile Number (10 digits, not part of 12-digit Aadhar)
+  // Look for patterns like "Mobile No.: 7208692520" or just "7208692520"
+  const mobileRegex = /(?:Mobile\s*No\.?[:\s]*)?([6-9]\d{9})(?!\d)/i;
+  for (const line of lines) {
+    // Skip if this line contains the 12-digit Aadhar number
+    if (/\d{4}\s*\d{4}\s*\d{4}/.test(line)) {
+      continue;
+    }
+    
+    const match = line.match(mobileRegex);
+    if (match) {
+      const number = match[1];
+      // Verify it's exactly 10 digits and starts with 6-9 (valid Indian mobile)
+      if (number.length === 10 && /^[6-9]/.test(number)) {
+        mobileNumber = number;
+        break;
+      }
+    }
+  }
+  
+  // Extract Name - Position-based (line before DOB)
+  let dobLineIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/DOB/i.test(lines[i])) {
+      dobLineIndex = i;
+      break;
+    }
+  }
+  
+  if (dobLineIndex > 0) {
+    // Check 1-3 lines before DOB
+    for (let i = dobLineIndex - 1; i >= Math.max(0, dobLineIndex - 3); i--) {
+      const line = lines[i];
+      const lowerLine = line.toLowerCase();
+      
+      // Skip unwanted lines
+      if (
+        lowerLine.includes('government') ||
+        lowerLine.includes('india') ||
+        lowerLine.includes('भारत') ||
+        lowerLine.includes('सरकार') ||
+        lowerLine.includes('tetet') ||
+        /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
+        /mobile/i.test(line) ||
+        line.length < 4 ||
+        line.length > 50
+      ) {
+        continue;
+      }
+      
+      const words = line.split(/\s+/).filter(w => w.length > 1);
+      
+      // Name validation
+      if (words.length >= 2 && words.length <= 4) {
+        const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
+        const hasProperCase = words.every(w => /^[A-Z][a-z]*$/.test(w) || /^[A-Z]+$/.test(w));
+        const noSpecialChars = !/[:\-_@#$%^&*()+=\[\]{}|\\;'"<>?/]/.test(line);
+        
+        // Check if not repetitive garbage
+        const isRepetitive = words.some(w => {
+          if (w.length >= 4) {
+            const half = w.substring(0, Math.floor(w.length / 2));
+            return w.toLowerCase().startsWith(half.toLowerCase()) && 
+                   w.toLowerCase().endsWith(half.toLowerCase());
+          }
+          return false;
+        });
+        
+        if (alphaRatio > 0.85 && hasProperCase && noSpecialChars && !isRepetitive) {
+          // Handle name splitting:
+          // 2 words: "Akshat Gupta" -> First: Akshat, Last: Gupta
+          // 3 words: "Rajesh Kumar Singh" -> First: Rajesh, Last: Singh (skip middle)
+          // 4 words: "Ram Prakash Kumar Singh" -> First: Ram, Last: Singh (skip middle)
+          
+          firstName = words[0];
+          
+          if (words.length === 2) {
+            lastName = words[1];
+          } else if (words.length === 3) {
+            // Skip middle name (index 1), take last name (index 2)
+            lastName = words[2];
+          } else if (words.length === 4) {
+            // Skip middle names, take last word
+            lastName = words[3];
+          }
+          
+          console.log('Found name:', firstName, lastName, '(from:', line, ')');
+          break;
+        }
+      }
+    }
+  }
+  
+  // Fallback method if position-based fails
+  if (!firstName) {
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      
+      if (
+        lowerLine.includes('government') ||
+        lowerLine.includes('india') ||
+        lowerLine.includes('dob') ||
+        lowerLine.includes('male') ||
+        lowerLine.includes('female') ||
+        lowerLine.includes('scanned') ||
+        lowerLine.includes('mobile') ||
+        /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
+        line.length < 4
+      ) {
+        continue;
+      }
+      
+      const words = line.split(/\s+/).filter(w => w.length > 1);
+      
+      if (words.length >= 2 && words.length <= 4 && line.length <= 50) {
+        const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
+        const hasProperCase = words.every(w => /^[A-Z]/.test(w));
+        const noSpecialChars = !/[:\-_]/.test(line);
+        
+        if (alphaRatio > 0.85 && hasProperCase && noSpecialChars) {
+          firstName = words[0];
+          
+          if (words.length === 2) {
+            lastName = words[1];
+          } else if (words.length === 3) {
+            lastName = words[2]; // Skip middle
+          } else if (words.length === 4) {
+            lastName = words[3]; // Skip middle names
+          }
+          
+          console.log('Found name (fallback):', firstName, lastName);
+          break;
+        }
+      }
+    }
+  }
+  
+  console.log('Extracted info:', { firstName, lastName, dob, aadharNumber, mobileNumber });
+  return { firstName, lastName, dob, aadharNumber, mobileNumber };
+};
+
+// Extract information from PAN card
+const extractPanInfo = (text) => {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  // Extract name
+  let name = '';
+  const nameIndex = lines.findIndex(line => line.toLowerCase().includes('name'));
+  if (nameIndex !== -1 && lines[nameIndex + 1]) {
+    name = lines[nameIndex + 1];
+  }
+  
+  // Extract PAN number (format: ABCDE1234F)
+  let panNumber = '';
+  const panRegex = /([A-Z]{5}\d{4}[A-Z])/;
+  for (const line of lines) {
+    const match = line.match(panRegex);
+    if (match) {
+      panNumber = match[1];
+      break;
+    }
+  }
+  
+  // Extract DOB
+  let dob = '';
+  const dobRegex = /(\d{2}[\/\-]\d{2}[\/\-]\d{4})/;
+  for (const line of lines) {
+    const match = line.match(dobRegex);
+    if (match) {
+      dob = match[1].replace(/\//g, '-');
+      break;
+    }
+  }
+  
+  return { name, dob, panNumber };
+};
+
+// Process document with OCR
+const processDocument = async (file, documentType, formType) => {
+  setOcrLoading(true);
+  setOcrProgress(0);
+  
+  try {
+    const result = await Tesseract.recognize(
+      file,
+      'eng',
+      {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setOcrProgress(Math.round(m.progress * 100));
+          }
+        }
+      }
+    );
+    
+    const extractedText = result.data.text;
+    console.log('Extracted text:', extractedText);
+    
+    let extractedInfo = {};
+    if (documentType === 'aadhar') {
+      extractedInfo = extractAadharInfo(extractedText);
+    } else if (documentType === 'pan') {
+      extractedInfo = extractPanInfo(extractedText);
+    }
+    
+    console.log('Parsed info:', extractedInfo); // Debug log
+    
+   // Auto-fill form based on extracted info
+if (formType === 'student') {
+  setFormData(prev => ({
+    ...prev,
+    firstName: extractedInfo.firstName || prev.firstName,
+    lastName: extractedInfo.lastName || prev.lastName,
+    contactNumber: extractedInfo.mobileNumber || prev.contactNumber, // Add mobile
+  }));
+  console.log('Updated student form'); 
+} else if (formType === 'parent') {
+  setParentFormData(prev => ({
+    ...prev,
+    firstName: extractedInfo.firstName || prev.firstName,
+    lastName: extractedInfo.lastName || prev.lastName,
+    contactNumber: extractedInfo.mobileNumber || prev.contactNumber, // Add mobile
+  }));
+  console.log('Updated parent form');
+}
+    
+   // Show what was extracted
+if (extractedInfo.firstName || extractedInfo.lastName) {
+  alert(`Document processed successfully!
+Name: ${extractedInfo.firstName} ${extractedInfo.lastName}
+DOB: ${extractedInfo.dob || 'Not found'}
+Mobile: ${extractedInfo.mobileNumber || 'Not found'}
+Aadhar: ${extractedInfo.aadharNumber || 'Not found'}
+
+Please verify the auto-filled information.`);
+} else {
+  alert('Document processed but name could not be extracted. Please enter details manually.');
+}
+    
+  } catch (error) {
+    console.error('OCR Error:', error);
+    alert('Failed to process document. Please try again or enter details manually.');
+  } finally {
+    setOcrLoading(false);
+    setOcrProgress(0);
+  }
+};
+
+// Handle document upload
+const handleDocumentUpload = async (e, documentType, formType) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Validate file type
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    alert('Please upload a valid image file (JPEG, PNG, or WebP)');
+    return;
+  }
+  
+  // Store the file
+  if (formType === 'student') {
+    setStudentDocuments(prev => ({
+      ...prev,
+      [documentType]: file
+    }));
+  } else if (formType === 'parent') {
+    setParentDocuments(prev => ({
+      ...prev,
+      [documentType]: file
+    }));
+  }
+  
+  // Process with OCR
+  await processDocument(file, documentType, formType);
+};
+
   // Reset form
- const resetForm = () => {
+const resetForm = () => {
   setFormData({
     firstName: "",
     lastName: "",
@@ -207,10 +568,11 @@ const fetchAvailableRoomsNumbersAPI = async () => {
     roomNumber: "",
     bedNumber: "",
     emergencyContactNumber: "",
-    admissionDate: getTodaysDate(), // Reset to today's date
+    admissionDate: getTodaysDate(),
     emergencyContactName: "",
     feeStatus: "",
   });
+  setStudentDocuments({ aadharCard: null, panCard: null }); // Add this line
   setEditingStudent(null);
   setErrors({});
   setShowEditModal(false);
@@ -226,19 +588,19 @@ const handleSubmit = async () => {
 
   setLoading(true);
   try {
-    // Prepare data for backend - combine room and bed if both are provided
-    const roomBedNumber = formData.bedNumber || "Not Assigned";
-    
     const studentData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       contactNumber: formData.contactNumber,
-      roomBedNumber: roomBedNumber,
+      roomBedNumber: formData.bedNumber || "Not Assigned",
       email: formData.email,
       admissionDate: formData.admissionDate,
       feeStatus: formData.feeStatus,
       emergencyContactName: formData.emergencyContactName,
       emergencyContactNumber: formData.emergencyContactNumber,
+      // Add document files
+      aadharCard: studentDocuments.aadharCard,
+      panCard: studentDocuments.panCard
     };
 
     const response = await registerStudentAPI(studentData);
@@ -400,6 +762,9 @@ const validateParentForm = (data) => {
   if (!data.contactNumber.trim()) {
     newErrors.contactNumber = "Contact Number is required.";
   }
+   if (!data.relation.trim()) {
+    newErrors.relation = "Relation is required";
+  }
   if (!data.studentId.trim()) {
     newErrors.studentId = "Student ID is required.";
   }
@@ -411,9 +776,11 @@ const resetParentForm = () => {
     firstName: "",
     lastName: "",
     email: "",
+    relation:"",
     contactNumber: "",
     studentId: "",
   });
+  setParentDocuments({ aadharCard: null, panCard: null }); // Add this line
   setParentErrors({});
 };
 
@@ -463,24 +830,20 @@ const loadStudents = async () => {
   try {
     const studentsData = await fetchStudentsAPI();
     
-    // Transform students and fetch room details for each
     const transformedStudents = await Promise.all(
       studentsData.students?.map(async (student) => {
         let roomDisplay = "Not Assigned";
         let roomDetails = null;
         
-        // If roomBedNumber is an ObjectId string, fetch room details
         if (student.roomBedNumber && typeof student.roomBedNumber === 'string' && student.roomBedNumber.length === 24) {
           roomDetails = await fetchRoomDetailsAPI(student.roomBedNumber);
           if (roomDetails && roomDetails.inventory) {
             roomDisplay = `${roomDetails.inventory.barcodeId} - Floor ${roomDetails.inventory.floor}, Room ${roomDetails.inventory.roomNo}`;
           }
         } else if (student.roomBedNumber && typeof student.roomBedNumber === 'object') {
-          // If it's already populated
           roomDisplay = `${student.roomBedNumber.barcodeId} - Floor ${student.roomBedNumber.floor}, Room ${student.roomBedNumber.roomNo}`;
           roomDetails = student.roomBedNumber;
         } else if (student.roomBedNumber) {
-          // If it's a string that's not ObjectId
           roomDisplay = student.roomBedNumber;
         }
 
@@ -498,7 +861,8 @@ const loadStudents = async () => {
           feeStatus: student.feeStatus,
           dues: "₹ 0/-",
           roomDetails: roomDetails,
-          roomObjectId: student.roomBedNumber
+          roomObjectId: student.roomBedNumber,
+          documents: student.documents || {} // ADD THIS LINE
         };
       }) || []
     );
@@ -506,7 +870,6 @@ const loadStudents = async () => {
     setStudents(transformedStudents);
   } catch (error) {
     console.error('Error loading students:', error);
-    // Keep default students if API fails
   }
 };
 
@@ -662,6 +1025,60 @@ const getFeeStatusStyle = (status) => ({
             </p>
           )}
         </div>
+
+        {/* Document Upload Section - Add after Last Name field */}
+<div className="w-full px-2 md:col-span-2">
+  <div className="bg-white/50 rounded-lg p-4 space-y-4">
+    <h3 className="font-semibold text-black mb-2">Upload Documents (Optional - Auto-fill with OCR)</h3>
+    
+    {/* Aadhar Card Upload */}
+    <div>
+      <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+        Aadhar Card
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleDocumentUpload(e, 'aadhar', 'student')}
+        className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+        disabled={ocrLoading}
+      />
+      {studentDocuments.aadharCard && (
+        <p className="text-xs text-green-600 mt-1">✓ {studentDocuments.aadharCard.name}</p>
+      )}
+    </div>
+    
+    {/* PAN Card Upload */}
+    <div>
+      <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+        PAN Card
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleDocumentUpload(e, 'pan', 'student')}
+        className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+        disabled={ocrLoading}
+      />
+      {studentDocuments.panCard && (
+        <p className="text-xs text-green-600 mt-1">✓ {studentDocuments.panCard.name}</p>
+      )}
+    </div>
+    
+    {/* OCR Progress */}
+    {ocrLoading && (
+      <div className="mt-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${ocrProgress}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-center mt-1">Processing document... {ocrProgress}%</p>
+      </div>
+    )}
+  </div>
+</div>
         
        
         {/* Contact Number */}
@@ -687,6 +1104,8 @@ const getFeeStatusStyle = (status) => ({
             </p>
           )}
         </div>
+
+        
         
         {/* Email */}
         <div className="w-full px-2">
@@ -1052,6 +1471,83 @@ const parentFormContent = () => (
           </p>
         )}
       </div>
+
+       <div className="w-full px-2">
+        <label className="block mb-1 text-black ml-2" style={labelStyle}>
+          relation
+        </label>
+        <input
+          type="tel"
+          name="contactNumber"
+          value={parentFormData.relation}
+          onChange={handleParentInputChange}
+          placeholder="Enter Phone Number"
+          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
+            parentErrors.relation ? "border-red-500" : ""
+          }`}
+          style={inputStyle}
+          required
+        />
+        {parentErrors.relation && (
+          <p className="text-red-500 text-xs mt-1 ml-2">
+            {parentErrors.relation}
+          </p>
+        )}
+      </div>
+
+      {/* Document Upload Section for Parent - Add after Contact Number */}
+<div className="w-full px-2 md:col-span-2">
+  <div className="bg-white/50 rounded-lg p-4 space-y-4">
+    <h3 className="font-semibold text-black mb-2">Upload Documents (Optional - Auto-fill with OCR)</h3>
+    
+    {/* Aadhar Card Upload */}
+    <div>
+      <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+        Aadhar Card
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleDocumentUpload(e, 'aadhar', 'parent')}
+        className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+        disabled={ocrLoading}
+      />
+      {parentDocuments.aadharCard && (
+        <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.aadharCard.name}</p>
+      )}
+    </div>
+    
+    {/* PAN Card Upload */}
+    <div>
+      <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+        PAN Card
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleDocumentUpload(e, 'pan', 'parent')}
+        className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+        disabled={ocrLoading}
+      />
+      {parentDocuments.panCard && (
+        <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.panCard.name}</p>
+      )}
+    </div>
+    
+    {/* OCR Progress */}
+    {ocrLoading && (
+      <div className="mt-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${ocrProgress}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-center mt-1">Processing document... {ocrProgress}%</p>
+      </div>
+    )}
+  </div>
+</div>  
       
     {/* Student ID */}
 <div className="w-full px-2 md:col-span-2">
@@ -1214,126 +1710,154 @@ const parentFormContent = () => (
         )}
 
         {/* Student Details Modal */}
-        {showDetailsModal && studentDetailsData && (
-          <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div
-              className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
-              style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-            >
+      {/* Student Details Modal */}
+{showDetailsModal && studentDetailsData && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+    <div
+      className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
+      style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+    >
+      <button
+        onClick={() => {
+          setShowDetailsModal(false);
+          setStudentDetailsData(null);
+        }}
+        className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
+        aria-label="Close"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"   
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+      
+      <h2
+        className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
+        style={{ fontFamily: "Inter", fontWeight: "700" }}
+      >
+        Student Details
+      </h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-black">
+        <div>
+          <p className="font-semibold" style={labelStyle}>Student ID:</p>
+          <p>{studentDetailsData.id}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Student Name:</p>
+          <p>{studentDetailsData.name}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Contact Number:</p>
+          <p>{studentDetailsData.contact}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Email:</p>
+          <p>{studentDetailsData.email || "N/A"}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Room/Bed:</p>
+          <p>{studentDetailsData.room}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Emergency Contact:</p>
+          <p>{studentDetailsData.emergencyContactNumber || "N/A"}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Admission Date:</p>
+          <p>{studentDetailsData.admissionDate || "N/A"}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Emergency Contact Name:</p>
+          <p>{studentDetailsData.emergencyContactName || "N/A"}</p>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Fee Status:</p>
+          <span
+            className="font-semibold"
+            style={getFeeStatusStyle(studentDetailsData.feeStatus)}
+          >
+            {studentDetailsData.feeStatus}
+          </span>
+        </div>
+        <div>
+          <p className="font-semibold" style={labelStyle}>Dues:</p>
+          <p>{studentDetailsData.dues}</p>
+        </div>
+      </div>
+
+      {/* ADD THIS DOCUMENTS SECTION */}
+      <div className="mt-6 border-t border-black/20 pt-6">
+        <h3 className="text-lg font-bold text-black mb-4" style={{ fontFamily: "Inter" }}>
+          Uploaded Documents
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Aadhar Card */}
+          <div className="bg-white/50 rounded-lg p-4">
+            <p className="font-semibold text-black mb-2">Aadhar Card</p>
+            {studentDetailsData.documents?.aadharCard?.filename ? (
               <button
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setStudentDetailsData(null);
-                }}
-                className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"
-                aria-label="Close"
+                onClick={() => window.open(
+                  `/api/adminauth/student-document/${studentDetailsData.id}/aadharCard`,
+                  '_blank'
+                )}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"   
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                View Document
               </button>
-              <h2
-                className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
-                style={{ fontFamily: "Inter", fontWeight: "700" }}
-              >
-                Student Details
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-black">
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Student ID:
-                  </p>
-                  <p>{studentDetailsData.id}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Student Name:
-                  </p>
-                  <p>{studentDetailsData.name}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Contact Number:
-                  </p>
-                  <p>{studentDetailsData.contact}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Email:
-                  </p>
-                  <p>{studentDetailsData.email || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Room/Bed:
-                  </p>
-                  <p>{studentDetailsData.room}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Emergency Contact:
-                  </p>
-                  <p>{studentDetailsData.emergencyContactNumber || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Admission Date:
-                  </p>
-                  <p>{studentDetailsData.admissionDate || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Emergency Contact Name:
-                  </p>
-                  <p>{studentDetailsData.emergencyContactName || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Fee Status:
-                  </p>
-                  <span
-                    className="font-semibold"
-                    style={getFeeStatusStyle(studentDetailsData.feeStatus)}
-                  >
-                    {studentDetailsData.feeStatus}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold" style={labelStyle}>
-                    Dues:
-                  </p>
-                  <p>{studentDetailsData.dues}</p>
-                </div>
-              </div>
-              <div className="flex justify-center mt-6">
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleEdit(studentDetailsData.id);
-                  }}
-                  className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
-                  style={{
-                    fontWeight: "600",
-                    fontSize: "15px",
-                  }}
-                >
-                  Edit Student
-                </button>
-              </div>
-            </div>
+            ) : (
+              <p className="text-sm text-gray-600">Not uploaded</p>
+            )}
           </div>
-        )}
+
+          {/* PAN Card */}
+          <div className="bg-white/50 rounded-lg p-4">
+            <p className="font-semibold text-black mb-2">PAN Card</p>
+            {studentDetailsData.documents?.panCard?.filename ? (
+              <button
+                onClick={() => window.open(
+                  `/api/adminauth/student-document/${studentDetailsData.id}/panCard`,
+                  '_blank'
+                )}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+              >
+                View Document
+              </button>
+            ) : (
+              <p className="text-sm text-gray-600">Not uploaded</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => {
+            setShowDetailsModal(false);
+            handleEdit(studentDetailsData.id);
+          }}
+          className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer"
+          style={{
+            fontWeight: "600",
+            fontSize: "15px",
+          }}
+        >
+          Edit Student
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Student List Header */}
       <div className="w-full max-w-7xl mx-auto mt-8 sm:mt-12">

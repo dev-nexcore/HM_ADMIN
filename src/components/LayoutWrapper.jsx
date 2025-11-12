@@ -14,7 +14,11 @@ export default function LayoutWrapper({ children }) {
   }, [pathname]);
 
   // Exclude layout for /admin/login, /forgetpassword or any path starting with /admin
-  const hideLayout = pathname.startsWith("/admin") && !pathname.includes("/login");
+  const hideLayout =
+  pathname === "/login" ||
+  pathname === "/forgetpassword" ||
+  pathname === "/" ||
+  pathname.startsWith("/admin");
 
   return (
     <>
