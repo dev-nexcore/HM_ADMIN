@@ -1474,14 +1474,14 @@ const parentFormContent = () => (
 
        <div className="w-full px-2">
         <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          relation
+          Relation
         </label>
         <input
           type="tel"
-          name="contactNumber"
+          name="relation"
           value={parentFormData.relation}
           onChange={handleParentInputChange}
-          placeholder="Enter Phone Number"
+          placeholder="Enter the realtion to the student"
           className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
             parentErrors.relation ? "border-red-500" : ""
           }`}
