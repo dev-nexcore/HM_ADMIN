@@ -3,6 +3,20 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
+// import { ToastContainer, toast } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+
+
+const initialFormState = {
+  template: "",
+  title: "",
+  recipient: "",
+  individualRecipient: "",
+  message: "",
+  date: ""
+};
+
+
 
 const HostelNotices = () => {
   const [form, setForm] = useState({
@@ -15,13 +29,8 @@ const HostelNotices = () => {
   });
 
   const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    status: "All",
-    recipientType: "",
-    page: 1,
-    limit: 50,
-  });
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({ status: "All", recipientType: "", page: 1, limit: 50 });
 
   const fetchNotices = async () => {
     try {
@@ -58,6 +67,7 @@ const HostelNotices = () => {
           form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
         individualRecipient: form.individualRecipient || "",
       });
+       toast.success("✅ Notice issued successfully");
       fetchNotices();
       setForm({
         template: "",
@@ -69,6 +79,8 @@ const HostelNotices = () => {
       });
     } catch (err) {
       console.error("Failed to issue notice:", err);
+      toast.success("✅ Notice issued successfully");
+       
     }
   };
 
@@ -260,49 +272,45 @@ const HostelNotices = () => {
               )}
             </div>
 
-            {/* Recipient */}
-            <div className="w-full">
-              <label className="text-black font-medium mb-1 block ml-2">
-                Recipient
-              </label>
-              <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
-                <select
-                  className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${
-                    formErrors?.recipient ? "border border-red-500" : ""
-                  }`}
-                  value={form.recipient}
-                  onChange={(e) => {
-                    setForm({ ...form, recipient: e.target.value });
-                    if (e.target.value) {
-                      setFormErrors((prev) => ({ ...prev, recipient: false }));
-                    }
-                  }}
+          {/* Recipient */}
+          <div className="w-full">
+            <label className="text-black font-medium mb-1 block ml-2">
+              Recipient
+            </label>
+            <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
+              <select
+                className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${
+                  formErrors?.recipient ? "border border-red-500" : ""
+                }`}
+                value={form.recipient}
+                onChange={(e) => {
+                  setForm({ ...form, recipient: e.target.value });
+                  if (e.target.value) {
+                    setFormErrors(prev => ({ ...prev, recipient: false }));
+                  }
+                }}
+              >
+                <option value="">Select recipient</option>
+                <option value="All (Students & Warden)">All (Students & Warden)</option>
+                <option value="Student">Students</option>
+                <option value="Warden">Warden</option>
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
+                <svg
+                  className="w-4 h-4 text-black"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  viewBox="0 0 24 24"
                 >
-                  <option value="">Select recipient</option>
-                  <option value="All (Students & Warden)">
-                    All (Students & Warden)
-                  </option>
-                  <option value="Students">Students</option>
-                  <option value="Warden">Warden</option>
-                </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <svg
-                    className="w-4 h-4 text-black"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-              {formErrors?.recipient && (
-                <p className="text-red-500 text-xs mt-1 ml-2">
-                  Please select a recipient
-                </p>
-              )}
             </div>
+            {formErrors?.recipient && (
+              <p className="text-red-500 text-xs mt-1 ml-2">Please select a recipient</p>
+            )}
+          </div>
 
             {/* Individual Recipient Input */}
             <div className="w-full">
@@ -817,7 +825,13 @@ const HostelNotices = () => {
           </div>
         )}
       </div>
+      <>
+  {/* existing JSX */}
+  <ToastContainer position="top-right" autoClose={3000} />
+</>
+
     </div>
+    
   );
 };
 
