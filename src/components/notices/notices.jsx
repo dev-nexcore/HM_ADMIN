@@ -5,6 +5,16 @@
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
 
+const initialFormState = {
+  template: "",
+  title: "",
+  recipient: "",
+  individualRecipient: "",
+  message: "",
+  date: ""
+};
+
+
 
 const HostelNotices = () => {
   const [form, setForm] = useState({
@@ -17,7 +27,7 @@ const HostelNotices = () => {
   });
 
   const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ status: "All", recipientType: "", page: 1, limit: 50 });
 
   const fetchNotices = async () => {
