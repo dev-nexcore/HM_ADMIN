@@ -1,3 +1,6 @@
+
+//notices.jsx
+
 "use client";
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
@@ -427,6 +430,9 @@ const[formErrors,setFormErrors] = useState(null);
                   // If no errors, proceed with submission
                   setFormErrors(null);
                   // Your submit logic here
+
+
+                  handleIssueNotice();
                 }}
                 className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
               >
