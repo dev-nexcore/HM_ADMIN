@@ -246,7 +246,7 @@ const[formErrors,setFormErrors] = useState(null);
               >
                 <option value="">Select recipient</option>
                 <option value="All (Students & Warden)">All (Students & Warden)</option>
-                <option value="Students">Students</option>
+                <option value="Student">Students</option>
                 <option value="Warden">Warden</option>
               </select>
               <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
