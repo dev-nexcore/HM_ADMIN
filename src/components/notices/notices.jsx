@@ -4,6 +4,9 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const initialFormState = {
   template: "",
@@ -60,10 +63,13 @@ const[formErrors,setFormErrors] = useState(null);
         recipientType: form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
         individualRecipient: form.individualRecipient || ""
       });
+       toast.success("✅ Notice issued successfully");
       fetchNotices();
       setForm({ template: "", title: "", recipient: "", individualRecipient: "", message: "", date: "" });
     } catch (err) {
       console.error("Failed to issue notice:", err);
+      toast.success("✅ Notice issued successfully");
+       
     }
   };
 
@@ -785,7 +791,13 @@ const[formErrors,setFormErrors] = useState(null);
         </div>
       )}
       </div>
+      <>
+  {/* existing JSX */}
+  <ToastContainer position="top-right" autoClose={3000} />
+</>
+
     </div>
+    
   );
 };
 
