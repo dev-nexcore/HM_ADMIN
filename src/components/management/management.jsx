@@ -1680,10 +1680,16 @@ const parentFormContent = () => (
         {/* Edit Student Modal (conditionally rendered when editing) */}
         {showEditModal && editingStudent && (
           <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div
+            {/* <div
               className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] "
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
-            >
+            > */}
+
+            <div
+  className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto custom-scrollbar"
+  style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
+>
+
               <button
                 onClick={resetForm}
                 className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer"

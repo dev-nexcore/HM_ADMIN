@@ -111,7 +111,7 @@ export default function TicketsSection() {
   const viewAttachment = async (complaintId, attachmentId, filename, mimeType) => {
     try {
       const response = await api.get(
-        `/api/adminauth/complaints/${complaintId}/attachments/${attachmentId}`,
+        `/api/adminauth/complaints/${complaintId}/attachment/${attachmentId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
