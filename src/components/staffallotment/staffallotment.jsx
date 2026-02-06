@@ -1,17 +1,11 @@
 "use client";
 import { useState } from "react";
 import { Edit2, Trash2, Clock, X } from "lucide-react";
-import { Edit2, Trash2, Clock, X } from "lucide-react";
 
 const StaffAllotment = () => {
   const [formData, setFormData] = useState({
     wardenName: "",
-    wardenName: "",
     contactNumber: "",
-    emailId: "",
-    designation: "",
-    password: "",
-    confirmPassword: "",
     emailId: "",
     designation: "",
     password: "",
@@ -42,9 +36,6 @@ const StaffAllotment = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedWardenId, setSelectedWardenId] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedWardenId, setSelectedWardenId] = useState(null);
 
   // ✅ Form Validation
   const validateForm = () => {
@@ -66,9 +57,6 @@ const StaffAllotment = () => {
     else if (!/^\d{10}$/.test(contactNumber))
       errors.contactNumber = "Enter valid 10-digit number.";
 
-    if (!emailId) errors.emailId = "Email is required.";
-    else if (!/\S+@\S+\.\S+/.test(emailId))
-      errors.emailId = "Enter a valid email address.";
     if (!emailId) errors.emailId = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(emailId))
       errors.emailId = "Enter a valid email address.";
@@ -382,25 +370,16 @@ const StaffAllotment = () => {
           <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Warden Name
-              Warden Name
             </label>
             <input
               type="text"
               name="wardenName"
               onBlur={() => handleBlur("wardenName")}
               value={formData.wardenName}
-              name="wardenName"
-              onBlur={() => handleBlur("wardenName")}
-              value={formData.wardenName}
               onChange={handleInputChange}
-              placeholder="Enter warden's Full name"
               placeholder="Enter warden's Full name"
               className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
             />
-            {formErrors.wardenName && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.wardenName}
-              </p>
             {formErrors.wardenName && (
               <p className="text-sm text-red-600 mt-1">
                 {formErrors.wardenName}
@@ -412,25 +391,16 @@ const StaffAllotment = () => {
           <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Contact Number
-              Contact Number
             </label>
             <input
               type="text"
               name="contactNumber"
               onBlur={() => handleBlur("contactNumber")}
               value={formData.contactNumber}
-              name="contactNumber"
-              onBlur={() => handleBlur("contactNumber")}
-              value={formData.contactNumber}
               onChange={handleInputChange}
-              placeholder="Enter Contact No."
               placeholder="Enter Contact No."
               className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
             />
-            {formErrors.contactNumber && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.contactNumber}
-              </p>
             {formErrors.contactNumber && (
               <p className="text-sm text-red-600 mt-1">
                 {formErrors.contactNumber}
@@ -442,24 +412,16 @@ const StaffAllotment = () => {
           <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Email ID
-              Email ID
             </label>
             <input
               type="email"
               name="emailId"
               onBlur={() => handleBlur("emailId")}
               value={formData.emailId}
-              type="email"
-              name="emailId"
-              onBlur={() => handleBlur("emailId")}
-              value={formData.emailId}
               onChange={handleInputChange}
-              placeholder="Enter Email Address"
               placeholder="Enter Email Address"
               className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
             />
-            {formErrors.emailId && (
-              <p className="text-sm text-red-600 mt-1">{formErrors.emailId}</p>
             {formErrors.emailId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.emailId}</p>
             )}
@@ -469,28 +431,12 @@ const StaffAllotment = () => {
           <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Designation
-              Designation
             </label>
             <select
               name="designation"
               onBlur={() => handleBlur("designation")}
               value={formData.designation}
-            <select
-              name="designation"
-              onBlur={() => handleBlur("designation")}
-              value={formData.designation}
               onChange={handleInputChange}
-              className="w-full max-w-[440px] p-3 rounded-md border text-gray-800 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            >
-              <option value="">Select Designation</option>
-              <option value="Warden">Warden</option>
-              <option value="Asst. Warden">Assistant Warden</option>
-              <option value="Senior Warden">Senior Warden</option>
-            </select>
-            {formErrors.designation && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.designation}
-              </p>
               className="w-full max-w-[440px] p-3 rounded-md border text-gray-800 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
             >
               <option value="">Select Designation</option>
@@ -509,24 +455,16 @@ const StaffAllotment = () => {
           <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Password
-              Password
             </label>
             <input
               type="password"
               name="password"
               onBlur={() => handleBlur("password")}
               value={formData.password}
-              type="password"
-              name="password"
-              onBlur={() => handleBlur("password")}
-              value={formData.password}
               onChange={handleInputChange}
-              placeholder="Enter Password"
               placeholder="Enter Password"
               className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
             />
-            {formErrors.password && (
-              <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
             {formErrors.password && (
               <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
             )}
@@ -558,7 +496,6 @@ const StaffAllotment = () => {
                   name="shiftEnd"
                   value={formData.shiftEnd}
                   onBlur={() => handleBlur("shiftEnd")}
-                  onBlur={() => handleBlur("shiftEnd")}
                   onChange={handleInputChange}
                   className="w-[110px] p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
                 />
@@ -588,7 +525,6 @@ const StaffAllotment = () => {
             {formErrors.confirmPassword && (
               <p className="text-sm text-red-600 mt-2">
                 {formErrors.confirmPassword}
-                {formErrors.confirmPassword}
               </p>
             )}
           </div>
@@ -598,18 +534,11 @@ const StaffAllotment = () => {
           <button
             onClick={handleRegisterWarden}
             className="bg-white border border-gray-300 py-3 px-8 sm:px-12 cursor-pointer rounded-2xl font-bold hover:bg-gray-50 transition-colors shadow-2xl text-sm sm:text-base"
-            className="bg-white border border-gray-300 py-3 px-8 sm:px-12 cursor-pointer rounded-2xl font-bold hover:bg-gray-50 transition-colors shadow-2xl text-sm sm:text-base"
           >
-            Register Warden
             Register Warden
           </button>
         </div>
       </div>
-      {successMsg && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 w-fit max-w-[90vw] animate-fadeInDown">
-          {successMsg}
-        </div>
-      )}
 
       {/* Success Msg */}
       {successMsg && (
