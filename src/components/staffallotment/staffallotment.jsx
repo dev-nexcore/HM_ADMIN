@@ -8,8 +8,6 @@ const StaffAllotment = () => {
     contactNumber: "",
     emailId: "",
     designation: "",
-    password: "",
-    confirmPassword: "",
     shiftStart: "",
     shiftEnd: "",
   });
@@ -45,8 +43,6 @@ const StaffAllotment = () => {
       contactNumber,
       emailId,
       designation,
-      password,
-      confirmPassword,
       shiftStart,
       shiftEnd,
     } = formData;
@@ -63,11 +59,6 @@ const StaffAllotment = () => {
 
     if (!designation) errors.designation = "Please select a designation.";
 
-    if (!password) errors.password = "Password is required.";
-
-    if (!confirmPassword) errors.confirmPassword = "Please confirm password.";
-    else if (password !== confirmPassword)
-      errors.confirmPassword = "Passwords do not match.";
 
     if (!shiftStart) errors.shiftStart = "Please enter shift time.";
     if (!shiftEnd) errors.shiftEnd = "Please enter shift time.";
@@ -124,8 +115,6 @@ const StaffAllotment = () => {
       contactNumber: "",
       emailId: "",
       designation: "",
-      password: "",
-      confirmPassword: "",
       shiftStart: "",
       shiftEnd: "",
     });
@@ -165,8 +154,6 @@ const StaffAllotment = () => {
       contactNumber: "",
       emailId: selected.email,
       designation: selected.designation,
-      password: "",
-      confirmPassword: "",
       shiftStart: parseTo24(shiftStartRaw),
       shiftEnd: parseTo24(shiftEndRaw),
     });
@@ -203,8 +190,6 @@ const StaffAllotment = () => {
       contactNumber: "",
       emailId: "",
       designation: "",
-      password: "",
-      confirmPassword: "",
       shiftStart: "",
       shiftEnd: "",
     });
@@ -452,7 +437,7 @@ const StaffAllotment = () => {
           </div>
 
           {/* Password */}
-          <div>
+          {/* <div>
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Password
             </label>
@@ -468,7 +453,7 @@ const StaffAllotment = () => {
             {formErrors.password && (
               <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
             )}
-          </div>
+          </div> */}
 
           {/* Shift */}
           <div>
@@ -509,7 +494,7 @@ const StaffAllotment = () => {
           </div>
 
           {/* Confirm */}
-          <div className="md:col-start-1">
+          {/* <div className="md:col-start-1">
             <label className="block text-base sm:text-lg text-black font-bold mb-1">
               Confirm Password
             </label>
@@ -527,7 +512,7 @@ const StaffAllotment = () => {
                 {formErrors.confirmPassword}
               </p>
             )}
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-7 text-center">

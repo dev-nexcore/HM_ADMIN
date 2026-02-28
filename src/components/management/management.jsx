@@ -3,6 +3,8 @@ import { useState, useRef, useEffect, use } from "react";
 import { Eye } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
+import { ToastContainer  ,toast} from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 
 const StudentManagement = () => {
@@ -509,7 +511,7 @@ if (formType === 'student') {
     
    // Show what was extracted
 if (extractedInfo.firstName || extractedInfo.lastName) {
-  alert(`Document processed successfully!
+  toast.success(`Document processed successfully!
 Name: ${extractedInfo.firstName} ${extractedInfo.lastName}
 DOB: ${extractedInfo.dob || 'Not found'}
 Mobile: ${extractedInfo.mobileNumber || 'Not found'}
@@ -517,12 +519,12 @@ Aadhar: ${extractedInfo.aadharNumber || 'Not found'}
 
 Please verify the auto-filled information.`);
 } else {
-  alert('Document processed but name could not be extracted. Please enter details manually.');
+  toast.error('Document processed but name could not be extracted. Please enter details manually.');
 }
     
   } catch (error) {
     console.error('OCR Error:', error);
-    alert('Failed to process document. Please try again or enter details manually.');
+    toast.error('Failed to process document. Please try again or enter details manually.');
   } finally {
     setOcrLoading(false);
     setOcrProgress(0);
@@ -537,7 +539,7 @@ const handleDocumentUpload = async (e, documentType, formType) => {
   // Validate file type
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   if (!validTypes.includes(file.type)) {
-    alert('Please upload a valid image file (JPEG, PNG, or WebP)');
+    toast.warning('Please upload a valid image file (JPEG, PNG, or WebP)');
     return;
   }
   
@@ -630,11 +632,20 @@ const handleSubmit = async () => {
     };
     
     setStudents((prev) => [...prev, newStudent]);
+    // Refresh students without parents list
+const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
+setStudentsWithoutParents(studentsWithoutParentsData.students || []);
     resetForm();
-    alert(`Student registered successfully! Password: ${response.student?.password || 'Check email for credentials'}`);
+
+
+    // alert(`Student registered successfully! Password: ${response.student?.password || 'Check email for credentials'}`);
+    toast.success(
+  `Student registered successfully! Password: ${response.student?.password}`,
+  { autoClose: 6000 }
+);
   } catch (error) {
     console.error('Error registering student:', error);
-    alert(error.message || 'Error registering student. Please try again.');
+    toast.error(error.message || 'Error registering student. Please try again.');
   } finally {
     setLoading(false);
   }
@@ -656,7 +667,10 @@ const handleEdit = (studentId) => {
       roomNumber: roomNumber, // Set room number
       bedNumber: student.roomObjectId || "", // Set bed ID
       emergencyContactNumber: student.emergencyContactNumber || "",
-      admissionDate: student.admissionDate || "",
+      // admissionDate: student.admissionDate || "",
+      admissionDate: student.admissionDate
+  ? new Date(student.admissionDate).toISOString().split("T")[0]
+  : "",
       emergencyContactName: student.emergencyContactName || "",
       feeStatus: student.feeStatus,
     });
@@ -720,10 +734,10 @@ const handleUpdate = async () => {
       )
     );
     resetForm();
-    alert("Student updated successfully!");
+    toast.success("Student updated successfully!");
   } catch (error) {
     console.error('Error updating student:', error);
-    alert(error.message || 'Error updating student. Please try again.');
+    toast.error(error.message || 'Error updating student. Please try again.');
   } finally {
     setLoading(false);
   }
@@ -800,10 +814,10 @@ const handleParentSubmit = async () => {
     setStudentsWithoutParents(studentsWithoutParentsData.students || []);
     
     resetParentForm();
-    alert(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
+    toast.success(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
   } catch (error) {
     console.error('Error registering parent:', error);
-    alert(error.message || 'Error registering parent. Please try again.');
+    toast.error(error.message || 'Error registering parent. Please try again.');
   } finally {
     setParentLoading(false);
   }
@@ -2107,6 +2121,7 @@ const parentFormContent = () => (
           </div>
         </div>
       </div>
+      <ToastContainer/>
     </div>
   );
 };
