@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 import { QrCode, Camera, Download, Check, AlertCircle } from "lucide-react";
 import api from "@/lib/api";
-import QRScanner from "../QRScanner/QRScanner";
+// import QRScanner from "../QRScanner/QRScanner";
 import ItemDetailsModal from "../ItemDetailsModal/ItemDetailsModal";
 
 // Import the new components (you'll need to create these files)
@@ -290,11 +290,11 @@ const handleBulkQRGeneration = async () => {
   }
 };
 
-  const handleQRScanResult = (item) => {
-    setScannedItem(item);
-    setShowDetailModal(true);
-    setSelectedItem(item);
-  };
+  // const handleQRScanResult = (item) => {
+  //   setScannedItem(item);
+  //   setShowDetailModal(true);
+  //   setSelectedItem(item);
+  // };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
@@ -321,13 +321,13 @@ const handleBulkQRGeneration = async () => {
     </button>
   )}
             {/* QR Scanner Button */}
-            <button
+            {/* <button
               onClick={() => setShowQRScanner(true)}
               className="flex items-center gap-2 cursor-pointer bg-green-600 hover:bg-green-700 text-white px-5 py-1.5 rounded shadow-md w-full sm:w-auto"
             >
               <Camera size={17} />
               Scan QR Code
-            </button>
+            </button> */}
 
             {/* Generate Monthly Stock Report */}
             <button
@@ -418,7 +418,7 @@ const handleBulkQRGeneration = async () => {
           onChange={(e) => setCategoryFilter(e.target.value)}
         >
           <option>All Categories</option>
-          <option>Bedding</option>
+          {/* <option>Bedding</option> */}
           <option>Furniture</option>
           <option>Electronics</option>
           <option>Applications</option>
@@ -448,6 +448,7 @@ const handleBulkQRGeneration = async () => {
       />
     </th>
     {[
+       "No",
       "Item Name",
       "Barcode ID",
       "Category",
@@ -464,7 +465,7 @@ const handleBulkQRGeneration = async () => {
                     >
                       <div className="flex items-center pl-4 pr-4">
                         <span className="flex-1">{header}</span>
-                        {idx < 6 && (
+                        {idx < 7 && (
                           <div className="h-6 w-px bg-black ml-4"></div>
                         )}
                       </div>
@@ -487,7 +488,7 @@ const handleBulkQRGeneration = async () => {
                           .toLowerCase()
                           .includes(searchQuery.toLowerCase()))
                   )
-                  .map((item) => (
+                  .map((item,index) => (
                    <tr key={item.barcodeId} className="hover:bg-gray-100">
   {/* ADD THIS CHECKBOX CELL */}
   <td className="px-2 py-2">
@@ -505,6 +506,10 @@ const handleBulkQRGeneration = async () => {
       />
     )}
   </td>
+
+  <td className=" font-semibold">
+  {index + 1}
+</td>
   <td className="px-4 py-2">{item.itemName}</td>
                       <td className="px-4 py-2">{item.barcodeId}</td>
                       <td className="px-4 py-2">{item.category}</td>
@@ -675,11 +680,11 @@ const handleBulkQRGeneration = async () => {
       </div>
 
       {/* QR Scanner Modal - Uncomment when you create the QRScanner component */}
-      <QRScanner
+      {/* <QRScanner
         isOpen={showQRScanner}
         onClose={() => setShowQRScanner(false)}
         onScanResult={handleQRScanResult}
-      />
+      /> */}
 
       {/* Item Details Modal - Uncomment when you create the ItemDetailsModal component */}
       <ItemDetailsModal
@@ -773,6 +778,7 @@ const handleBulkQRGeneration = async () => {
             <h3 className="text-xl font-bold mb-4">Upload Receipt</h3>
             <input
               type="file"
+               ref={fileInputRef}
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={handleUploadReceipt}
               className="mb-4 w-full"
@@ -812,7 +818,7 @@ const handleBulkQRGeneration = async () => {
       )}
 
       {/* Edit Modal */}
-      {showEditModal && editData && (
+      {/* {showEditModal && editData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/20">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
             <h3 className="text-xl font-bold mb-4">Edit Item</h3>
@@ -855,7 +861,99 @@ const handleBulkQRGeneration = async () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+
+      {showEditModal && editData && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/20">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+      <h3 className="text-xl font-bold mb-4">Edit Item</h3>
+
+      {/* Item Name */}
+      <input
+        className="border px-3 py-2 w-full mb-3 rounded"
+        value={editData.itemName}
+        onChange={(e) =>
+          setEditData({ ...editData, itemName: e.target.value })
+        }
+        placeholder="Item Name"
+      />
+
+      {/* Barcode ID */}
+      <input
+        className="border px-3 py-2 w-full mb-3 rounded"
+        value={editData.barcodeId}
+        onChange={(e) =>
+          setEditData({ ...editData, barcodeId: e.target.value })
+        }
+        placeholder="Barcode ID"
+      />
+
+      {/* Category Dropdown */}
+      <select
+        value={editData.category}
+        onChange={(e) =>
+          setEditData({ ...editData, category: e.target.value })
+        }
+        className="w-full border px-3 py-2 mb-3 rounded"
+      >
+        <option value="">Select Category</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Furniture">Furniture</option>
+        <option value="Bedding">Bedding</option>
+        <option value="Applications">Applications</option>
+      </select>
+
+      {/* Location Dropdown */}
+      <select
+        value={editData.location}
+        onChange={(e) =>
+          setEditData({ ...editData, location: e.target.value })
+        }
+        className="w-full border px-3 py-2 mb-3 rounded"
+      >
+        <option value="">Select Location</option>
+        <option value="Main Building">Main Building</option>
+        <option value="Kitchen">Kitchen</option>
+        <option value="Mess Hall">Mess Hall</option>
+        <option value="Recreation Room">Recreation Room</option>
+        <option value="Study Hall">Study Hall</option>
+      </select>
+
+      {/* Status Dropdown */}
+      <select
+        value={editData.status}
+        onChange={(e) =>
+          setEditData({ ...editData, status: e.target.value })
+        }
+        className="w-full border px-3 py-2 mb-4 rounded"
+      >
+        <option value="">Select Status</option>
+        <option value="Available">Available</option>
+        <option value="In Use">In Use</option>
+        <option value="In maintenance">In maintenance</option>
+        <option value="Damaged">Damaged</option>
+      </select>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-4">
+        <button
+          className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded cursor-pointer"
+          onClick={() => setShowEditModal(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
+          onClick={handleEditSave}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {showBulkQRModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
@@ -941,7 +1039,14 @@ const handleBulkQRGeneration = async () => {
                   </p>
                   <p>
                     <span className="font-semibold">Purchase Date:</span>{" "}
-                    {selectedItem.purchaseDate || "Not specified"}
+                    {/* {selectedItem.purchaseDate || "Not specified"} */}
+                    {selectedItem.purchaseDate
+  ? new Date(selectedItem.purchaseDate).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+  : "Not specified"}
                   </p>
                   <p>
                     <span className="font-semibold">Purchase Cost:</span>{" "}
@@ -1043,14 +1148,25 @@ const handleBulkQRGeneration = async () => {
                 {selectedItem.receiptUrl ? (
                   <div className="flex flex-col items-center">
                     <p>Receipt uploaded</p>
-                    <button
+                    {/* <button
                       className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                       onClick={() => {
                         window.open(selectedItem.receiptUrl, "_blank");
                       }}
                     >
                       View Receipt
-                    </button>
+                    </button> */}
+                    <button
+  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+  onClick={() => {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:5224";
+
+    window.open(`${baseUrl}${selectedItem.receiptUrl}`, "_blank");
+  }}
+>
+  View Receipt
+</button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
@@ -1058,9 +1174,11 @@ const handleBulkQRGeneration = async () => {
                     <button
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                       onClick={() => {
-                        setShowDetailModal(false);
-                        setSelectedItem(selectedItem);
-                        triggerFileInput();
+                        // setShowDetailModal(false);
+                        // setSelectedItem(selectedItem);
+                        // triggerFileInput();
+                          setShowDetailModal(false);
+  setShowUploadModal(true);
                       }}
                     >
                       Upload Receipt
@@ -1161,7 +1279,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
   const [formData, setFormData] = useState({
     itemName: "",
     location: "",
-    barcodeId: "",
+    // barcodeId: "",
     status: "",
     category: "",
     description: "",
@@ -1195,25 +1313,25 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
   };
 
   // Fixed barcode generation function
-  const generateBarcodeId = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    const itemPrefix = formData.itemName
-      ? formData.itemName.toUpperCase().replace(/\s+/g, "").substring(0, 3)
-      : "ITM";
-    return `${itemPrefix}${timestamp}${random}`;
-  };
+  // const generateBarcodeId = () => {
+  //   const timestamp = Date.now();
+  //   const random = Math.floor(Math.random() * 1000);
+  //   const itemPrefix = formData.itemName
+  //     ? formData.itemName.toUpperCase().replace(/\s+/g, "").substring(0, 3)
+  //     : "ITM";
+  //   return `${itemPrefix}${timestamp}${random}`;
+  // };
 
   // Auto-generate barcode when item name changes
-  useEffect(() => {
-    if (formData.itemName) {
-      const newBarcodeId = generateBarcodeId();
-      setFormData(prev => ({
-        ...prev,
-        barcodeId: newBarcodeId
-      }));
-    }
-  }, [formData.itemName]);
+  // useEffect(() => {
+  //   if (formData.itemName) {
+  //     const newBarcodeId = generateBarcodeId();
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       barcodeId: newBarcodeId
+  //     }));
+  //   }
+  // }, [formData.itemName]);
 
   useEffect(() => {
     const loadAvailableRoomsFloors = async () => {
@@ -1253,9 +1371,9 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       newErrors.location = "Location is required.";
     }
 
-    if (!formData.barcodeId.trim()) {
-      newErrors.barcodeId = "Barcode ID is required.";
-    }
+    // if (!formData.barcodeId.trim()) {
+    //   newErrors.barcodeId = "Barcode ID is required.";
+    // }
 
     if (!formData.status) {
       newErrors.status = "Status is required.";
@@ -1290,7 +1408,7 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       location: "",
       roomNo: "",
       floor: "",
-      barcodeId: "",
+      // barcodeId: "",
       status: "",
       category: "",
       description: "",
@@ -1315,7 +1433,7 @@ const handleGenerateQR = async () => {
   try {
     const formDataToSend = new FormData();
     formDataToSend.append("itemName", formData.itemName);
-    formDataToSend.append("barcodeId", formData.barcodeId);
+    // formDataToSend.append("barcodeId", formData.barcodeId);
     formDataToSend.append("category", formData.category);
     formDataToSend.append("location", formData.location);
     formDataToSend.append("status", formData.status);
@@ -1590,7 +1708,7 @@ const handleGenerateQR = async () => {
 </div>
 
 {/* Barcode ID - Updated to match input style */}
-<div className="w-full px-2">
+{/* <div className="w-full px-2">
   <label className="block mb-1 text-black ml-2" style={labelStyle}>
     Barcode ID
   </label>
@@ -1606,7 +1724,7 @@ const handleGenerateQR = async () => {
   <p className="text-xs text-gray-600 mt-1 ml-2">
     Barcode ID is automatically generated
   </p>
-</div>
+</div> */}
 
           {/* Status */}
           <div className="w-full px-2">

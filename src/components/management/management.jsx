@@ -1220,7 +1220,7 @@ const getFeeStatusStyle = (status) => ({
       </option>
       {getBedsForRoom(formData.roomNumber).map((bed) => (
         <option key={bed._id} value={bed._id}>
-          {bed.barcodeId}
+         {bed.itemName}
         </option>
       ))}
     </select>
