@@ -5,6 +5,8 @@ import { Eye, Download } from "lucide-react";
 import Image from "next/image";
 import InspectionModal from "./InspectionModal";
 import api from "@/lib/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const statusStyles = {
   Scheduled: "bg-[#FF9D00] text-white",
@@ -97,7 +99,7 @@ export default function InspectionPage() {
         setUpcomingInspections(response.inspections || []);
       } catch (error) {
         console.error('Error loading inspections:', error);
-        alert(error.message || 'Failed to load inspections');
+        toast.error(error.message || 'Failed to load inspections');
       } finally {
         setFetchLoading(false);
       }
@@ -184,11 +186,11 @@ export default function InspectionPage() {
       });
       
       setSubmitted(true);
-      alert("Inspection Scheduled Successfully");
+      toast.success("Inspection Scheduled Successfully");
       setTimeout(() => setSubmitted(false), 3000);
     } catch (error) {
       console.error('Error creating inspection:', error);
-      alert(error.message || 'Error scheduling inspection. Please try again.');
+      toast.error(error.message || 'Error scheduling inspection. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -256,10 +258,10 @@ Generated on: ${new Date().toLocaleString()}
         )
       );
       
-      alert(`Inspection status updated to ${newStatus}`);
+      toast.info(`Inspection status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating status:', error);
-      alert(error.message || 'Failed to update inspection status');
+      toast.error(error.message || 'Failed to update inspection status');
     }
   };
 
@@ -276,10 +278,10 @@ Generated on: ${new Date().toLocaleString()}
         prev.filter(inspection => inspection.id !== inspectionId)
       );
       
-      alert('Inspection deleted successfully');
+    toast.success('Inspection deleted successfully');
     } catch (error) {
       console.error('Error deleting inspection:', error);
-      alert(error.message || 'Failed to delete inspection');
+      toast.error(error.message || 'Failed to delete inspection');
     }
   };
 
@@ -676,6 +678,15 @@ Generated on: ${new Date().toLocaleString()}
           onDelete={handleDeleteInspection}
         />
       )}
+      <ToastContainer
+  position="top-right"
+  autoClose={3000}
+  hideProgressBar={false}
+  closeOnClick
+  pauseOnHover
+  draggable
+  theme="colored"
+/>
     </div>
   );
 }

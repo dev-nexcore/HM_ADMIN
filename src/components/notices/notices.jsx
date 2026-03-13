@@ -3,8 +3,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
-// import { ToastContainer, toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 
 const initialFormState = {
@@ -79,7 +79,7 @@ const HostelNotices = () => {
       });
     } catch (err) {
       console.error("Failed to issue notice:", err);
-      toast.success("✅ Notice issued successfully");
+      toast.error("❌ Notice issued Failed");
        
     }
   };
@@ -827,7 +827,7 @@ const HostelNotices = () => {
       </div>
       <>
   {/* existing JSX */}
-  {/* <ToastContainer position="top-right" autoClose={3000} /> */}
+  <ToastContainer position="top-right" autoClose={3000} />
 </>
 
     </div>

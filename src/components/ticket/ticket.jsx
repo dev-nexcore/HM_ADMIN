@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export default function TicketsSection() {
   const [openTickets, setOpenTickets] = useState([]);
   const [resolvedTickets, setResolvedTickets] = useState([]);
@@ -41,7 +44,7 @@ export default function TicketsSection() {
       setOpenTickets(formattedTickets);
     } catch (error) {
       console.error("Failed to fetch open tickets:", error);
-      alert("Failed to fetch open tickets. Please try again.");
+      toast.error("Failed to fetch open tickets. Please try again.");
     }
   };
 
@@ -76,7 +79,7 @@ export default function TicketsSection() {
       setResolvedTickets(formattedTickets);
     } catch (error) {
       console.error("Failed to fetch resolved tickets:", error);
-      alert("Failed to fetch resolved tickets. Please try again.");
+      toast.error("Failed to fetch resolved tickets. Please try again.");
     }
   };
 
@@ -127,7 +130,7 @@ export default function TicketsSection() {
       setAttachmentModal({ show: true, url, type, filename });
     } catch (error) {
       console.error("Failed to fetch attachment:", error);
-      alert("Failed to load attachment. Please try again.");
+      toast.error("Failed to load attachment. Please try again.");
     }
   };
 
@@ -177,11 +180,11 @@ export default function TicketsSection() {
       setResolvedTickets(prev => [resolvedTicket, ...prev]);
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
 
-      alert("✅ Complaint has been approved and resolved successfully!");
+      toast.success("✅ Complaint has been approved and resolved successfully!");
 
     } catch (error) {
       console.error("Failed to approve complaint:", error);
-      alert("❌ Failed to approve complaint. Please try again.");
+      toast.error("❌ Failed to approve complaint. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [`approve_${index}`]: false }));
     }
@@ -200,10 +203,10 @@ export default function TicketsSection() {
 
     try {
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
-      alert("❌ Complaint has been rejected and removed from the list.");
+      toast.error("❌ Complaint has been rejected and removed from the list.");
     } catch (error) {
       console.error("Failed to reject complaint:", error);
-      alert("❌ Failed to reject complaint. Please try again.");
+      toast.error("❌ Failed to reject complaint. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [`reject_${index}`]: false }));
     }
@@ -632,6 +635,11 @@ export default function TicketsSection() {
           </div>
         </div>
       )}
+      <ToastContainer
+  position="top-right"
+  autoClose={3000}
+  theme="colored"
+/>
     </div>
   );
 }
