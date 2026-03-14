@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, Mail } from "lucide-react";
 import api from "@/lib/api";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const statusStyles = {
   pending: "bg-orange-500 text-white",
@@ -92,7 +95,7 @@ export default function LeaveRequestsPage() {
           }
         );
         
-        alert(`Leave has been ${status === "approved" ? "approved ✅" : "rejected ❌"}`);
+        toast.success(`Leave has been ${status === "approved" ? "approved ✅" : "rejected ❌"}`);
         fetchLeaves(activeFilter);
       } else if (action === "message") {
         const message = prompt("Enter your message to the student:");
@@ -109,12 +112,12 @@ export default function LeaveRequestsPage() {
               },
             }
           );
-          alert("Message sent successfully 📩");
+          toast.success("Message sent successfully 📩");
         }
       }
     } catch (err) {
       console.error("Action failed", err);
-      alert("Failed to perform action. Please try again.");
+      toast.error("Failed to perform action. Please try again.");
     }
   };
 
@@ -299,6 +302,16 @@ export default function LeaveRequestsPage() {
           </div>
         </section>
       </div>
+      <ToastContainer
+  position="top-right"
+  autoClose={3000}
+  hideProgressBar={false}
+  newestOnTop
+  closeOnClick
+  pauseOnHover
+  draggable
+  theme="colored"
+/>
     </div>
   );
 }

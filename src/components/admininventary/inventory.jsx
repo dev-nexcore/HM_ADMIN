@@ -1531,7 +1531,9 @@ const handleGenerateQR = async () => {
 
     try {
       const response = await api.get(
-        `/api/adminauth/inventory/${generatedItem._id}/qr-code/download`
+        `/api/adminauth/inventory/${generatedItem._id}/qr-code/download`,{
+          responseType: "blob"
+        }
       );
       if (response.data) {
         const blob = response.data;
