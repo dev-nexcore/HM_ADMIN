@@ -56,33 +56,73 @@ const HostelNotices = () => {
   const [deleteNoticeId, setDeleteNoticeId] = useState(null);
   const [formErrors, setFormErrors] = useState(null);
 
-  const handleIssueNotice = async () => {
-    try {
-      await api.post("/api/adminauth/issue-notice", {
-        template: form.template,
-        title: form.title,
-        message: form.message,
-        issueDate: form.date,
-        recipientType:
-          form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
-        individualRecipient: form.individualRecipient || "",
-      });
-       toast.success("✅ Notice issued successfully");
-      fetchNotices();
-      setForm({
-        template: "",
-        title: "",
-        recipient: "",
-        individualRecipient: "",
-        message: "",
-        date: "",
-      });
-    } catch (err) {
-      console.error("Failed to issue notice:", err);
-      toast.error("❌ Notice issued Failed");
+  // const handleIssueNotice = async () => {
+  //   try {
+  //     await api.post("/api/adminauth/issue-notice", {
+  //       template: form.template,
+  //       title: form.title,
+  //       message: form.message,
+  //       issueDate: form.date,
+  //       recipientType:
+  //         form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
+  //       individualRecipient: form.individualRecipient || "",
+  //     });
+  //      toast.success("✅ Notice issued successfully");
+  //     fetchNotices();
+  //     setForm({
+  //       template: "",
+  //       title: "",
+  //       recipient: "",
+  //       individualRecipient: "",
+  //       message: "",
+  //       date: "",
+  //     });
+  //   } catch (err) {
+  //     console.error("Failed to issue notice:", err);
+  //     toast.error("❌ Notice issued Failed");
        
-    }
-  };
+  //   }
+  // };
+
+
+  const handleIssueNotice = async () => {
+
+  const toastId = toast.loading("Issuing notice...");
+
+  try {
+    await api.post("/api/adminauth/issue-notice", {
+      template: form.template,
+      title: form.title,
+      message: form.message,
+      issueDate: form.date,
+      recipientType:
+        form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
+      individualRecipient: form.individualRecipient || "",
+    });
+
+    toast.update(toastId, {
+      render: "✅ Notice issued successfully",
+      type: "success",
+      isLoading: false,
+      autoClose: 3000
+    });
+
+    fetchNotices();
+
+    setForm(initialFormState);
+
+  } catch (err) {
+
+    toast.update(toastId, {
+      render: "❌ Notice issue failed",
+      type: "error",
+      isLoading: false,
+      autoClose: 3000
+    });
+
+    console.error(err);
+  }
+};
 
   const handleDeleteNotice = async (id) => {
     if (!window.confirm("Are you sure you want to delete this notice?")) return;
