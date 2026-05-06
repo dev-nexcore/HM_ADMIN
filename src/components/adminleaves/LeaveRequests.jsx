@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Eye } from "lucide-react";
 
 const statusStyles = {
   pending: "bg-orange-500 text-white",
@@ -22,6 +23,12 @@ export default function LeaveRequestsPage() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [activeFilter, setActiveFilter] = useState("All");
   const [loading, setLoading] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+const [showRejectModal, setShowRejectModal] = useState(false);
+const [selectedLeaveId, setSelectedLeaveId] = useState(null);
+const [rejectReason, setRejectReason] = useState("");
+const [showViewModal, setShowViewModal] = useState(false);
+const [selectedLeave, setSelectedLeave] = useState(null);
 
   // Fetch leaves from backend
   const fetchLeaves = useCallback(async (filter) => {
@@ -61,6 +68,7 @@ export default function LeaveRequestsPage() {
         to: new Date(leave.endDate).toLocaleDateString(),
         reason: leave.reason,
         status: leave.status,
+        adminComments: leave.adminComments || "", 
       }));
 
       setLeaveRequests(formatted);
@@ -121,6 +129,64 @@ export default function LeaveRequestsPage() {
     }
   };
 
+
+  const confirmApprove = async () => {
+  try {
+    await api.put(
+      `/api/adminauth/leaves/${selectedLeaveId}/status`,
+      {
+        status: "approved",
+        adminComments: "",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+      }
+    );
+
+    toast.success("Leave approved ✅");
+    setShowApproveModal(false);
+    setSelectedLeaveId(null);
+    fetchLeaves(activeFilter);
+
+  } catch {
+    toast.error("Failed to approve leave");
+  }
+};
+
+
+const confirmReject = async () => {
+  try {
+    if (!rejectReason.trim()) {
+      toast.error("Rejection reason is required ❗");
+      return;
+    }
+
+    await api.put(
+      `/api/adminauth/leaves/${selectedLeaveId}/status`,
+      {
+        status: "rejected",
+        adminComments: rejectReason,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+      }
+    );
+
+    toast.success("Leave rejected ❌");
+
+    setShowRejectModal(false);
+    setRejectReason("");
+    setSelectedLeaveId(null);
+    fetchLeaves(activeFilter);
+
+  } catch {
+    toast.error("Failed to reject leave");
+  }
+};
   const filteredRequests =
     activeFilter === "All"
       ? leaveRequests
@@ -183,24 +249,49 @@ export default function LeaveRequestsPage() {
                   </div>
 
                   {/* Reason */}
-                  <div className="mb-4">
+                  {/* <div className="mb-4">
                     <p className="text-xs sm:text-sm text-gray-700">
                       <span className="font-medium">Reason:</span> {req.reason}
                     </p>
-                  </div>
+                    {req.status?.toLowerCase() === "rejected" && req.adminComments && (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
+    <p className="text-xs text-red-700">
+      <span className="font-semibold">Rejected:</span> {req.adminComments}
+    </p>
+  </div>
+)}
+                  </div> */}
+                  
 
                   {/* Actions */}
                   {req.status?.toLowerCase() === "pending" ? (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <button
+  className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg"
+  onClick={() => {
+    setSelectedLeave(req);
+    setShowViewModal(true);
+  }}
+>
+  <Eye size={14} /> VIEW
+</button>
+                      <button
                         className="flex-1 flex items-center justify-center gap-2 text-white bg-[#28C404] hover:bg-green-700 px-3 py-2 text-xs sm:text-sm rounded-lg"
-                        onClick={() => handleAction(req.id, "approve")}
+                        // onClick={() => handleAction(req.id, "approve")}
+                        onClick={() => {
+  setSelectedLeaveId(req.id);
+  setShowApproveModal(true);
+}}
                       >
                         <CheckCircle size={14} /> APPROVE
                       </button>
                       <button
                         className="flex-1 flex items-center justify-center gap-2 text-white bg-[#FF0000] hover:bg-red-600 px-3 py-2 text-xs sm:text-sm rounded-lg"
-                        onClick={() => handleAction(req.id, "reject")}
+                        // onClick={() => handleAction(req.id, "reject")}
+                        onClick={() => {
+  setSelectedLeaveId(req.id);
+  setShowRejectModal(true);
+}}
                       >
                         <XCircle size={14} /> REJECT
                       </button>
@@ -212,9 +303,15 @@ export default function LeaveRequestsPage() {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-center text-gray-500 text-sm py-2">
-                      No actions available
-                    </p>
+                    <button
+  className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg"
+  onClick={() => {
+    setSelectedLeave(req);
+    setShowViewModal(true);
+  }}
+>
+  <Eye size={14} /> VIEW
+</button>
                   )}
                 </div>
               ))}
@@ -236,9 +333,10 @@ export default function LeaveRequestsPage() {
                     <th className="px-4 py-3 text-center">Requester Name</th>
                     <th className="px-4 py-3 text-center">Type</th>
                     <th className="px-4 py-3 text-center">Dates</th>
-                    <th className="px-4 py-3 text-center">Reason</th>
+                    {/* <th className="px-4 py-3 text-center">Reason</th> */}
                     <th className="px-4 py-3 text-center">Status</th>
                     <th className="px-4 py-3 text-center">Actions</th>
+                    {/* <th className="px-4 py-3 text-center">Rejection Reason</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -249,7 +347,7 @@ export default function LeaveRequestsPage() {
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         {req.from} <br /> To <br /> {req.to}
                       </td>
-                      <td className="px-4 py-3 text-center">{req.reason}</td>
+                      {/* <td className="px-4 py-3 text-center">{req.reason}</td> */}
                       <td className="px-4 py-3 text-center">
                         <span
                           className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-medium ${
@@ -263,14 +361,31 @@ export default function LeaveRequestsPage() {
                         {req.status?.toLowerCase() === "pending" ? (
                           <div className="flex flex-col gap-2 items-center">
                             <button
+  className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg"
+  onClick={() => {
+    setSelectedLeave(req);
+    setShowViewModal(true);
+  }}
+>
+  <Eye size={14} /> VIEW
+</button>
+                            <button
                               className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#28C404] hover:bg-green-700 px-3 py-1 text-xs lg:text-sm rounded-lg"
-                              onClick={() => handleAction(req.id, "approve")}
+                              // onClick={() => handleAction(req.id, "approve")}
+                              onClick={() => {
+  setSelectedLeaveId(req.id);
+  setShowApproveModal(true);
+}}
                             >
                               <CheckCircle size={15} /> APPROVE
                             </button>
                             <button
                               className="w-28 h-8 flex items-center justify-start gap-2 text-white bg-[#FF0000] hover:bg-red-600 px-3 py-1 text-xs lg:text-sm rounded-lg"
-                              onClick={() => handleAction(req.id, "reject")}
+                              // onClick={() => handleAction(req.id, "reject")}
+                              onClick={() => {
+  setSelectedLeaveId(req.id);
+  setShowRejectModal(true);
+}}
                             >
                               <XCircle size={15} /> REJECT
                             </button>
@@ -282,12 +397,22 @@ export default function LeaveRequestsPage() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-gray-500 text-sm">
-                            No actions available
-                          </span>
+                          <button
+  className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg"
+  onClick={() => {
+    setSelectedLeave(req);
+    setShowViewModal(true);
+  }}
+>
+  <Eye size={14} /> VIEW
+</button>
                         )}
                       </td>
+                      {/* <td className="px-4 py-3 text-center text-red-600 text-sm">
+  {req.status?.toLowerCase() === "rejected" ? req.adminComments : "-"}
+</td> */}
                     </tr>
+                    
                   ))}
                   {filteredRequests.length === 0 && !loading && (
                     <tr>
@@ -302,6 +427,114 @@ export default function LeaveRequestsPage() {
           </div>
         </section>
       </div>
+ {showApproveModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+    
+    <div className="bg-white w-[90%] sm:w-[380px] rounded-2xl p-6 shadow-2xl animate-fadeIn">
+      
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+        Confirm Approval
+      </h3>
+
+      <p className="text-sm text-gray-600 mb-6">
+        Are you sure you want to approve this leave request?
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowApproveModal(false)}
+          className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={confirmApprove}
+          className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+        >
+          Approve
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+{showRejectModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+    
+    <div className="bg-white w-[90%] sm:w-[420px] rounded-2xl p-6 shadow-2xl animate-fadeIn">
+
+      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+        Reject Leave
+      </h3>
+
+      <textarea
+        value={rejectReason}
+        onChange={(e) => setRejectReason(e.target.value)}
+        placeholder="Enter rejection reason..."
+        className="w-full border border-gray-300 rounded-lg p-3 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-red-400"
+        rows={4}
+      />
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowRejectModal(false);
+            setRejectReason("");
+          }}
+          className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={confirmReject}
+          className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+        >
+          Reject
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
+
+{showViewModal && selectedLeave && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+    
+    <div className="bg-white w-[90%] sm:w-[450px] rounded-2xl p-6 shadow-2xl">
+
+      <h3 className="text-lg font-semibold mb-4">Leave Details</h3>
+
+      <div className="space-y-2 text-sm text-gray-700">
+        <p><b>Name:</b> {selectedLeave.name}</p>
+        <p><b>Type:</b> {selectedLeave.type}</p>
+        <p><b>From:</b> {selectedLeave.from}</p>
+        <p><b>To:</b> {selectedLeave.to}</p>
+        <p><b>Status:</b> {selectedLeave.status}</p>
+
+        <p><b>Reason:</b> {selectedLeave.reason}</p>
+
+        {selectedLeave.status?.toLowerCase() === "rejected" && (
+          <p className="text-red-600">
+            <b>Rejection Reason:</b> {selectedLeave.adminComments || "-"}
+          </p>
+        )}
+      </div>
+
+      <div className="flex justify-end mt-5">
+        <button
+          onClick={() => setShowViewModal(false)}
+          className="px-4 py-2 bg-gray-200 rounded-lg"
+        >
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
       <ToastContainer
   position="top-right"
   autoClose={3000}
