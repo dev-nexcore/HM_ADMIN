@@ -1,697 +1,2609 @@
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import {
+//   Edit2,
+//   Trash2,
+//   Clock,
+//   Eye,
+//   X,
+// } from "lucide-react";
+// import axios from "axios";
+
+// const StaffAllotment = () => {
+
+//   const [activeTab, setActiveTab] =
+//     useState("warden");
+
+//   const [formData, setFormData] = useState({
+//     firstName: "",
+//     lastName: "",
+//     wardenId: "",
+//     contactNumber: "",
+//     emailId: "",
+//     designation: "",
+//     otherDesignation: "",
+//     shiftStart: "",
+//     shiftEnd: "",
+//   });
+
+//   const [wardens, setWardens] =
+//     useState([]);
+
+//   const [staffs, setStaffs] =
+//     useState([]);
+
+//   const [formErrors, setFormErrors] =
+//     useState({});
+
+//   const [successMsg, setSuccessMsg] =
+//     useState("");
+
+//   const [showDeleteModal, setShowDeleteModal] =
+//     useState(false);
+
+//   const [showEditModal, setShowEditModal] =
+//     useState(false);
+
+//   const [showViewModal, setShowViewModal] =
+//     useState(false);
+
+//   const [selectedWardenId, setSelectedWardenId] =
+//     useState(null);
+
+//   const [selectedWarden, setSelectedWarden] =
+//     useState(null);
+
+//   // Fetch Wardens
+//   useEffect(() => {
+//     fetchWardens();
+//     fetchStaffs();
+//   }, []);
+
+//   const fetchWardens = async () => {
+
+//     try {
+
+//       const response = await axios.get(
+//         "http://localhost:5224/api/wardenauth/all"
+//       );
+
+//       const formattedData =
+//         response.data.wardens.map(
+//           (warden) => ({
+
+//             id: warden.id,
+
+//             name: `${warden.firstName} ${warden.lastName}`,
+
+//             firstName:
+//               warden.firstName,
+
+//             lastName:
+//               warden.lastName,
+
+//             email:
+//               warden.email,
+
+//             contactNumber:
+//               warden.contactNumber,
+
+//             wardenId:
+//               warden.wardenId,
+
+//             profilePhoto:
+//               warden.profilePhoto,
+
+//             attendanceLog:
+//               warden.attendanceLog || [],
+
+//             designation:
+//               "Warden",
+
+//             currentShift:
+//               "N/A",
+//           })
+//         );
+
+//       setWardens(formattedData);
+
+//     } catch (error) {
+
+//       console.error(
+//         "Error fetching wardens:",
+//         error
+//       );
+//     }
+//   };
+
+//   const fetchStaffs = async () => {
+
+//   try {
+
+//     const response = await axios.get(
+//       "http://localhost:5224/api/staffauth/all"
+//     );
+
+//     const formattedData =
+//       response.data.staffs.map(
+//         (staff) => ({
+
+//           id: staff._id,
+
+//           name: `${staff.firstName} ${staff.lastName}`,
+
+//           firstName:
+//             staff.firstName,
+
+//           lastName:
+//             staff.lastName,
+
+//           email:
+//             staff.email,
+
+//           contactNumber:
+//             staff.contactNumber,
+
+//           designation:
+//             staff.designation,
+
+//           shift:
+//             `${staff.shiftStart} - ${staff.shiftEnd}`,
+//         })
+//       );
+
+//     setStaffs(formattedData);
+
+//   } catch (error) {
+
+//     console.error(
+//       "Error fetching staffs:",
+//       error
+//     );
+//   }
+// };
+
+
+  
+//   // Validation
+//   const validateForm = () => {
+
+//     const errors = {};
+
+//     if (!formData.firstName) {
+//       errors.firstName =
+//         "First name is required.";
+//     }
+
+//     if (!formData.lastName) {
+//       errors.lastName =
+//         "Last name is required.";
+//     }
+
+//     if (
+//       activeTab === "warden" &&
+//       !formData.wardenId
+//     ) {
+//       errors.wardenId =
+//         "Warden ID is required.";
+//     }
+
+//     if (!formData.contactNumber) {
+//       errors.contactNumber =
+//         "Contact number is required.";
+//     } else if (
+//       !/^\d{10}$/.test(
+//         formData.contactNumber
+//       )
+//     ) {
+//       errors.contactNumber =
+//         "Enter valid 10 digit number.";
+//     }
+
+//     if (!formData.emailId) {
+//       errors.emailId =
+//         "Email is required.";
+//     } else if (
+//       !/\S+@\S+\.\S+/.test(
+//         formData.emailId
+//       )
+//     ) {
+//       errors.emailId =
+//         "Enter valid email address.";
+//     }
+
+//     if (
+//       activeTab === "staff" &&
+//       !formData.designation
+//     ) {
+//       errors.designation =
+//         "Designation is required.";
+//     }
+
+//     setFormErrors(errors);
+
+//     return (
+//       Object.keys(errors).length === 0
+//     );
+//   };
+
+//   // Input Change
+//   const handleInputChange = (e) => {
+
+//     const { name, value } = e.target;
+
+//     setFormData((prev) => ({
+//       ...prev,
+//       [name]: value,
+//     }));
+//   };
+
+//   // Blur
+//   const handleBlur = (fieldName) => {
+
+//     if (
+//       formData[fieldName]?.trim()
+//     ) {
+//       setFormErrors((prev) => ({
+//         ...prev,
+//         [fieldName]: "",
+//       }));
+//     }
+//   };
+
+//   // Register Warden
+//   const handleRegisterWarden =
+//     async () => {
+
+//       if (!validateForm()) return;
+
+//       try {
+
+//         const payload = {
+//           firstName:
+//             formData.firstName,
+
+//           lastName:
+//             formData.lastName,
+
+//           email:
+//             formData.emailId,
+
+//           contactNumber:
+//             formData.contactNumber,
+
+//           wardenId:
+//             formData.wardenId,
+//         };
+
+//         const response =
+//           await axios.post(
+//             "http://localhost:5224/api/adminauth/register-warden",
+//             payload
+//           );
+
+//         setSuccessMsg(
+//           response.data.message
+//         );
+
+//         await fetchWardens();
+
+//         setFormData({
+//           firstName: "",
+//           lastName: "",
+//           wardenId: "",
+//           contactNumber: "",
+//           emailId: "",
+//           designation: "",
+//           otherDesignation: "",
+//           shiftStart: "",
+//           shiftEnd: "",
+//         });
+
+//         setTimeout(() => {
+//           setSuccessMsg("");
+//         }, 3000);
+
+//       } catch (error) {
+
+//         console.error(error);
+
+//         setSuccessMsg(
+//           error.response?.data
+//             ?.message ||
+//             "Error registering warden"
+//         );
+
+//         setTimeout(() => {
+//           setSuccessMsg("");
+//         }, 3000);
+//       }
+//     };
+
+//   // Register Staff
+//   const handleRegisterStaff =
+//   async () => {
+
+//     if (!validateForm()) return;
+
+//     try {
+
+//       const payload = {
+
+//         firstName:
+//           formData.firstName,
+
+//         lastName:
+//           formData.lastName,
+
+//         email:
+//           formData.emailId,
+
+//         staffId: `S${Date.now()
+//           .toString()
+//           .slice(-4)}`,
+
+//         contactNumber:
+//           formData.contactNumber,
+
+//         designation:
+//           formData.designation ===
+//           "Other"
+//             ? formData.otherDesignation
+//             : formData.designation,
+
+//         shiftStart:
+//           formData.shiftStart,
+
+//         shiftEnd:
+//           formData.shiftEnd,
+//       };
+
+//       const response =
+//         await axios.post(
+//           "http://localhost:5224/api/staffauth/register-staff",
+//           payload
+//         );
+
+//       setSuccessMsg(
+//         response.data.message
+//       );
+
+//       await fetchStaffs();
+
+//       setFormData({
+//         firstName: "",
+//         lastName: "",
+//         wardenId: "",
+//         contactNumber: "",
+//         emailId: "",
+//         designation: "",
+//         otherDesignation: "",
+//         shiftStart: "",
+//         shiftEnd: "",
+//       });
+
+//       setTimeout(() => {
+//         setSuccessMsg("");
+//       }, 3000);
+
+//     } catch (error) {
+
+//       console.error(error);
+
+//       setSuccessMsg(
+//         error.response?.data
+//           ?.message ||
+//           "Error registering staff"
+//       );
+
+//       setTimeout(() => {
+//         setSuccessMsg("");
+//       }, 3000);
+//     }
+//   };
+
+//   // View
+//   const handleViewWarden = (
+//     warden
+//   ) => {
+
+//     setSelectedWarden(warden);
+
+//     setShowViewModal(true);
+//   };
+
+//   // Edit
+//   const handleEditWarden = (
+//     warden
+//   ) => {
+
+//     setFormData({
+//       firstName:
+//         warden.firstName,
+
+//       lastName:
+//         warden.lastName,
+
+//       wardenId:
+//         warden.wardenId,
+
+//       contactNumber:
+//         warden.contactNumber,
+
+//       emailId:
+//         warden.email,
+//     });
+
+//     setSelectedWardenId(
+//       warden.id
+//     );
+
+//     setShowEditModal(true);
+//   };
+
+//   // Edit Staff
+// const handleEditStaff =
+//   (staff) => {
+
+//     setFormData({
+//       firstName:
+//         staff.firstName,
+
+//       lastName:
+//         staff.lastName,
+
+//       contactNumber:
+//         staff.contactNumber,
+
+//       emailId:
+//         staff.email,
+
+//       designation:
+//         staff.designation,
+
+//       shiftStart:
+//         staff.shift.split(
+//           " - "
+//         )[0],
+
+//       shiftEnd:
+//         staff.shift.split(
+//           " - "
+//         )[1],
+//     });
+
+//     setSelectedWardenId(
+//       staff.id
+//     );
+
+//     setShowEditModal(true);
+//   };
+
+//   // Update
+//   const handleUpdateWarden =
+//     async () => {
+
+//       try {
+
+//         const payload = {
+//           firstName:
+//             formData.firstName,
+
+//           lastName:
+//             formData.lastName,
+
+//           email:
+//             formData.emailId,
+
+//           contactNumber:
+//             formData.contactNumber,
+
+//           wardenId:
+//             formData.wardenId,
+//         };
+
+//         await axios.put(
+//           `http://localhost:5224/api/wardenauth/update/${selectedWardenId}`,
+//           payload
+//         );
+
+//         setSuccessMsg(
+//           "Warden updated successfully"
+//         );
+
+//         setShowEditModal(false);
+
+//         await fetchWardens();
+
+//       } catch (error) {
+
+//         console.error(error);
+
+//         setSuccessMsg(
+//           "Error updating warden"
+//         );
+//       }
+//     };
+
+
+//     // Update Staff
+// const handleUpdateStaff =
+//   async () => {
+
+//     try {
+
+//       const payload = {
+
+//         firstName:
+//           formData.firstName,
+
+//         lastName:
+//           formData.lastName,
+
+//         email:
+//           formData.emailId,
+
+//         contactNumber:
+//           formData.contactNumber,
+
+//         designation:
+//           formData.designation,
+
+//         shiftStart:
+//           formData.shiftStart,
+
+//         shiftEnd:
+//           formData.shiftEnd,
+//       };
+
+//       await axios.put(
+//         `http://localhost:5224/api/staffauth/update/${selectedWardenId}`,
+//         payload
+//       );
+
+//       setSuccessMsg(
+//         "Staff updated successfully"
+//       );
+
+//       setShowEditModal(false);
+
+//       await fetchStaffs();
+
+//     } catch (error) {
+
+//       console.error(error);
+
+//       setSuccessMsg(
+//         "Error updating staff"
+//       );
+//     }
+//   };
+//   // Delete
+//   const handleDeleteWarden = (
+//     id
+//   ) => {
+
+//     setSelectedWardenId(id);
+
+//     setShowDeleteModal(true);
+//   };
+
+//   const confirmDeleteWarden =
+//     async () => {
+
+//       try {
+
+//         await axios.delete(
+//           `http://localhost:5224/api/wardenauth/delete/${selectedWardenId}`
+//         );
+
+//         setSuccessMsg(
+//           "Warden deleted successfully"
+//         );
+
+//         await fetchWardens();
+
+//       } catch (error) {
+
+//         console.error(error);
+
+//         setSuccessMsg(
+//           "Error deleting warden"
+//         );
+//       }
+
+//       setShowDeleteModal(false);
+
+//       setSelectedWardenId(null);
+//     };
+
+
+//     // Delete Staff
+// const handleDeleteStaff =
+//   (id) => {
+
+//     setSelectedWardenId(id);
+
+//     setShowDeleteModal(true);
+//   };
+
+// const confirmDeleteStaff =
+//   async () => {
+
+//     try {
+
+//       await axios.delete(
+//         `http://localhost:5224/api/staffauth/delete/${selectedWardenId}`
+//       );
+
+//       setSuccessMsg(
+//         "Staff deleted successfully"
+//       );
+
+//       await fetchStaffs();
+
+//     } catch (error) {
+
+//       console.error(error);
+
+//       setSuccessMsg(
+//         "Error deleting staff"
+//       );
+//     }
+
+//     setShowDeleteModal(false);
+
+//     setSelectedWardenId(null);
+//   };
+//   return (
+//     <div className="flex-1 bg-white p-4 sm:p-6 mt-5">
+
+//       {/* Header */}
+//       <div className="mb-6">
+
+//         <div className="flex items-center mb-4">
+
+//           <div className="w-[4px] h-6 bg-[#4F8CCF] mr-3" />
+
+//           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+//             Staff Allotment
+//           </h1>
+
+//         </div>
+//       </div>
+
+//       {/* Tabs */}
+//       <div className="flex mb-4">
+
+//         <button
+//           onClick={() =>
+//             setActiveTab("warden")
+//           }
+//           className={`px-6 py-3 rounded-t-[20px] font-semibold ${
+//             activeTab === "warden"
+//               ? "bg-[#BEC5AD] text-black"
+//               : "bg-gray-200 text-gray-600"
+//           }`}
+//         >
+//           Register Warden
+//         </button>
+
+//         <button
+//           onClick={() =>
+//             setActiveTab("staff")
+//           }
+//           className={`px-6 py-3 rounded-t-[20px] font-semibold ${
+//             activeTab === "staff"
+//               ? "bg-[#BEC5AD] text-black"
+//               : "bg-gray-200 text-gray-600"
+//           }`}
+//         >
+//           Register Staff
+//         </button>
+
+//       </div>
+
+//       {/* Warden Section */}
+//       {activeTab ===
+//         "warden" && (
+//         <>
+
+//           {/* Warden Form */}
+//           <div
+//             className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6 mb-6"
+//             style={{
+//               boxShadow:
+//                 "0px 4px 4px 0px #00000040 inset",
+//             }}
+//           >
+
+//             <h2 className="text-xl sm:text-2xl font-semibold text-black mb-6">
+//               Register New Warden
+//             </h2>
+
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:ml-10">
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   First Name
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="firstName"
+//                   value={
+//                     formData.firstName
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Last Name
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="lastName"
+//                   value={
+//                     formData.lastName
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Contact Number
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="contactNumber"
+//                   value={
+//                     formData.contactNumber
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Warden ID
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="wardenId"
+//                   value={
+//                     formData.wardenId
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Email ID
+//                 </label>
+
+//                 <input
+//                   type="email"
+//                   name="emailId"
+//                   value={
+//                     formData.emailId
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+//             </div>
+
+//             <div className="mt-7 text-center">
+
+//               <button
+//                 onClick={
+//                   handleRegisterWarden
+//                 }
+//                 className="bg-white border py-3 px-10 rounded-2xl font-bold"
+//               >
+//                 Register Warden
+//               </button>
+
+//             </div>
+//           </div>
+
+//           {/* Manage Warden */}
+//           <div
+//             className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6"
+//             style={{
+//               boxShadow:
+//                 "inset 0px 4px 20px 0px #00000040",
+//             }}
+//           >
+
+//             <h2 className="text-xl sm:text-2xl font-bold text-black mb-6">
+//               Manage Warden
+//             </h2>
+
+//             {wardens.length === 0 ? (
+//               <p className="text-center py-6">
+//                 No warden found.
+//               </p>
+//             ) : (
+//               <div className="space-y-4">
+
+//                 {wardens.map(
+//                   (warden) => (
+
+//                     <div
+//                       key={warden.id}
+//                       className="bg-white rounded-lg p-4"
+//                     >
+
+//                       <div className="flex justify-between items-center">
+
+//                         <div>
+
+//                           <h3 className="font-bold text-lg">
+//                             {
+//                               warden.name
+//                             }
+//                           </h3>
+
+//                           <p>
+//                             {
+//                               warden.email
+//                             }
+//                           </p>
+
+//                           <p>
+//                             Warden ID:
+//                             {" "}
+//                             {
+//                               warden.wardenId
+//                             }
+//                           </p>
+
+//                         </div>
+
+//                         <div className="flex items-center space-x-4">
+
+//                           <button
+//                             onClick={() =>
+//                               handleViewWarden(
+//                                 warden
+//                               )
+//                             }
+//                           >
+//                             <Eye />
+//                           </button>
+
+//                           <button
+//                             onClick={() =>
+//                               handleEditWarden(
+//                                 warden
+//                               )
+//                             }
+//                           >
+//                             <Edit2 />
+//                           </button>
+
+//                           <button
+//                             onClick={() =>
+//                               handleDeleteWarden(
+//                                 warden.id
+//                               )
+//                             }
+//                           >
+//                             <Trash2 />
+//                           </button>
+
+//                         </div>
+//                       </div>
+//                     </div>
+//                   )
+//                 )}
+//               </div>
+//             )}
+//           </div>
+//         </>
+//       )}
+
+//       {/* Staff Section */}
+//       {activeTab ===
+//         "staff" && (
+//         <>
+
+//           {/* Staff Form */}
+//           <div
+//             className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6 mb-6"
+//             style={{
+//               boxShadow:
+//                 "0px 4px 4px 0px #00000040 inset",
+//             }}
+//           >
+
+//             <h2 className="text-xl sm:text-2xl font-semibold text-black mb-6">
+//               Register New Staff
+//             </h2>
+
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:ml-10">
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   First Name
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="firstName"
+//                   value={
+//                     formData.firstName
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Last Name
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="lastName"
+//                   value={
+//                     formData.lastName
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Contact Number
+//                 </label>
+
+//                 <input
+//                   type="text"
+//                   name="contactNumber"
+//                   value={
+//                     formData.contactNumber
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Email ID
+//                 </label>
+
+//                 <input
+//                   type="email"
+//                   name="emailId"
+//                   value={
+//                     formData.emailId
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Designation
+//                 </label>
+
+//                 <select
+//                   name="designation"
+//                   value={
+//                     formData.designation
+//                   }
+//                   onChange={
+//                     handleInputChange
+//                   }
+//                   className="w-full p-3 rounded-md border bg-white"
+//                 >
+//                   <option value="">
+//                     Select
+//                   </option>
+
+//                   <option value="Watchman">
+//                     Watchman
+//                   </option>
+
+//                   <option value="Cleaner">
+//                     Cleaner
+//                   </option>
+
+//                   <option value="Other">
+//                     Other
+//                   </option>
+
+//                 </select>
+//               </div>
+
+//               <div>
+//                 <label className="block font-bold mb-1">
+//                   Shift Timing
+//                 </label>
+
+//                 <div className="flex items-center gap-2">
+
+//                   <input
+//                     type="time"
+//                     name="shiftStart"
+//                     value={
+//                       formData.shiftStart
+//                     }
+//                     onChange={
+//                       handleInputChange
+//                     }
+//                     className="p-2 border rounded-md bg-white"
+//                   />
+
+//                   <Clock />
+
+//                   <input
+//                     type="time"
+//                     name="shiftEnd"
+//                     value={
+//                       formData.shiftEnd
+//                     }
+//                     onChange={
+//                       handleInputChange
+//                     }
+//                     className="p-2 border rounded-md bg-white"
+//                   />
+
+//                 </div>
+//               </div>
+//             </div>
+
+//             <div className="mt-7 text-center">
+
+//               <button
+//                 onClick={
+//                   handleRegisterStaff
+//                 }
+//                 className="bg-white border py-3 px-10 rounded-2xl font-bold"
+//               >
+//                 Register Staff
+//               </button>
+
+//             </div>
+//           </div>
+
+//           {/* Manage Staff */}
+//           <div
+//             className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6"
+//             style={{
+//               boxShadow:
+//                 "inset 0px 4px 20px 0px #00000040",
+//             }}
+//           >
+
+//             <h2 className="text-xl sm:text-2xl font-bold text-black mb-6">
+//               Manage Staff
+//             </h2>
+
+//             {staffs.length === 0 ? (
+//               <p className="text-center py-6">
+//                 No staff found.
+//               </p>
+//             ) : (
+//               <div className="space-y-4">
+
+//               {staffs.map(
+//   (staff) => (
+
+//     <div
+//       key={staff.id}
+//       className="bg-white rounded-lg p-4"
+//     >
+
+//       <div className="flex justify-between items-center">
+
+//         <div>
+
+//           <h3 className="font-bold text-lg">
+//             {staff.name}
+//           </h3>
+
+//           <p>
+//             {staff.email}
+//           </p>
+
+//           <p>
+//             {staff.designation}
+//           </p>
+
+//           <p>
+//             Shift:
+//             {" "}
+//             {staff.shift}
+//           </p>
+
+//         </div>
+
+//         <div className="flex items-center space-x-4">
+
+//           <button
+//             onClick={() =>
+//               handleEditStaff(
+//                 staff
+//               )
+//             }
+//             className="text-green-600"
+//           >
+//             <Edit2 />
+//           </button>
+
+//           <button
+//             onClick={() =>
+//               handleDeleteStaff(
+//                 staff.id
+//               )
+//             }
+//             className="text-red-600"
+//           >
+//             <Trash2 />
+//           </button>
+
+//         </div>
+//       </div>
+//     </div>
+//   )
+// )}
+//               </div>
+//             )}
+//           </div>
+//         </>
+//       )}
+
+//       {/* Success */}
+//       {successMsg && (
+//         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50">
+//           {successMsg}
+//         </div>
+//       )}
+
+//       {/* View Modal */}
+//       {showViewModal &&
+//         selectedWarden && (
+
+//         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+//           <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
+
+//             <div className="flex justify-between items-center mb-5">
+
+//               <h2 className="text-2xl font-bold">
+//                 Warden Details
+//               </h2>
+
+//               <button
+//                 onClick={() =>
+//                   setShowViewModal(
+//                     false
+//                   )
+//                 }
+//               >
+//                 <X />
+//               </button>
+
+//             </div>
+
+//             <div className="space-y-3">
+
+//               <p>
+//                 <strong>
+//                   First Name:
+//                 </strong>{" "}
+//                 {
+//                   selectedWarden.firstName
+//                 }
+//               </p>
+
+//               <p>
+//                 <strong>
+//                   Last Name:
+//                 </strong>{" "}
+//                 {
+//                   selectedWarden.lastName
+//                 }
+//               </p>
+
+//               <p>
+//                 <strong>
+//                   Email:
+//                 </strong>{" "}
+//                 {
+//                   selectedWarden.email
+//                 }
+//               </p>
+
+//               <p>
+//                 <strong>
+//                   Contact:
+//                 </strong>{" "}
+//                 {
+//                   selectedWarden.contactNumber
+//                 }
+//               </p>
+
+//               <p>
+//                 <strong>
+//                   Warden ID:
+//                 </strong>{" "}
+//                 {
+//                   selectedWarden.wardenId
+//                 }
+//               </p>
+
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default StaffAllotment;
+
+
+
 "use client";
-import { useState } from "react";
-import { Edit2, Trash2, Clock, X } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import {
+  Edit2,
+  Trash2,
+  Clock,
+  Eye,
+  X,
+} from "lucide-react";
+import axios from "axios";
 
 const StaffAllotment = () => {
-  const [formData, setFormData] = useState({
-    wardenName: "",
-    contactNumber: "",
-    emailId: "",
-    designation: "",
-    shiftStart: "",
-    shiftEnd: "",
-  });
 
-  const [wardens, setWardens] = useState([
-    {
-      id: 1,
-      name: "Chinmay Gawade",
-      email: "skyy@gmail.com",
-      designation: "Warden",
-      currentShift: "Morning (08AM - 12PM)",
-    },
-    {
-      id: 2,
-      name: "Chinmay Gawade",
-      email: "skyy@gmail.com",
-      designation: "Asst. Warden",
-      currentShift: "Evening (04PM - 12AM)",
-    },
-  ]);
+  const [activeTab, setActiveTab] =
+    useState("warden");
 
-  const [formErrors, setFormErrors] = useState({});
-  const [successMsg, setSuccessMsg] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedWardenId, setSelectedWardenId] = useState(null);
+  const [formData, setFormData] =
+    useState({
+      firstName: "",
+      lastName: "",
+      wardenId: "",
+      contactNumber: "",
+      emailId: "",
+      designation: "",
+      otherDesignation: "",
+      shiftStart: "",
+      shiftEnd: "",
+    });
 
-  // ✅ Form Validation
-  const validateForm = () => {
-    const errors = {};
-    const {
-      wardenName,
-      contactNumber,
-      emailId,
-      designation,
-      shiftStart,
-      shiftEnd,
-    } = formData;
+  const [wardens, setWardens] =
+    useState([]);
 
-    if (!wardenName) errors.wardenName = "Warden name is required.";
+  const [staffs, setStaffs] =
+    useState([]);
 
-    if (!contactNumber) errors.contactNumber = "Contact number is required.";
-    else if (!/^\d{10}$/.test(contactNumber))
-      errors.contactNumber = "Enter valid 10-digit number.";
+  const [successMsg, setSuccessMsg] =
+    useState("");
 
-    if (!emailId) errors.emailId = "Email is required.";
-    else if (!/\S+@\S+\.\S+/.test(emailId))
-      errors.emailId = "Enter a valid email address.";
+  const [showDeleteModal, setShowDeleteModal] =
+    useState(false);
 
-    if (!designation) errors.designation = "Please select a designation.";
+  const [showEditModal, setShowEditModal] =
+    useState(false);
 
+  const [showViewModal, setShowViewModal] =
+    useState(false);
 
-    if (!shiftStart) errors.shiftStart = "Please enter shift time.";
-    if (!shiftEnd) errors.shiftEnd = "Please enter shift time.";
+  const [selectedId, setSelectedId] =
+    useState(null);
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const [selectedWarden, setSelectedWarden] =
+    useState(null);
+
+  // Fetch Data
+  useEffect(() => {
+
+    fetchWardens();
+
+    fetchStaffs();
+
+  }, []);
+
+  // Fetch Wardens
+  const fetchWardens = async () => {
+
+    try {
+
+      const response =
+        await axios.get(
+          "http://localhost:5224/api/wardenauth/all"
+        );
+
+      const formattedData =
+        response.data.wardens.map(
+          (warden) => ({
+
+            id: warden.id,
+
+            firstName:
+              warden.firstName,
+
+            lastName:
+              warden.lastName,
+
+            name: `${warden.firstName} ${warden.lastName}`,
+
+            email:
+              warden.email,
+
+            contactNumber:
+              warden.contactNumber,
+
+            wardenId:
+              warden.wardenId,
+          })
+        );
+
+      setWardens(formattedData);
+
+    } catch (error) {
+
+      console.error(error);
+    }
   };
 
-  // ✅ Input Change
+  // Fetch Staff
+  const fetchStaffs = async () => {
+
+    try {
+
+      const response =
+        await axios.get(
+          "http://localhost:5224/api/staffauth/all"
+        );
+
+      const formattedData =
+        response.data.staffs.map(
+          (staff) => ({
+
+            id: staff._id,
+
+            firstName:
+              staff.firstName,
+
+            lastName:
+              staff.lastName,
+
+            name: `${staff.firstName} ${staff.lastName}`,
+
+            email:
+              staff.email,
+
+            contactNumber:
+              staff.contactNumber,
+
+            designation:
+              staff.designation,
+
+            shiftStart:
+              staff.shiftStart,
+
+            shiftEnd:
+              staff.shiftEnd,
+          })
+        );
+
+      setStaffs(formattedData);
+
+    } catch (error) {
+
+      console.error(error);
+    }
+  };
+
+  // Input Change
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+
+    const { name, value } =
+      e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  // ✅ Blur clear error
-  const handleBlur = (fieldName) => {
-    if (formData[fieldName]?.trim()) {
-      setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
-    }
-  };
+  // Register Warden
+  const handleRegisterWarden =
+    async () => {
 
-  // ✅ Convert time 24hr -> 12hr (08:00 -> 08AM)
-  const convertTime = (timeStr) => {
-    const [hour] = timeStr.split(":");
-    const hr = parseInt(hour);
-    const period = hr >= 12 ? "PM" : "AM";
-    const formattedHour = hr % 12 === 0 ? 12 : hr % 12;
-    return `${formattedHour.toString().padStart(2, "0")}${period}`;
-  };
+      try {
 
-  // ✅ Register
-  const handleRegisterWarden = () => {
-    if (!validateForm()) return;
+        const payload = {
+          firstName:
+            formData.firstName,
 
-    const newWarden = {
-      id: Date.now(),
-      name: formData.wardenName,
-      email: formData.emailId,
-      designation: formData.designation,
-      currentShift: `${
-        formData.shiftStart < "12:00" ? "Morning" : "Evening"
-      } (${convertTime(formData.shiftStart)} - ${convertTime(
-        formData.shiftEnd
-      )})`,
+          lastName:
+            formData.lastName,
+
+          email:
+            formData.emailId,
+
+          contactNumber:
+            formData.contactNumber,
+
+          wardenId:
+            formData.wardenId,
+        };
+
+        const response =
+          await axios.post(
+            "http://localhost:5224/api/adminauth/register-warden",
+            payload
+          );
+
+        setSuccessMsg(
+          response.data.message
+        );
+
+        fetchWardens();
+
+        setFormData({
+          firstName: "",
+          lastName: "",
+          wardenId: "",
+          contactNumber: "",
+          emailId: "",
+          designation: "",
+          otherDesignation: "",
+          shiftStart: "",
+          shiftEnd: "",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        setSuccessMsg(
+          "Error registering warden"
+        );
+      }
     };
 
-    setWardens((prev) => [...prev, newWarden]);
+  // Register Staff
+  const handleRegisterStaff =
+    async () => {
 
-    setFormData({
-      wardenName: "",
-      contactNumber: "",
-      emailId: "",
-      designation: "",
-      shiftStart: "",
-      shiftEnd: "",
-    });
+      try {
 
-    setFormErrors({});
-    setSuccessMsg("Warden registered successfully ✅");
+        const payload = {
 
-    setTimeout(() => setSuccessMsg(""), 3000);
-  };
+          firstName:
+            formData.firstName,
 
-  // ✅ Edit
-  const handleEditWarden = (id) => {
-    const selected = wardens.find((w) => w.id === id);
-    if (!selected) return;
+          lastName:
+            formData.lastName,
 
-    const [shiftStartRaw, shiftEndRaw] = selected.currentShift
-      .match(/\((.*?)\)/)[1]
-      .split(" - ");
+          email:
+            formData.emailId,
 
-    const parseTo24 = (t) => {
-      const hour = parseInt(t.slice(0, -2));
-      const isPM = t.includes("PM");
+          staffId: `S${Date.now()
+            .toString()
+            .slice(-4)}`,
 
-      const result = isPM
-        ? hour === 12
-          ? 12
-          : hour + 12
-        : hour === 12
-        ? 0
-        : hour;
+          contactNumber:
+            formData.contactNumber,
 
-      return `${result.toString().padStart(2, "0")}:00`;
+          designation:
+            formData.designation ===
+            "Other"
+              ? formData.otherDesignation
+              : formData.designation,
+
+          shiftStart:
+            formData.shiftStart,
+
+          shiftEnd:
+            formData.shiftEnd,
+        };
+
+        const response =
+          await axios.post(
+            "http://localhost:5224/api/staffauth/register-staff",
+            payload
+          );
+
+        setSuccessMsg(
+          response.data.message
+        );
+
+        fetchStaffs();
+
+        setFormData({
+          firstName: "",
+          lastName: "",
+          wardenId: "",
+          contactNumber: "",
+          emailId: "",
+          designation: "",
+          otherDesignation: "",
+          shiftStart: "",
+          shiftEnd: "",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        setSuccessMsg(
+          "Error registering staff"
+        );
+      }
     };
 
-    setFormData({
-      wardenName: selected.name,
-      contactNumber: "",
-      emailId: selected.email,
-      designation: selected.designation,
-      shiftStart: parseTo24(shiftStartRaw),
-      shiftEnd: parseTo24(shiftEndRaw),
-    });
+  // View Warden
+  const handleViewWarden =
+    (warden) => {
 
-    setSelectedWardenId(id);
-    setShowEditModal(true);
-  };
+      setSelectedWarden(
+        warden
+      );
 
-  // ✅ Update
-  const handleUpdateWarden = () => {
-    setWardens((prev) =>
-      prev.map((warden) =>
-        warden.id === selectedWardenId
-          ? {
-              ...warden,
-              name: formData.wardenName,
-              email: formData.emailId,
-              designation: formData.designation,
-              currentShift: `${
-                formData.shiftStart < "12:00" ? "Morning" : "Evening"
-              } (${convertTime(formData.shiftStart)} - ${convertTime(
-                formData.shiftEnd
-              )})`,
-            }
-          : warden
-      )
-    );
+      setShowViewModal(true);
+    };
 
-    setShowEditModal(false);
-    setSelectedWardenId(null);
+  // Edit Warden
+  const handleEditWarden =
+    (warden) => {
 
-    setFormData({
-      wardenName: "",
-      contactNumber: "",
-      emailId: "",
-      designation: "",
-      shiftStart: "",
-      shiftEnd: "",
-    });
-  };
+      setSelectedId(
+        warden.id
+      );
 
-  // ✅ Delete modal open
-  const handleDeleteWarden = (id) => {
-    setSelectedWardenId(id);
-    setShowDeleteModal(true);
-  };
+      setFormData({
+        firstName:
+          warden.firstName,
 
-  // ✅ Delete confirm
-  const confirmDeleteWarden = () => {
-    setWardens((prev) =>
-      prev.filter((warden) => warden.id !== selectedWardenId)
-    );
+        lastName:
+          warden.lastName,
 
-    setShowDeleteModal(false);
-    setSelectedWardenId(null);
-  };
+        wardenId:
+          warden.wardenId,
 
-  // ✅ Helper for Mobile view dynamic shift
-  const getShiftLabel = (shift) => shift.split(" (")[0];
-  const getShiftTime = (shift) => shift.match(/\((.*?)\)/)?.[1];
+        contactNumber:
+          warden.contactNumber,
+
+        emailId:
+          warden.email,
+      });
+
+      setShowEditModal(true);
+    };
+
+  // Edit Staff
+  const handleEditStaff =
+    (staff) => {
+
+      setSelectedId(
+        staff.id
+      );
+
+      setFormData({
+        firstName:
+          staff.firstName,
+
+        lastName:
+          staff.lastName,
+
+        contactNumber:
+          staff.contactNumber,
+
+        emailId:
+          staff.email,
+
+        designation:
+          staff.designation,
+
+        shiftStart:
+          staff.shiftStart,
+
+        shiftEnd:
+          staff.shiftEnd,
+      });
+
+      setShowEditModal(true);
+    };
+
+  // Update Warden
+  const handleUpdateWarden =
+    async () => {
+
+      try {
+
+        const payload = {
+
+          firstName:
+            formData.firstName,
+
+          lastName:
+            formData.lastName,
+
+          email:
+            formData.emailId,
+
+          contactNumber:
+            formData.contactNumber,
+
+          wardenId:
+            formData.wardenId,
+        };
+
+        await axios.put(
+          `http://localhost:5224/api/wardenauth/update/${selectedId}`,
+          payload
+        );
+
+        setSuccessMsg(
+          "Warden updated successfully"
+        );
+
+        fetchWardens();
+
+        setShowEditModal(false);
+
+      } catch (error) {
+
+        console.error(error);
+      }
+    };
+
+  // Update Staff
+  const handleUpdateStaff =
+    async () => {
+
+      try {
+
+        const payload = {
+
+          firstName:
+            formData.firstName,
+
+          lastName:
+            formData.lastName,
+
+          email:
+            formData.emailId,
+
+          contactNumber:
+            formData.contactNumber,
+
+          designation:
+            formData.designation ===
+            "Other"
+              ? formData.otherDesignation
+              : formData.designation,
+
+          shiftStart:
+            formData.shiftStart,
+
+          shiftEnd:
+            formData.shiftEnd,
+        };
+
+        await axios.put(
+          `http://localhost:5224/api/staffauth/update/${selectedId}`,
+          payload
+        );
+
+        setSuccessMsg(
+          "Staff updated successfully"
+        );
+
+        fetchStaffs();
+
+        setShowEditModal(false);
+
+      } catch (error) {
+
+        console.error(error);
+      }
+    };
+
+  // Delete Warden
+  const handleDeleteWarden =
+    (id) => {
+
+      setSelectedId(id);
+
+      setShowDeleteModal(true);
+    };
+
+  const confirmDeleteWarden =
+    async () => {
+
+      try {
+
+        await axios.delete(
+          `http://localhost:5224/api/wardenauth/delete/${selectedId}`
+        );
+
+        fetchWardens();
+
+        setSuccessMsg(
+          "Warden deleted successfully"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+      }
+
+      setShowDeleteModal(false);
+    };
+
+  // Delete Staff
+  const handleDeleteStaff =
+    (id) => {
+
+      setSelectedId(id);
+
+      setShowDeleteModal(true);
+    };
+
+  const confirmDeleteStaff =
+    async () => {
+
+      try {
+
+        await axios.delete(
+          `http://localhost:5224/api/staffauth/delete/${selectedId}`
+        );
+
+        fetchStaffs();
+
+        setSuccessMsg(
+          "Staff deleted successfully"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+      }
+
+      setShowDeleteModal(false);
+    };
 
   return (
     <div className="flex-1 bg-white p-4 sm:p-6 mt-5">
-      {/* ✅ Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl sm:text-2xl font-semibold">
-                Edit Warden Details
-              </h2>
 
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedWardenId(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-base sm:text-lg text-black font-bold mb-1">
-                  Warden Name
-                </label>
-                <input
-                  type="text"
-                  name="wardenName"
-                  value={formData.wardenName}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-base sm:text-lg text-black font-bold mb-1">
-                  Email ID
-                </label>
-                <input
-                  type="email"
-                  name="emailId"
-                  value={formData.emailId}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-base sm:text-lg text-black font-bold mb-1">
-                  Designation
-                </label>
-                <select
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-md border text-gray-800 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                >
-                  <option value="Warden">Warden</option>
-                  <option value="Asst. Warden">Assistant Warden</option>
-                  <option value="Senior Warden">Senior Warden</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-base sm:text-lg text-black font-bold mb-1">
-                  Shift Timing
-                </label>
-                <div className="w-full flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2">
-                  <div className="flex items-center space-x-1">
-                    <input
-                      type="time"
-                      name="shiftStart"
-                      value={formData.shiftStart}
-                      onChange={handleInputChange}
-                      className="w-[110px] p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                    />
-                    <Clock className="w-4 h-4 text-gray-800" />
-                  </div>
-
-                  <span className="text-sm text-black font-bold">TO</span>
-
-                  <div className="flex items-center space-x-1">
-                    <input
-                      type="time"
-                      name="shiftEnd"
-                      value={formData.shiftEnd}
-                      onChange={handleInputChange}
-                      className="w-[110px] p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-                    />
-                    <Clock className="w-4 h-4 text-gray-800" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="bg-gray-200 cursor-pointer text-gray-800 py-2 px-6 rounded-lg font-bold hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleUpdateWarden}
-                className="bg-green-600 cursor-pointer text-white py-2 px-6 rounded-lg font-bold hover:bg-green-700 transition-colors"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Title */}
+      {/* Header */}
       <div className="mb-6">
+
         <div className="flex items-center mb-4">
+
           <div className="w-[4px] h-6 bg-[#4F8CCF] mr-3" />
+
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
             Staff Allotment
           </h1>
+
         </div>
       </div>
 
-      {/* Register */}
-      <div
-        className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6 mb-6"
-        style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}
-      >
-        <h2 className="text-xl sm:text-2xl font-semibold text-black mb-6">
-          Register New Warden
-        </h2>
+      {/* Tabs */}
+      <div className="flex mb-4 gap-2">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:ml-10">
-          {/* Name */}
-          <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Warden Name
-            </label>
-            <input
-              type="text"
-              name="wardenName"
-              onBlur={() => handleBlur("wardenName")}
-              value={formData.wardenName}
-              onChange={handleInputChange}
-              placeholder="Enter warden's Full name"
-              className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            />
-            {formErrors.wardenName && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.wardenName}
-              </p>
-            )}
+        <button
+          onClick={() =>
+            setActiveTab(
+              "warden"
+            )
+          }
+          className={`px-6 py-3 rounded-t-[20px] font-semibold ${
+            activeTab ===
+            "warden"
+              ? "bg-[#BEC5AD] text-black"
+              : "bg-gray-200"
+          }`}
+        >
+          Register Warden
+        </button>
+
+        <button
+          onClick={() =>
+            setActiveTab(
+              "staff"
+            )
+          }
+          className={`px-6 py-3 rounded-t-[20px] font-semibold ${
+            activeTab ===
+            "staff"
+              ? "bg-[#BEC5AD] text-black"
+              : "bg-gray-200"
+          }`}
+        >
+          Register Staff
+        </button>
+
+      </div>
+
+      {/* Warden Section */}
+      {activeTab ===
+        "warden" && (
+        <>
+          <div className="bg-[#BEC5AD] rounded-xl p-6 mb-6">
+
+            <h2 className="text-2xl font-semibold mb-6">
+              Register New Warden
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <input
+                type="text"
+                name="firstName"
+                value={
+                  formData.firstName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="First Name"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="text"
+                name="lastName"
+                value={
+                  formData.lastName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Last Name"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="text"
+                name="contactNumber"
+                value={
+                  formData.contactNumber
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Contact Number"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="text"
+                name="wardenId"
+                value={
+                  formData.wardenId
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Warden ID"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="email"
+                name="emailId"
+                value={
+                  formData.emailId
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Email"
+                className="p-3 border rounded-md bg-white"
+              />
+
+            </div>
+
+            <div className="mt-6 text-center">
+
+              <button
+                onClick={
+                  handleRegisterWarden
+                }
+                className="bg-white px-8 py-3 rounded-xl font-bold"
+              >
+                Register Warden
+              </button>
+
+            </div>
           </div>
 
-          {/* Contact */}
-          <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Contact Number
-            </label>
-            <input
-              type="text"
-              name="contactNumber"
-              onBlur={() => handleBlur("contactNumber")}
-              value={formData.contactNumber}
-              onChange={handleInputChange}
-              placeholder="Enter Contact No."
-              className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            />
-            {formErrors.contactNumber && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.contactNumber}
-              </p>
-            )}
+          {/* Manage Warden */}
+          <div className="bg-[#BEC5AD] rounded-xl p-6">
+
+            <h2 className="text-2xl font-bold mb-6">
+              Manage Warden
+            </h2>
+
+            <div className="space-y-4">
+
+              {wardens.map(
+                (warden) => (
+
+                  <div
+                    key={warden.id}
+                    className="bg-white rounded-lg p-4 flex justify-between items-center"
+                  >
+
+                    <div>
+
+                      <h3 className="font-bold text-lg">
+                        {
+                          warden.name
+                        }
+                      </h3>
+
+                      <p>
+                        {
+                          warden.email
+                        }
+                      </p>
+
+                      <p>
+                        Warden ID:
+                        {" "}
+                        {
+                          warden.wardenId
+                        }
+                      </p>
+
+                    </div>
+
+                    <div className="flex gap-4">
+
+                      <button
+                        onClick={() =>
+                          handleViewWarden(
+                            warden
+                          )
+                        }
+                      >
+                        <Eye />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleEditWarden(
+                            warden
+                          )
+                        }
+                      >
+                        <Edit2 />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleDeleteWarden(
+                            warden.id
+                          )
+                        }
+                      >
+                        <Trash2 />
+                      </button>
+
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
           </div>
+        </>
+      )}
 
-          {/* Email */}
-          <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Email ID
-            </label>
-            <input
-              type="email"
-              name="emailId"
-              onBlur={() => handleBlur("emailId")}
-              value={formData.emailId}
-              onChange={handleInputChange}
-              placeholder="Enter Email Address"
-              className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            />
-            {formErrors.emailId && (
-              <p className="text-sm text-red-600 mt-1">{formErrors.emailId}</p>
-            )}
-          </div>
+      {/* Staff Section */}
+      {activeTab ===
+        "staff" && (
+        <>
+          <div className="bg-[#BEC5AD] rounded-xl p-6 mb-6">
 
-          {/* Designation */}
-          <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Designation
-            </label>
-            <select
-              name="designation"
-              onBlur={() => handleBlur("designation")}
-              value={formData.designation}
-              onChange={handleInputChange}
-              className="w-full max-w-[440px] p-3 rounded-md border text-gray-800 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            >
-              <option value="">Select Designation</option>
-              <option value="Warden">Warden</option>
-              <option value="Asst. Warden">Assistant Warden</option>
-              <option value="Senior Warden">Senior Warden</option>
-            </select>
-            {formErrors.designation && (
-              <p className="text-sm text-red-600 mt-1">
-                {formErrors.designation}
-              </p>
-            )}
-          </div>
+            <h2 className="text-2xl font-semibold mb-6">
+              Register New Staff
+            </h2>
 
-          {/* Password */}
-          {/* <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              onBlur={() => handleBlur("password")}
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Enter Password"
-              className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            />
-            {formErrors.password && (
-              <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
-            )}
-          </div> */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-          {/* Shift */}
-          <div>
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Shift Timing
-            </label>
+              <input
+                type="text"
+                name="firstName"
+                value={
+                  formData.firstName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="First Name"
+                className="p-3 border rounded-md bg-white"
+              />
 
-            <div className="w-full max-w-[440px] flex flex-wrap sm:flex-nowrap items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2">
-              <div className="flex items-center space-x-1">
+              <input
+                type="text"
+                name="lastName"
+                value={
+                  formData.lastName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Last Name"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="text"
+                name="contactNumber"
+                value={
+                  formData.contactNumber
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Contact Number"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <input
+                type="email"
+                name="emailId"
+                value={
+                  formData.emailId
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Email"
+                className="p-3 border rounded-md bg-white"
+              />
+
+              <select
+                name="designation"
+                value={
+                  formData.designation
+                }
+                onChange={
+                  handleInputChange
+                }
+                className="p-3 border rounded-md bg-white"
+              >
+
+                <option value="">
+                  Select Designation
+                </option>
+
+                <option value="Watchman">
+                  Watchman
+                </option>
+
+                <option value="Cleaner">
+                  Cleaner
+                </option>
+
+                <option value="Other">
+                  Other
+                </option>
+
+              </select>
+
+              {formData.designation ===
+                "Other" && (
+
+                <input
+                  type="text"
+                  name="otherDesignation"
+                  value={
+                    formData.otherDesignation
+                  }
+                  onChange={
+                    handleInputChange
+                  }
+                  placeholder="Specify Designation"
+                  className="p-3 border rounded-md bg-white"
+                />
+              )}
+
+              <div className="flex items-center gap-2">
+
                 <input
                   type="time"
                   name="shiftStart"
-                  value={formData.shiftStart}
-                  onChange={handleInputChange}
-                  className="w-[110px] p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  value={
+                    formData.shiftStart
+                  }
+                  onChange={
+                    handleInputChange
+                  }
+                  className="p-3 border rounded-md bg-white"
                 />
-                <Clock className="w-4 h-4 text-gray-800" />
-              </div>
 
-              <span className="text-sm text-black font-bold">TO</span>
+                <Clock />
 
-              <div className="flex items-center space-x-1">
                 <input
                   type="time"
                   name="shiftEnd"
-                  value={formData.shiftEnd}
-                  onBlur={() => handleBlur("shiftEnd")}
-                  onChange={handleInputChange}
-                  className="w-[110px] p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
+                  value={
+                    formData.shiftEnd
+                  }
+                  onChange={
+                    handleInputChange
+                  }
+                  className="p-3 border rounded-md bg-white"
                 />
-                <Clock className="w-4 h-4 text-gray-800" />
+
               </div>
             </div>
 
-            {formErrors.shiftEnd && (
-              <p className="text-sm text-red-600 mt-2">{formErrors.shiftEnd}</p>
-            )}
+            <div className="mt-6 text-center">
+
+              <button
+                onClick={
+                  handleRegisterStaff
+                }
+                className="bg-white px-8 py-3 rounded-xl font-bold"
+              >
+                Register Staff
+              </button>
+
+            </div>
           </div>
 
-          {/* Confirm */}
-          {/* <div className="md:col-start-1">
-            <label className="block text-base sm:text-lg text-black font-bold mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              onBlur={() => handleBlur("confirmPassword")}
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              placeholder="Confirm password"
-              className="w-full max-w-[440px] p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#8a9079]"
-            />
-            {formErrors.confirmPassword && (
-              <p className="text-sm text-red-600 mt-2">
-                {formErrors.confirmPassword}
-              </p>
-            )}
-          </div> */}
-        </div>
+          {/* Manage Staff */}
+          <div className="bg-[#BEC5AD] rounded-xl p-6">
 
-        <div className="mt-7 text-center">
-          <button
-            onClick={handleRegisterWarden}
-            className="bg-white border border-gray-300 py-3 px-8 sm:px-12 cursor-pointer rounded-2xl font-bold hover:bg-gray-50 transition-colors shadow-2xl text-sm sm:text-base"
-          >
-            Register Warden
-          </button>
-        </div>
-      </div>
+            <h2 className="text-2xl font-bold mb-6">
+              Manage Staff
+            </h2>
 
-      {/* Success Msg */}
+            <div className="space-y-4">
+
+              {staffs.map(
+                (staff) => (
+
+                  <div
+                    key={staff.id}
+                    className="bg-white rounded-lg p-4 flex justify-between items-center"
+                  >
+
+                    <div>
+
+                      <h3 className="font-bold text-lg">
+                        {
+                          staff.name
+                        }
+                      </h3>
+
+                      <p>
+                        {
+                          staff.email
+                        }
+                      </p>
+
+                      <p>
+                        {
+                          staff.designation
+                        }
+                      </p>
+
+                      <p>
+                        Shift:
+                        {" "}
+                        {
+                          staff.shiftStart
+                        }
+                        {" - "}
+                        {
+                          staff.shiftEnd
+                        }
+                      </p>
+
+                    </div>
+
+                    <div className="flex gap-4">
+
+                      <button
+                        onClick={() =>
+                          handleEditStaff(
+                            staff
+                          )
+                        }
+                      >
+                        <Edit2 />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleDeleteStaff(
+                            staff.id
+                          )
+                        }
+                      >
+                        <Trash2 />
+                      </button>
+
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Success */}
       {successMsg && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 w-fit max-w-[90vw] animate-fadeInDown">
+
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-3 rounded-lg z-50">
+
           {successMsg}
+
         </div>
       )}
 
-      {/* Manage */}
-      <div
-        className="bg-[#BEC5AD] rounded-xl p-4 sm:p-6"
-        style={{ boxShadow: "inset 0px 4px 20px 0px #00000040" }}
-      >
-        <h2 className="text-xl sm:text-2xl font-bold text-black mb-6">
-          Manage Warden Shifts
-        </h2>
+      {/* Edit Modal */}
+      {showEditModal && (
 
-        {/* Mobile */}
-        <div className="block xl:hidden">
-          {wardens.length === 0 ? (
-            <p className="text-center py-6 text-gray-600">No wardens found.</p>
-          ) : (
-            <div className="space-y-4">
-              {wardens.map((warden) => (
-                <div
-                  key={warden.id}
-                  className="bg-white rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg">
-                        {warden.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {warden.designation}
-                      </p>
-                    </div>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => handleEditWarden(warden.id)}
-                        className="text-gray-700 hover:text-gray-900 transition-colors"
-                      >
-                        <Edit2 size={20} />
-                      </button>
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-2xl">
 
-                      <button
-                        onClick={() => handleDeleteWarden(warden.id)}
-                        className="text-gray-700 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
-                  </div>
+            <div className="flex justify-between items-center mb-5">
 
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Email:</span> {warden.email}
-                    </p>
-                  </div>
+              <h2 className="text-2xl font-bold">
+                Edit {
+                  activeTab ===
+                  "warden"
+                    ? "Warden"
+                    : "Staff"
+                }
+              </h2>
 
-                  <div className="mb-2">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Current Shift:</span>
-                    </p>
-
-                    <div className="mt-1">
-                      <p className="text-base font-medium">
-                        {getShiftLabel(warden.currentShift)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        ({getShiftTime(warden.currentShift)})
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Desktop */}
-        <div className="hidden xl:block">
-          <div className="w-full overflow-x-auto text-[15px] font-medium">
-            <div className="grid min-w-[650px] grid-cols-5 bg-white rounded-t-md text-black text-left px-5 py-3">
-              <div className="pl-2 border-r text-lg font-bold border-black flex items-center">
-                Warden Name
-              </div>
-              <div className="pl-6 border-r text-lg font-bold border-black flex items-center justify-start">
-                Email
-              </div>
-              <div className="pl-4 border-r text-lg font-bold border-black flex items-center justify-start">
-                Designation
-              </div>
-              <div className="pl-4 border-r text-lg font-bold border-black flex items-center justify-start">
-                Current Shift
-              </div>
-              <div className="text-lg font-bold text-center">Actions</div>
-            </div>
-
-            {wardens.map((warden, index) => (
-              <div
-                key={warden.id}
-                className={`grid min-w-[650px] grid-cols-5 items-center px-5 py-4 text-[16px] text-black ${
-                  index !== wardens.length - 1 ? "border-b border-black" : ""
-                }`}
+              <button
+                onClick={() =>
+                  setShowEditModal(
+                    false
+                  )
+                }
               >
-                <div className="pl-2">{warden.name}</div>
-                <div className="pl-4">{warden.email}</div>
-                <div className="pl-4">{warden.designation}</div>
+                <X />
+              </button>
 
-                <div className="pl-10 leading-tight">
-                  <div className="pl-5 text-lg">
-                    {getShiftLabel(warden.currentShift)}
-                  </div>
-                  <div className="text-md text-gray-900">
-                    ({getShiftTime(warden.currentShift)})
-                  </div>
-                </div>
+            </div>
 
-                <div className="flex justify-center items-center space-x-4">
-                  <button
-                    onClick={() => handleEditWarden(warden.id)}
-                    className="text-black hover:text-gray-800"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <input
+                type="text"
+                name="firstName"
+                value={
+                  formData.firstName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="First Name"
+                className="p-3 border rounded-md"
+              />
+
+              <input
+                type="text"
+                name="lastName"
+                value={
+                  formData.lastName
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Last Name"
+                className="p-3 border rounded-md"
+              />
+
+              {activeTab ===
+                "warden" && (
+
+                <input
+                  type="text"
+                  name="wardenId"
+                  value={
+                    formData.wardenId
+                  }
+                  onChange={
+                    handleInputChange
+                  }
+                  placeholder="Warden ID"
+                  className="p-3 border rounded-md"
+                />
+              )}
+
+              <input
+                type="text"
+                name="contactNumber"
+                value={
+                  formData.contactNumber
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Contact Number"
+                className="p-3 border rounded-md"
+              />
+
+              <input
+                type="email"
+                name="emailId"
+                value={
+                  formData.emailId
+                }
+                onChange={
+                  handleInputChange
+                }
+                placeholder="Email"
+                className="p-3 border rounded-md"
+              />
+
+              {activeTab ===
+                "staff" && (
+                <>
+                  <select
+                    name="designation"
+                    value={
+                      formData.designation
+                    }
+                    onChange={
+                      handleInputChange
+                    }
+                    className="p-3 border rounded-md"
                   >
-                    <Edit2 size={20} />
-                  </button>
 
-                  <div className="h-6 w-[1px] bg-black" />
+                    <option value="">
+                      Select
+                    </option>
 
-                  <button
-                    onClick={() => handleDeleteWarden(warden.id)}
-                    className="text-black hover:text-gray-700"
-                  >
-                    <Trash2 className="w-5 h-5" strokeWidth={2.7} />
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <option value="Watchman">
+                      Watchman
+                    </option>
+
+                    <option value="Cleaner">
+                      Cleaner
+                    </option>
+
+                    <option value="Other">
+                      Other
+                    </option>
+
+                  </select>
+
+                  {formData.designation ===
+                    "Other" && (
+
+                    <input
+                      type="text"
+                      name="otherDesignation"
+                      value={
+                        formData.otherDesignation
+                      }
+                      onChange={
+                        handleInputChange
+                      }
+                      placeholder="Specify Designation"
+                      className="p-3 border rounded-md"
+                    />
+                  )}
+
+                  <div className="flex gap-2">
+
+                    <input
+                      type="time"
+                      name="shiftStart"
+                      value={
+                        formData.shiftStart
+                      }
+                      onChange={
+                        handleInputChange
+                      }
+                      className="p-3 border rounded-md w-full"
+                    />
+
+                    <input
+                      type="time"
+                      name="shiftEnd"
+                      value={
+                        formData.shiftEnd
+                      }
+                      onChange={
+                        handleInputChange
+                      }
+                      className="p-3 border rounded-md w-full"
+                    />
+
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+
+              <button
+                onClick={
+                  activeTab ===
+                  "warden"
+                    ? handleUpdateWarden
+                    : handleUpdateStaff
+                }
+                className="bg-green-600 text-white px-6 py-3 rounded-lg"
+              >
+                Update
+              </button>
+
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-40 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 text-center">
-            <h2 className="text-xl font-bold text-red-600 mb-4">
-              Delete Warden?
+
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm">
+
+            <h2 className="text-xl font-bold text-center mb-5">
+              Delete {
+                activeTab ===
+                "warden"
+                  ? "Warden"
+                  : "Staff"
+              }?
             </h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this warden? This action cannot be
-              undone.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
+
+            <div className="flex justify-center gap-4">
+
               <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded-lg border cursor-pointer border-gray-300 text-gray-600 hover:bg-gray-100"
+                onClick={() =>
+                  setShowDeleteModal(
+                    false
+                  )
+                }
+                className="px-5 py-2 border rounded-lg"
               >
                 Cancel
               </button>
 
               <button
-                onClick={confirmDeleteWarden}
-                className="px-4 py-2 rounded-lg bg-red-600 cursor-pointer text-white hover:bg-red-700"
+                onClick={
+                  activeTab ===
+                  "warden"
+                    ? confirmDeleteWarden
+                    : confirmDeleteStaff
+                }
+                className="px-5 py-2 bg-red-600 text-white rounded-lg"
               >
                 Delete
               </button>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {showViewModal &&
+        selectedWarden && (
+
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
+
+            <div className="flex justify-between items-center mb-5">
+
+              <h2 className="text-2xl font-bold">
+                Warden Details
+              </h2>
+
+              <button
+                onClick={() =>
+                  setShowViewModal(
+                    false
+                  )
+                }
+              >
+                <X />
+              </button>
+
+            </div>
+
+            <div className="space-y-3">
+
+              <p>
+                <strong>
+                  First Name:
+                </strong>{" "}
+                {
+                  selectedWarden.firstName
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Last Name:
+                </strong>{" "}
+                {
+                  selectedWarden.lastName
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Email:
+                </strong>{" "}
+                {
+                  selectedWarden.email
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Contact:
+                </strong>{" "}
+                {
+                  selectedWarden.contactNumber
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Warden ID:
+                </strong>{" "}
+                {
+                  selectedWarden.wardenId
+                }
+              </p>
+
             </div>
           </div>
         </div>
