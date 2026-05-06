@@ -523,11 +523,456 @@
 
 
 
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { useRouter } from "next/navigation";
+// import api from "@/lib/api"; 
+
+// const AdminLogin = () => {
+//   const [step, setStep] = useState(1);
+//   const [adminId, setAdminId] = useState("");
+//   const [otp, setOtp] = useState("");
+//   const [maskedNumber, setMaskedNumber] = useState("");
+//   const [errorMsg, setErrorMsg] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [mounted, setMounted] = useState(false);
+//   const [resendTimer, setResendTimer] = useState(0);
+//   const router = useRouter();
+
+//   useEffect(() => {
+//     setMounted(true);
+//   }, []);
+
+//   useEffect(() => {
+//     if (resendTimer > 0) {
+//       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [resendTimer]);
+
+//   // 🔥 STEP 1: bypass OTP send
+//   const handleSendOTP = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setErrorMsg("");
+
+//     try {
+//       setMaskedNumber("Demo Mode");
+//       setStep(2);
+//       setResendTimer(60);
+//     } catch (error) {
+//       setErrorMsg("Something went wrong");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // 🔥 STEP 2: direct login (OTP ignored)
+//   const handleVerifyOTP = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setErrorMsg("");
+
+//     try {
+//       const { data } = await api.post(
+//         `/api/adminauth/login`,
+//         { adminId }, // OTP removed
+//         { headers: { "Content-Type": "application/json" } }
+//       );
+
+//       const { token, refreshToken } = data || {};
+//       if (!token) throw new Error("No token returned");
+
+//       localStorage.setItem("accessToken", token);
+//       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+//       document.cookie = `adminToken=${token}; Path=/; Max-Age=${7*24*60*60}; SameSite=Lax${
+//         window.location.protocol === "https:" ? "; Secure" : ""
+//       }`;
+
+//       const urlParams = new URLSearchParams(window.location.search);
+//       const defaultDashboard = window.location.pathname.startsWith("/admin")
+//         ? "/admin/dashboard"
+//         : "/dashboard";
+//       const callbackUrl = urlParams.get("callbackUrl") || defaultDashboard;
+
+//       window.location.href = callbackUrl;
+
+//     } catch (error) {
+//       setErrorMsg(error.response?.data?.message || "Login failed");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // 🔥 dummy resend
+//   const handleResendOTP = async () => {
+//     if (resendTimer > 0) return;
+//     setResendTimer(60);
+//     setOtp("");
+//     setErrorMsg("");
+//   };
+
+//   const handleBack = () => {
+//     setStep(1);
+//     setOtp("");
+//     setErrorMsg("");
+//   };
+
+//   return (
+//     <div className="h-screen w-screen flex items-center justify-center bg-[#A4B494] overflow-hidden">
+//       {/* Desktop Layout */}
+//       <div className="hidden lg:flex flex-row w-full h-full bg-white shadow-2xl overflow-hidden">
+        
+//         {/* Left Panel */}
+//         <div
+//           className={`w-1/2 bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16 lg:py-0 rounded-none lg:rounded-r-[100px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-1000 ease-out ${
+//             mounted
+//               ? "translate-x-0 opacity-100"
+//               : "-translate-x-full opacity-0"
+//           }`}
+//         >
+//           <h2
+//             className={`text-3xl sm:text-4xl font-bold text-black mb-12 transition-all duration-700 delay-300 ease-out ${
+//               mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+//             }`}
+//           >
+//             Welcome Back!
+//           </h2>
+
+//           <div
+//             className={`transition-all duration-700 delay-500 ease-out transform ${
+//               mounted
+//                 ? "scale-100 opacity-100 rotate-0"
+//                 : "scale-75 opacity-0 rotate-12"
+//             }`}
+//           >
+//             <img
+//               src="/photos/logo1.svg"
+//               alt="Logo"
+//               className="w-[210px] h-[190px] bg-white p-4 rounded-lg mb-14 object-contain hover:scale-110 transition-transform duration-300 ease-in-out shadow-lg"
+//             />
+//           </div>
+
+//           <p
+//             className={`text-black text-lg font-semibold max-w-lg transition-all duration-700 delay-700 ease-out ${
+//               mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+//             }`}
+//           >
+//             "Manage Your Hostel Smarter – Everything You Need in One Platform."
+//           </p>
+//         </div>
+
+//         {/* Right Panel */}
+//         <div
+//           className={`w-1/2 flex flex-col justify-center items-center px-6 py-10 sm:px-10 lg:px-16 bg-white transition-all duration-1000 ease-out ${
+//             mounted ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+//           }`}
+//         >
+//           <h2
+//             className={`text-4xl font-bold text-black mb-16 transition-all duration-700 delay-200 ease-out ${
+//               mounted ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
+//             }`}
+//           >
+//             Admin Login
+//           </h2>
+
+//           <div
+//             className={`w-full max-w-sm transition-all duration-700 delay-400 ease-out ${
+//               mounted ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
+//             }`}
+//           >
+//             {step === 1 ? (
+//               <form onSubmit={handleSendOTP} className="space-y-6 w-full">
+//                 <div>
+//                   <label className="block text-lg font-bold mb-2">Admin ID</label>
+//                   <input
+//                     type="text"
+//                     value={adminId}
+//                     onChange={(e) => setAdminId(e.target.value)}
+//                     placeholder="Enter Your Admin ID"
+//                     required
+//                     className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium transition-all duration-300 ease-in-out transform focus:scale-[1.02] hover:shadow-lg"
+//                   />
+//                 </div>
+
+//                 {errorMsg && (
+//                   <div className="text-red-600 text-sm font-semibold text-center animate-fadeInUp">
+//                     {errorMsg}
+//                   </div>
+//                 )}
+
+//                 <div className="flex justify-center">
+//                   <button
+//                     type="submit"
+//                     disabled={loading}
+//                     className="w-[200px] bg-[#BEC5AD] text-black font-bold py-3 rounded-xl"
+//                   >
+//                     {loading ? "Sending..." : "Send OTP"}
+//                   </button>
+//                 </div>
+//               </form>
+//             ) : (
+//               <form onSubmit={handleVerifyOTP} className="space-y-6 w-full">
+//                 <div className="text-center mb-4">
+//                   <p className="text-sm text-gray-600">
+//                     OTP sent to WhatsApp: <span className="font-semibold">{maskedNumber}</span>
+//                   </p>
+//                 </div>
+
+//                 <input
+//                   type="text"
+//                   value={otp}
+//                   onChange={(e) => setOtp(e.target.value)}
+//                   placeholder="Enter OTP"
+//                   className="w-full px-5 py-3 border rounded-xl text-center"
+//                 />
+
+//                 {errorMsg && (
+//                   <div className="text-red-600 text-sm text-center">
+//                     {errorMsg}
+//                   </div>
+//                 )}
+
+//                 <button
+//                   type="submit"
+//                   disabled={loading}
+//                   className="w-[200px] bg-[#BEC5AD] py-3 rounded-xl font-bold"
+//                 >
+//                   {loading ? "Logging in..." : "Verify & Login"}
+//                 </button>
+
+//                 <div className="flex justify-between text-sm">
+//                   <button type="button" onClick={handleBack}>← Back</button>
+//                   <button type="button" onClick={handleResendOTP}>
+//                     {resendTimer > 0 ? `Resend ${resendTimer}s` : "Resend OTP"}
+//                   </button>
+//                 </div>
+//               </form>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Mobile same as before (no change in UI) */}
+//     </div>
+//   );
+// };
+
+// export default AdminLogin;
+
+
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import api from "@/lib/api";
+
+// const AdminLogin = () => {
+//   const [step, setStep] = useState(1);
+//   const [adminId, setAdminId] = useState("");
+//   const [otp, setOtp] = useState("");
+//   const [maskedNumber, setMaskedNumber] = useState("");
+//   const [errorMsg, setErrorMsg] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [resendTimer, setResendTimer] = useState(0);
+
+//   useEffect(() => {
+//     if (resendTimer > 0) {
+//       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [resendTimer]);
+
+//   // STEP 1
+//   const handleSendOTP = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setErrorMsg("");
+
+//     try {
+//       setMaskedNumber("Demo Mode");
+//       setStep(2);
+//       setResendTimer(60);
+//     } catch (error) {
+//       setErrorMsg("Something went wrong");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // STEP 2
+//   const handleVerifyOTP = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setErrorMsg("");
+
+//     try {
+//       const { data } = await api.post(
+//         `/api/adminauth/login`,
+//         { adminId },
+//         { headers: { "Content-Type": "application/json" } }
+//       );
+
+//       const { token, refreshToken } = data || {};
+//       if (!token) throw new Error("No token returned");
+
+//       localStorage.setItem("accessToken", token);
+//       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+//       document.cookie = `adminToken=${token}; Path=/; Max-Age=${7*24*60*60}; SameSite=Lax${
+//         window.location.protocol === "https:" ? "; Secure" : ""
+//       }`;
+
+//       window.location.href = "/admin/dashboard";
+
+//     } catch (error) {
+//       setErrorMsg(error.response?.data?.message || "Login failed");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleResendOTP = () => {
+//     if (resendTimer > 0) return;
+//     setResendTimer(60);
+//     setOtp("");
+//     setErrorMsg("");
+//   };
+
+//   const handleBack = () => {
+//     setStep(1);
+//     setOtp("");
+//     setErrorMsg("");
+//   };
+
+//   return (
+//     <div className="min-h-screen w-full bg-[#A4B494]">
+
+//       {/* FULL SCREEN CONTAINER */}
+//       <div className="flex flex-col lg:flex-row w-full min-h-screen">
+
+//         {/* LEFT PANEL */}
+//         <div className="w-full lg:w-1/2 min-h-[40vh] lg:min-h-screen bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16">
+
+//           <h2 className="text-3xl sm:text-4xl font-bold text-black mb-8">
+//             Welcome Back!
+//           </h2>
+
+//           <img
+//             src="/photos/logo1.svg"
+//             alt="Logo"
+//             className="w-[150px] sm:w-[180px] lg:w-[220px] bg-white p-4 rounded-lg mb-8 shadow-lg"
+//           />
+
+//           <p className="text-black text-base sm:text-lg font-semibold max-w-md">
+//             "Manage Your Hostel Smarter – Everything You Need in One Platform."
+//           </p>
+//         </div>
+
+//         {/* RIGHT PANEL */}
+//         <div className="w-full lg:w-1/2 min-h-[60vh] lg:min-h-screen flex flex-col justify-center items-center bg-white px-6 py-10 sm:px-10 lg:px-16">
+
+//           <h2 className="text-3xl sm:text-4xl font-bold text-black mb-10">
+//             Admin Login
+//           </h2>
+
+//           <div className="w-full max-w-sm">
+
+//             {step === 1 ? (
+//               <form onSubmit={handleSendOTP} className="space-y-6">
+
+//                 <div>
+//                   <label className="block text-lg font-bold mb-2">
+//                     Admin ID
+//                   </label>
+//                   <input
+//                     type="text"
+//                     value={adminId}
+//                     onChange={(e) => setAdminId(e.target.value)}
+//                     placeholder="Enter Your Admin ID"
+//                     required
+//                     className="w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87]"
+//                   />
+//                 </div>
+
+//                 {errorMsg && (
+//                   <div className="text-red-600 text-sm text-center">
+//                     {errorMsg}
+//                   </div>
+//                 )}
+
+//                 <div className="flex justify-center">
+//                   <button
+//                     type="submit"
+//                     disabled={loading}
+//                     className="w-[200px] bg-[#BEC5AD] py-3 rounded-xl font-bold hover:scale-105 transition"
+//                   >
+//                     {loading ? "Sending..." : "Send OTP"}
+//                   </button>
+//                 </div>
+
+//               </form>
+//             ) : (
+//               <form onSubmit={handleVerifyOTP} className="space-y-6">
+
+//                 <p className="text-sm text-center text-gray-600">
+//                   OTP sent to WhatsApp:{" "}
+//                   <span className="font-semibold">{maskedNumber}</span>
+//                 </p>
+
+//                 <input
+//                   type="text"
+//                   value={otp}
+//                   onChange={(e) => setOtp(e.target.value)}
+//                   placeholder="Enter OTP"
+//                   className="w-full px-5 py-3 border rounded-xl text-center"
+//                 />
+
+//                 {errorMsg && (
+//                   <div className="text-red-600 text-sm text-center">
+//                     {errorMsg}
+//                   </div>
+//                 )}
+
+//                 <button
+//                   type="submit"
+//                   disabled={loading}
+//                   className="w-full bg-[#BEC5AD] py-3 rounded-xl font-bold hover:scale-105 transition"
+//                 >
+//                   {loading ? "Logging in..." : "Verify & Login"}
+//                 </button>
+
+//                 <div className="flex justify-between text-sm">
+//                   <button type="button" onClick={handleBack}>
+//                     ← Back
+//                   </button>
+
+//                   <button type="button" onClick={handleResendOTP}>
+//                     {resendTimer > 0
+//                       ? `Resend ${resendTimer}s`
+//                       : "Resend OTP"}
+//                   </button>
+//                 </div>
+
+//               </form>
+//             )}
+
+//           </div>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default AdminLogin;
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/lib/api"; 
+import api from "@/lib/api";
 
 const AdminLogin = () => {
   const [step, setStep] = useState(1);
@@ -551,12 +996,10 @@ const AdminLogin = () => {
     }
   }, [resendTimer]);
 
-  // 🔥 STEP 1: bypass OTP send
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
-
     try {
       setMaskedNumber("Demo Mode");
       setStep(2);
@@ -568,16 +1011,14 @@ const AdminLogin = () => {
     }
   };
 
-  // 🔥 STEP 2: direct login (OTP ignored)
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
-
     try {
       const { data } = await api.post(
         `/api/adminauth/login`,
-        { adminId }, // OTP removed
+        { adminId },
         { headers: { "Content-Type": "application/json" } }
       );
 
@@ -587,7 +1028,7 @@ const AdminLogin = () => {
       localStorage.setItem("accessToken", token);
       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
 
-      document.cookie = `adminToken=${token}; Path=/; Max-Age=${7*24*60*60}; SameSite=Lax${
+      document.cookie = `adminToken=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${
         window.location.protocol === "https:" ? "; Secure" : ""
       }`;
 
@@ -598,7 +1039,6 @@ const AdminLogin = () => {
       const callbackUrl = urlParams.get("callbackUrl") || defaultDashboard;
 
       window.location.href = callbackUrl;
-
     } catch (error) {
       setErrorMsg(error.response?.data?.message || "Login failed");
     } finally {
@@ -606,7 +1046,6 @@ const AdminLogin = () => {
     }
   };
 
-  // 🔥 dummy resend
   const handleResendOTP = async () => {
     if (resendTimer > 0) return;
     setResendTimer(60);
@@ -621,20 +1060,21 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-[#A4B494] overflow-hidden">
-      {/* Desktop Layout */}
-      <div className="hidden lg:flex flex-row w-full h-full bg-white shadow-2xl overflow-hidden">
+    // min-h-screen सुनिश्चित करता है कि मोबाइल पर कंटेंट कटे नहीं
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#A4B494] overflow-x-hidden p-0 sm:p-4">
+      {/* Container: मोबाइल पर flex-col, डेस्कटॉप पर flex-row */}
+      <div className="flex flex-col lg:flex-row w-full h-full lg:h-screen bg-white shadow-2xl overflow-hidden">
         
-        {/* Left Panel */}
+        {/* Left Panel (Green section) */}
         <div
-          className={`w-1/2 bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16 lg:py-0 rounded-none lg:rounded-r-[100px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-1000 ease-out ${
+          className={`w-full lg:w-1/2 bg-[#9AAA87] flex flex-col items-center justify-center text-center px-6 py-10 lg:px-16 rounded-b-[40px] lg:rounded-none lg:rounded-r-[100px] shadow-lg transition-all duration-1000 ease-out ${
             mounted
               ? "translate-x-0 opacity-100"
-              : "-translate-x-full opacity-0"
+              : "-translate-x-full lg:-translate-x-full opacity-0"
           }`}
         >
           <h2
-            className={`text-3xl sm:text-4xl font-bold text-black mb-12 transition-all duration-700 delay-300 ease-out ${
+            className={`text-2xl sm:text-4xl font-bold text-black mb-6 lg:mb-12 transition-all duration-700 delay-300 ease-out ${
               mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
             }`}
           >
@@ -651,12 +1091,12 @@ const AdminLogin = () => {
             <img
               src="/photos/logo1.svg"
               alt="Logo"
-              className="w-[210px] h-[190px] bg-white p-4 rounded-lg mb-14 object-contain hover:scale-110 transition-transform duration-300 ease-in-out shadow-lg"
+              className="w-[120px] h-[110px] sm:w-[210px] sm:h-[190px] bg-white p-3 rounded-lg mb-6 lg:mb-14 object-contain hover:scale-110 transition-transform duration-300 shadow-lg"
             />
           </div>
 
           <p
-            className={`text-black text-lg font-semibold max-w-lg transition-all duration-700 delay-700 ease-out ${
+            className={`text-black text-sm sm:text-lg font-semibold max-w-lg transition-all duration-700 delay-700 ease-out ${
               mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
             }`}
           >
@@ -664,14 +1104,14 @@ const AdminLogin = () => {
           </p>
         </div>
 
-        {/* Right Panel */}
+        {/* Right Panel (Form section) */}
         <div
-          className={`w-1/2 flex flex-col justify-center items-center px-6 py-10 sm:px-10 lg:px-16 bg-white transition-all duration-1000 ease-out ${
+          className={`w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-12 lg:px-16 bg-white transition-all duration-1000 ease-out ${
             mounted ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
           }`}
         >
           <h2
-            className={`text-4xl font-bold text-black mb-16 transition-all duration-700 delay-200 ease-out ${
+            className={`text-3xl lg:text-4xl font-bold text-black mb-8 lg:mb-16 transition-all duration-700 delay-200 ease-out ${
               mounted ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
             }`}
           >
@@ -686,19 +1126,19 @@ const AdminLogin = () => {
             {step === 1 ? (
               <form onSubmit={handleSendOTP} className="space-y-6 w-full">
                 <div>
-                  <label className="block text-lg font-bold mb-2">Admin ID</label>
+                  <label className="block text-base lg:text-lg font-bold mb-2">Admin ID</label>
                   <input
                     type="text"
                     value={adminId}
                     onChange={(e) => setAdminId(e.target.value)}
                     placeholder="Enter Your Admin ID"
                     required
-                    className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium transition-all duration-300 ease-in-out transform focus:scale-[1.02] hover:shadow-lg"
+                    className="w-full px-5 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] transition-all duration-300 hover:shadow-md"
                   />
                 </div>
 
                 {errorMsg && (
-                  <div className="text-red-600 text-sm font-semibold text-center animate-fadeInUp">
+                  <div className="text-red-600 text-sm font-semibold text-center animate-bounce">
                     {errorMsg}
                   </div>
                 )}
@@ -707,7 +1147,7 @@ const AdminLogin = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-[200px] bg-[#BEC5AD] text-black font-bold py-3 rounded-xl"
+                    className="w-full sm:w-[200px] bg-[#BEC5AD] text-black font-bold py-3 rounded-xl hover:bg-[#9AAA87] transition-colors"
                   >
                     {loading ? "Sending..." : "Send OTP"}
                   </button>
@@ -726,26 +1166,28 @@ const AdminLogin = () => {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="Enter OTP"
-                  className="w-full px-5 py-3 border rounded-xl text-center"
+                  className="w-full px-5 py-3 border rounded-xl text-center focus:ring-2 focus:ring-[#9AAA87] outline-none"
                 />
 
                 {errorMsg && (
-                  <div className="text-red-600 text-sm text-center">
+                  <div className="text-red-600 text-sm text-center font-semibold">
                     {errorMsg}
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-[200px] bg-[#BEC5AD] py-3 rounded-xl font-bold"
-                >
-                  {loading ? "Logging in..." : "Verify & Login"}
-                </button>
+                <div className="flex justify-center">
+                    <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:w-[200px] bg-[#BEC5AD] py-3 rounded-xl font-bold hover:bg-[#9AAA87] transition-colors"
+                    >
+                    {loading ? "Logging in..." : "Verify & Login"}
+                    </button>
+                </div>
 
-                <div className="flex justify-between text-sm">
-                  <button type="button" onClick={handleBack}>← Back</button>
-                  <button type="button" onClick={handleResendOTP}>
+                <div className="flex justify-between text-sm font-medium pt-2">
+                  <button type="button" onClick={handleBack} className="hover:underline">← Back</button>
+                  <button type="button" onClick={handleResendOTP} className="hover:underline">
                     {resendTimer > 0 ? `Resend ${resendTimer}s` : "Resend OTP"}
                   </button>
                 </div>
@@ -754,8 +1196,6 @@ const AdminLogin = () => {
           </div>
         </div>
       </div>
-
-      {/* Mobile same as before (no change in UI) */}
     </div>
   );
 };
