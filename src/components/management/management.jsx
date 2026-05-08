@@ -81,14 +81,14 @@
 //   try {
 //     // Create FormData for file upload
 //     const formData = new FormData();
-    
+
 //     // Add text fields
 //     Object.keys(studentData).forEach(key => {
 //       if (key !== 'aadharCard' && key !== 'panCard') {
 //         formData.append(key, studentData[key]);
 //       }
 //     });
-    
+
 //     // Add files if they exist
 //     if (studentData.aadharCard) {
 //       formData.append('aadharCard', studentData.aadharCard);
@@ -96,7 +96,7 @@
 //     if (studentData.panCard) {
 //       formData.append('panCard', studentData.panCard);
 //     }
-    
+
 //     const response = await api.post(`/api/adminauth/register-student`, formData, {
 //       headers: {
 //         'Content-Type': 'multipart/form-data',
@@ -113,14 +113,14 @@
 //   try {
 //     // Create FormData for file upload
 //     const formData = new FormData();
-    
+
 //     // Add text fields
 //     Object.keys(parentData).forEach(key => {
 //       if (key !== 'aadharCard' && key !== 'panCard') {
 //         formData.append(key, parentData[key]);
 //       }
 //     });
-    
+
 //     // Add files if they exist
 //     if (parentData.aadharCard) {
 //       formData.append('aadharCard', parentData.aadharCard);
@@ -128,7 +128,7 @@
 //     if (parentData.panCard) {
 //       formData.append('panCard', parentData.panCard);
 //     }
-    
+
 //     const response = await api.post(`/api/adminauth/register-parent`, formData, {
 //       headers: {
 //         'Content-Type': 'multipart/form-data',
@@ -245,7 +245,7 @@
 //     if (!data.lastName.trim()) {
 //       newErrors.lastName = "Last Name is required.";
 //     }
-   
+
 //     if (!data.contactNumber.trim()) {
 //       newErrors.contactNumber = "Contact Number is required.";
 //     }
@@ -263,13 +263,13 @@
 // // Extract information from Aadhar card
 // const extractAadharInfo = (text) => {
 //   const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  
+
 //   let firstName = '';
 //   let lastName = '';
 //   let dob = '';
 //   let aadharNumber = '';
 //   let mobileNumber = '';
-  
+
 //   // Extract DOB
 //   const dobRegex = /DOB[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i;
 //   for (const line of lines) {
@@ -279,7 +279,7 @@
 //       break;
 //     }
 //   }
-  
+
 //   // Extract Aadhar number (12 digits)
 //   const aadharRegex = /(\d{4}\s*\d{4}\s*\d{4})/;
 //   for (const line of lines) {
@@ -292,7 +292,7 @@
 //       }
 //     }
 //   }
-  
+
 //   // Extract Mobile Number (10 digits, not part of 12-digit Aadhar)
 //   // Look for patterns like "Mobile No.: 7208692520" or just "7208692520"
 //   const mobileRegex = /(?:Mobile\s*No\.?[:\s]*)?([6-9]\d{9})(?!\d)/i;
@@ -301,7 +301,7 @@
 //     if (/\d{4}\s*\d{4}\s*\d{4}/.test(line)) {
 //       continue;
 //     }
-    
+
 //     const match = line.match(mobileRegex);
 //     if (match) {
 //       const number = match[1];
@@ -312,7 +312,7 @@
 //       }
 //     }
 //   }
-  
+
 //   // Extract Name - Position-based (line before DOB)
 //   let dobLineIndex = -1;
 //   for (let i = 0; i < lines.length; i++) {
@@ -321,13 +321,13 @@
 //       break;
 //     }
 //   }
-  
+
 //   if (dobLineIndex > 0) {
 //     // Check 1-3 lines before DOB
 //     for (let i = dobLineIndex - 1; i >= Math.max(0, dobLineIndex - 3); i--) {
 //       const line = lines[i];
 //       const lowerLine = line.toLowerCase();
-      
+
 //       // Skip unwanted lines
 //       if (
 //         lowerLine.includes('government') ||
@@ -342,15 +342,15 @@
 //       ) {
 //         continue;
 //       }
-      
+
 //       const words = line.split(/\s+/).filter(w => w.length > 1);
-      
+
 //       // Name validation
 //       if (words.length >= 2 && words.length <= 4) {
 //         const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
 //         const hasProperCase = words.every(w => /^[A-Z][a-z]*$/.test(w) || /^[A-Z]+$/.test(w));
 //         const noSpecialChars = !/[:\-_@#$%^&*()+=\[\]{}|\\;'"<>?/]/.test(line);
-        
+
 //         // Check if not repetitive garbage
 //         const isRepetitive = words.some(w => {
 //           if (w.length >= 4) {
@@ -360,15 +360,15 @@
 //           }
 //           return false;
 //         });
-        
+
 //         if (alphaRatio > 0.85 && hasProperCase && noSpecialChars && !isRepetitive) {
 //           // Handle name splitting:
 //           // 2 words: "Akshat Gupta" -> First: Akshat, Last: Gupta
 //           // 3 words: "Rajesh Kumar Singh" -> First: Rajesh, Last: Singh (skip middle)
 //           // 4 words: "Ram Prakash Kumar Singh" -> First: Ram, Last: Singh (skip middle)
-          
+
 //           firstName = words[0];
-          
+
 //           if (words.length === 2) {
 //             lastName = words[1];
 //           } else if (words.length === 3) {
@@ -378,19 +378,19 @@
 //             // Skip middle names, take last word
 //             lastName = words[3];
 //           }
-          
+
 //           console.log('Found name:', firstName, lastName, '(from:', line, ')');
 //           break;
 //         }
 //       }
 //     }
 //   }
-  
+
 //   // Fallback method if position-based fails
 //   if (!firstName) {
 //     for (const line of lines) {
 //       const lowerLine = line.toLowerCase();
-      
+
 //       if (
 //         lowerLine.includes('government') ||
 //         lowerLine.includes('india') ||
@@ -404,17 +404,17 @@
 //       ) {
 //         continue;
 //       }
-      
+
 //       const words = line.split(/\s+/).filter(w => w.length > 1);
-      
+
 //       if (words.length >= 2 && words.length <= 4 && line.length <= 50) {
 //         const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
 //         const hasProperCase = words.every(w => /^[A-Z]/.test(w));
 //         const noSpecialChars = !/[:\-_]/.test(line);
-        
+
 //         if (alphaRatio > 0.85 && hasProperCase && noSpecialChars) {
 //           firstName = words[0];
-          
+
 //           if (words.length === 2) {
 //             lastName = words[1];
 //           } else if (words.length === 3) {
@@ -422,14 +422,14 @@
 //           } else if (words.length === 4) {
 //             lastName = words[3]; // Skip middle names
 //           }
-          
+
 //           console.log('Found name (fallback):', firstName, lastName);
 //           break;
 //         }
 //       }
 //     }
 //   }
-  
+
 //   console.log('Extracted info:', { firstName, lastName, dob, aadharNumber, mobileNumber });
 //   return { firstName, lastName, dob, aadharNumber, mobileNumber };
 // };
@@ -437,14 +437,14 @@
 // // Extract information from PAN card
 // const extractPanInfo = (text) => {
 //   const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  
+
 //   // Extract name
 //   let name = '';
 //   const nameIndex = lines.findIndex(line => line.toLowerCase().includes('name'));
 //   if (nameIndex !== -1 && lines[nameIndex + 1]) {
 //     name = lines[nameIndex + 1];
 //   }
-  
+
 //   // Extract PAN number (format: ABCDE1234F)
 //   let panNumber = '';
 //   const panRegex = /([A-Z]{5}\d{4}[A-Z])/;
@@ -455,7 +455,7 @@
 //       break;
 //     }
 //   }
-  
+
 //   // Extract DOB
 //   let dob = '';
 //   const dobRegex = /(\d{2}[\/\-]\d{2}[\/\-]\d{4})/;
@@ -466,7 +466,7 @@
 //       break;
 //     }
 //   }
-  
+
 //   return { name, dob, panNumber };
 // };
 
@@ -474,7 +474,7 @@
 // const processDocument = async (file, documentType, formType) => {
 //   setOcrLoading(true);
 //   setOcrProgress(0);
-  
+
 //   try {
 //     const result = await Tesseract.recognize(
 //       file,
@@ -487,19 +487,19 @@
 //         }
 //       }
 //     );
-    
+
 //     const extractedText = result.data.text;
 //     console.log('Extracted text:', extractedText);
-    
+
 //     let extractedInfo = {};
 //     if (documentType === 'aadhar') {
 //       extractedInfo = extractAadharInfo(extractedText);
 //     } else if (documentType === 'pan') {
 //       extractedInfo = extractPanInfo(extractedText);
 //     }
-    
+
 //     console.log('Parsed info:', extractedInfo); // Debug log
-    
+
 //    // Auto-fill form based on extracted info
 // if (formType === 'student') {
 //   setFormData(prev => ({
@@ -518,7 +518,7 @@
 //   }));
 //   console.log('Updated parent form');
 // }
-    
+
 //    // Show what was extracted
 // if (extractedInfo.firstName || extractedInfo.lastName) {
 //   toast.success(`Document processed successfully!
@@ -531,7 +531,7 @@
 // } else {
 //   toast.error('Document processed but name could not be extracted. Please enter details manually.');
 // }
-    
+
 //   } catch (error) {
 //     console.error('OCR Error:', error);
 //     toast.error('Failed to process document. Please try again or enter details manually.');
@@ -545,14 +545,14 @@
 // const handleDocumentUpload = async (e, documentType, formType) => {
 //   const file = e.target.files[0];
 //   if (!file) return;
-  
+
 //   // Validate file type
 //   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 //   if (!validTypes.includes(file.type)) {
 //     toast.warning('Please upload a valid image file (JPEG, PNG, or WebP)');
 //     return;
 //   }
-  
+
 //   // Store the file
 //   if (formType === 'student') {
 //     setStudentDocuments(prev => ({
@@ -565,7 +565,7 @@
 //       [documentType]: file
 //     }));
 //   }
-  
+
 //   // Process with OCR
 //   await processDocument(file, documentType, formType);
 // };
@@ -622,13 +622,13 @@
 //     };
 
 //     const response = await registerStudentAPI(studentData);
-    
+
 //     // Find the selected room details for display
 //     const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
 //     const roomDisplay = selectedRoom 
 //       ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
 //       : formData.bedNumber || "Not Assigned";
-    
+
 //     // Add new student to local state
 //     const newStudent = {
 //       id: response.student.studentId,
@@ -646,7 +646,7 @@
 //       roomDetails: selectedRoom,
 //       roomObjectId: formData.bedNumber
 //     };
-    
+
 //     setStudents((prev) => [...prev, newStudent]);
 //     // Refresh students without parents list
 // const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
@@ -674,7 +674,7 @@
 // //   if (student) {
 // //     // Extract room number from room details if available
 // //     const roomNumber = student.roomDetails?.roomNo || "";
-    
+
 // //     setFormData({
 // //       firstName: student.firstName || student.name?.split(' ')[0] || '',
 // //       lastName: student.lastName || student.name?.split(' ').slice(1).join(' ') || '',
@@ -909,11 +909,11 @@
 //   setParentLoading(true);
 //   try {
 //     const response = await registerParentAPI(parentFormData);
-    
+
 //     // ADD THIS: Refresh the students without parents list
 //     const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
 //     setStudentsWithoutParents(studentsWithoutParentsData.students || []);
-    
+
 //     resetParentForm();
 //     toast.success(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
 //   } catch (error) {
@@ -944,12 +944,12 @@
 // const loadStudents = async () => {
 //   try {
 //     const studentsData = await fetchStudentsAPI();
-    
+
 //     const transformedStudents = await Promise.all(
 //       studentsData.students?.map(async (student) => {
 //         let roomDisplay = "Not Assigned";
 //         let roomDetails = null;
-        
+
 //         if (student.roomBedNumber && typeof student.roomBedNumber === 'string' && student.roomBedNumber.length === 24) {
 //           roomDetails = await fetchRoomDetailsAPI(student.roomBedNumber);
 //           if (roomDetails && roomDetails.inventory) {
@@ -981,7 +981,7 @@
 //         };
 //       }) || []
 //     );
-    
+
 //     setStudents(transformedStudents);
 //   } catch (error) {
 //     console.error('Error loading students:', error);
@@ -994,7 +994,7 @@
 //     try {
 //       // Load students
 //       await loadStudents();
-      
+
 //       // Load available beds
 //       const bedsData = await fetchAvailableRoomsAPI();
 //       setAvailableRooms(bedsData.availableBeds || []);
@@ -1010,7 +1010,7 @@
 //       console.error('Error loading data:', error);
 //     }
 //   };
-  
+
 //   loadData();
 // }, []);
 
@@ -1031,7 +1031,7 @@
 // };
 
 
- 
+
 
 //   // Fee status style
 // // Fee status style
@@ -1116,7 +1116,7 @@
 //             </p>
 //           )}
 //         </div>
-        
+
 //         {/* Last Name */}
 //         <div className="w-full px-2">
 //           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1197,7 +1197,7 @@
 // }
 //     </div>
 
- 
+
 
 //     {/* PAN Card */}
 //     {/* <div>
@@ -1379,8 +1379,8 @@
 //   </div>
 
 // </div>
-        
-       
+
+
 //         {/* Contact Number */}
 //         <div className="w-full px-2">
 //           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1405,8 +1405,8 @@
 //           )}
 //         </div>
 
-        
-        
+
+
 //         {/* Email */}
 //         <div className="w-full px-2">
 //           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1428,8 +1428,8 @@
 //             <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>
 //           )}
 //         </div>
-        
-      
+
+
 // {/* Room Number */}
 // <div className="w-full px-2">
 //   <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
@@ -1524,7 +1524,7 @@
 //     </svg>
 //   </div>
 // </div>
-        
+
 //         {/* Emergency Contact Number */}
 //         <div className="w-full px-2">
 //           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -1540,7 +1540,7 @@
 //             style={inputStyle}
 //           />
 //         </div>
-        
+
 //       {/* Admission Date */}
 // <div className="w-full px-2">
 //   <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -1587,7 +1587,7 @@
 //     Admission date is automatically set to today's date
 //   </p>
 // </div>
-        
+
 //         {/* Emergency Contact Name */}
 //         <div className="w-full px-2">
 //           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -1603,7 +1603,7 @@
 //             style={inputStyle}
 //           />
 //         </div>
-        
+
 //         {/* Fee Status */}
 //         <div className="w-full px-2">
 //           <label
@@ -1638,7 +1638,7 @@
 //           </select>
 //         </div>
 //       </div>
-      
+
 //       {/* Buttons */}
 //       <div className="flex flex-col sm:flex-row justify-center gap-4">
 //         <button
@@ -1701,7 +1701,7 @@
 //           </p>
 //         )}
 //       </div>
-      
+
 //       {/* Last Name */}
 //       <div className="w-full px-2">
 //         <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1725,7 +1725,7 @@
 //           </p>
 //         )}
 //       </div>
-      
+
 //       {/* Email */}
 //       <div className="w-full px-2">
 //         <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1747,7 +1747,7 @@
 //           <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.email}</p>
 //         )}
 //       </div>
-      
+
 //       {/* Contact Number */}
 //       <div className="w-full px-2">
 //         <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1799,7 +1799,7 @@
 // <div className="w-full px-2 md:col-span-2">
 //   <div className="bg-white/50 rounded-lg p-4 space-y-4">
 //     <h3 className="font-semibold text-black mb-2">Upload Documents (Optional - Auto-fill with OCR)</h3>
-    
+
 //     {/* Aadhar Card Upload */}
 //     <div>
 //       <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
@@ -1816,7 +1816,7 @@
 //         <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.aadharCard.name}</p>
 //       )}
 //     </div>
-    
+
 //     {/* PAN Card Upload */}
 //     <div>
 //       <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
@@ -1833,7 +1833,7 @@
 //         <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.panCard.name}</p>
 //       )}
 //     </div>
-    
+
 //     {/* OCR Progress */}
 //     {ocrLoading && (
 //       <div className="mt-2">
@@ -1848,7 +1848,7 @@
 //     )}
 //   </div>
 // </div>  
-      
+
 //     {/* Student ID */}
 // <div className="w-full px-2 md:col-span-2">
 //   <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -1897,7 +1897,7 @@
 //   )}
 // </div>
 //     </div>
-    
+
 //     {/* Submit Button */}
 //     <div className="flex justify-center">
 //       <button
@@ -1937,7 +1937,7 @@
 //             </span>
 //           </h1>
 //         </div>
-        
+
 //      {/* Tabbed Registration Forms (conditionally rendered when not editing) */}
 // {!editingStudent && (
 //   <div className="w-full max-w-7xl mx-auto">
@@ -1966,7 +1966,7 @@
 //         Register Parent
 //       </button>
 //     </div>
-    
+
 //     {/* Tab Content */}
 //     <div
 //       className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8"
@@ -1976,7 +1976,7 @@
 //     </div>
 //   </div>
 // )}
-        
+
 //         {/* Edit Student Modal (conditionally rendered when editing) */}
 //         {showEditModal && editingStudent && (
 //           <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -2046,14 +2046,14 @@
 //           />
 //         </svg>
 //       </button>
-      
+
 //       <h2
 //         className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
 //         style={{ fontFamily: "Inter", fontWeight: "700" }}
 //       >
 //         Student Details
 //       </h2>
-      
+
 //       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-black">
 //         <div>
 //           <p className="font-semibold" style={labelStyle}>Student ID:</p>
@@ -2181,7 +2181,7 @@
 //             Student List & Fee status
 //           </h2>
 //         </div>
-        
+
 //         {/* Student List Table */}
 //         <div className="w-full max-w-7xl mx-auto mt-4 px-4 sm:px-0">
 //           <div
@@ -2234,7 +2234,7 @@
 //                     </div>
 //                   ))}
 //                 </div>
-                
+
 //                 {/* Table Body */}
 //                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
 //                   {students.map((student, i) => (
@@ -2424,12 +2424,12 @@ import { useState, useRef, useEffect, use } from "react";
 import { Eye } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
-import { ToastContainer  ,toast} from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // ✅ FIX 1: Helper function to build correct document URL
 const getDocumentUrl = (studentId, docType) => {
-  return `/api/adminauth/student-document/${studentId}/${docType}`;
+  return `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/student-document/${studentId}/${docType}`;
 };
 
 // ✅ FIX 2: Helper to check if a document exists (handles both filename and path formats)
@@ -2445,13 +2445,13 @@ const getDocumentName = (docObj) => {
 };
 
 const StudentManagement = () => {
-const getTodaysDate = () => {
-  const today = new Date();
-  const day = today.getDate().toString().padStart(2, '0');
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');
-  const year = today.getFullYear();
-  return `${year}-${month}-${day}`;
-};
+  const getTodaysDate = () => {
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
 
 
   const [formData, setFormData] = useState({
@@ -2465,272 +2465,277 @@ const getTodaysDate = () => {
     admissionDate: getTodaysDate(),
     emergencyContactName: "",
     feeStatus: "",
-      hasCollegeId: true,
-  studentIdCard: null,
-  feesReceipt: null,
+    hasCollegeId: true,
+    studentIdCard: null,
+    feesReceipt: null,
   });
   const [editingStudent, setEditingStudent] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
-const [availableRoomNumbers, setAvailableRoomNumbers] = useState([]);
+  const [availableRoomNumbers, setAvailableRoomNumbers] = useState([]);
   const [students, setStudents] = useState([]);
-const [studentsWithoutParents, setStudentsWithoutParents] = useState([]);
+  const [studentsWithoutParents, setStudentsWithoutParents] = useState([]);
   const [errors, setErrors] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [studentDetailsData, setStudentDetailsData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-const [activeTab, setActiveTab] = useState("student");
-const [parentFormData, setParentFormData] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-  relation:"",
-  contactNumber: "",
-  studentId: "",
-});
+  const [activeTab, setActiveTab] = useState("student");
+  const [parentFormData, setParentFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    relation: "",
+    contactNumber: "",
+    studentId: "",
+  });
 
-const [studentDocuments, setStudentDocuments] = useState({
-  aadharCard: null,
-  panCard: null,
-  studentIdCard: null,
-  feesReceipt: null
-});
-const [parentDocuments, setParentDocuments] = useState({
-  aadharCard: null,
-  panCard: null
-});
-const [ocrLoading, setOcrLoading] = useState(false);
-const [ocrProgress, setOcrProgress] = useState(0);
-const [parentErrors, setParentErrors] = useState({});
-const [parentLoading, setParentLoading] = useState(false);
+  const [studentDocuments, setStudentDocuments] = useState({
+    aadharCard: null,
+    panCard: null,
+    studentIdCard: null,
+    feesReceipt: null
+  });
+  const [parentDocuments, setParentDocuments] = useState({
+    aadharCard: null,
+    panCard: null
+  });
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [parentErrors, setParentErrors] = useState({});
+  const [parentLoading, setParentLoading] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
 
-  if (formData.hasCollegeId) {
+    if (formData.hasCollegeId) {
 
-    setStudentDocuments((prev) => ({
-      ...prev,
-      feesReceipt: null,
-    }));
-
-  } else {
-
-    setStudentDocuments((prev) => ({
-      ...prev,
-      studentIdCard: null,
-    }));
-  }
-
-}, [formData.hasCollegeId]);
-
-  // API Functions
-//  const registerStudentAPI = async (studentData) => {
-//   try {
-//     const formData = new FormData();
-    
-//     Object.keys(studentData).forEach(key => {
-//       if (key !== 'aadharCard' && key !== 'panCard') {
-//         formData.append(key, studentData[key]);
-//       }
-//     });
-    
-//     if (studentData.aadharCard) {
-//       formData.append('aadharCard', studentData.aadharCard);
-//     }
-//     if (studentData.panCard) {
-//       formData.append('panCard', studentData.panCard);
-//     }
-
-//     if (studentData.studentIdCard) {
-//   formData.append("studentIdCard", studentData.studentIdCard);
-// }
-
-// if (studentData.feesReceipt) {
-//   formData.append("feesReceipt", studentData.feesReceipt);
-// }
-    
-//     const response = await api.post(`/api/adminauth/register-student`, formData, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//       }
-//     });
-//     return response.data;
-//   } catch (error) {
-//     throw error.response?.data || { message: 'Failed to register student' };
-//   }
-// };
-
-const registerStudentAPI = async (studentData) => {
-  try {
-
-    const formData = new FormData();
-
-    // Basic fields
-    formData.append("firstName", studentData.firstName || "");
-    formData.append("lastName", studentData.lastName || "");
-    formData.append("contactNumber", studentData.contactNumber || "");
-    formData.append("roomBedNumber", studentData.roomBedNumber || "");
-    formData.append("email", studentData.email || "");
-    formData.append("admissionDate", studentData.admissionDate || "");
-    formData.append("feeStatus", studentData.feeStatus || "");
-    formData.append(
-      "emergencyContactName",
-      studentData.emergencyContactName || ""
-    );
-    formData.append(
-      "emergencyContactNumber",
-      studentData.emergencyContactNumber || ""
-    );
-
-    // Boolean
-    formData.append(
-      "hasCollegeId",
-      studentData.hasCollegeId
-    );
-
-    // Aadhar
-    if (studentData.aadharCard instanceof File) {
-      formData.append(
-        "aadharCard",
-        studentData.aadharCard
-      );
-    }
-
-    // PAN
-    if (studentData.panCard instanceof File) {
-      formData.append(
-        "panCard",
-        studentData.panCard
-      );
-    }
-
-    // Student ID Card OR Fees Receipt
-    if (studentData.hasCollegeId) {
-
-      if (studentData.studentIdCard instanceof File) {
-        formData.append(
-          "studentIdCard",
-          studentData.studentIdCard
-        );
-      }
+      setStudentDocuments((prev) => ({
+        ...prev,
+        feesReceipt: null,
+      }));
 
     } else {
 
-      if (studentData.feesReceipt instanceof File) {
+      setStudentDocuments((prev) => ({
+        ...prev,
+        studentIdCard: null,
+      }));
+    }
+
+  }, [formData.hasCollegeId]);
+
+  // API Functions
+  //  const registerStudentAPI = async (studentData) => {
+  //   try {
+  //     const formData = new FormData();
+
+  //     Object.keys(studentData).forEach(key => {
+  //       if (key !== 'aadharCard' && key !== 'panCard') {
+  //         formData.append(key, studentData[key]);
+  //       }
+  //     });
+
+  //     if (studentData.aadharCard) {
+  //       formData.append('aadharCard', studentData.aadharCard);
+  //     }
+  //     if (studentData.panCard) {
+  //       formData.append('panCard', studentData.panCard);
+  //     }
+
+  //     if (studentData.studentIdCard) {
+  //   formData.append("studentIdCard", studentData.studentIdCard);
+  // }
+
+  // if (studentData.feesReceipt) {
+  //   formData.append("feesReceipt", studentData.feesReceipt);
+  // }
+
+  //     const response = await api.post(`/api/adminauth/register-student`, formData, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       }
+  //     });
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error.response?.data || { message: 'Failed to register student' };
+  //   }
+  // };
+
+  const registerStudentAPI = async (studentData) => {
+    try {
+
+      const formData = new FormData();
+
+      // Basic fields
+      formData.append("firstName", studentData.firstName || "");
+      formData.append("lastName", studentData.lastName || "");
+      formData.append("contactNumber", studentData.contactNumber || "");
+      formData.append("roomBedNumber", studentData.roomBedNumber || "");
+      formData.append("email", studentData.email || "");
+      formData.append("admissionDate", studentData.admissionDate || "");
+      formData.append("feeStatus", studentData.feeStatus || "");
+      formData.append(
+        "emergencyContactName",
+        studentData.emergencyContactName || ""
+      );
+      formData.append(
+        "emergencyContactNumber",
+        studentData.emergencyContactNumber || ""
+      );
+
+      // Boolean
+      formData.append(
+        "hasCollegeId",
+        studentData.hasCollegeId
+      );
+
+      // Aadhar
+      if (studentData.aadharCard instanceof File) {
         formData.append(
-          "feesReceipt",
-          studentData.feesReceipt
+          "aadharCard",
+          studentData.aadharCard
         );
       }
-    }
 
-    // DEBUG
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
-
-    const response = await api.post(
-      `/api/adminauth/register-student`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // PAN
+      if (studentData.panCard instanceof File) {
+        formData.append(
+          "panCard",
+          studentData.panCard
+        );
       }
-    );
 
-    return response.data;
+      // Student ID Card OR Fees Receipt
+      if (studentData.hasCollegeId) {
 
-  } catch (error) {
+        if (studentData.studentIdCard instanceof File) {
+          formData.append(
+            "studentIdCard",
+            studentData.studentIdCard
+          );
+        }
 
-    console.error("REGISTER STUDENT ERROR:", error);
+      } else {
 
-    throw (
-      error.response?.data || {
-        message: "Failed to register student",
+        if (studentData.feesReceipt instanceof File) {
+          formData.append(
+            "feesReceipt",
+            studentData.feesReceipt
+          );
+        }
       }
-    );
-  }
-};
 
-
-
- const registerParentAPI = async (parentData) => {
-  try {
-    const formData = new FormData();
-    
-    Object.keys(parentData).forEach(key => {
-      if (key !== 'aadharCard' && key !== 'panCard') {
-        formData.append(key, parentData[key]);
+      // DEBUG
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
-    });
-    
-    if (parentData.aadharCard) {
-      formData.append('aadharCard', parentData.aadharCard);
+
+      const response = await api.post(
+        `/api/adminauth/register-student`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return response.data;
+
+    } catch (error) {
+
+      console.error("REGISTER STUDENT ERROR:", error);
+
+      throw (
+        error.response?.data || {
+          message: "Failed to register student",
+        }
+      );
     }
-    if (parentData.panCard) {
-      formData.append('panCard', parentData.panCard);
-    }
-    
-    const response = await api.post(`/api/adminauth/register-parent`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to register parent' };
-  }
-};
+  };
 
-  const updateStudentAPI = async (studentId, studentData) => {
+
+
+  const registerParentAPI = async (parentData) => {
     try {
-      const response = await api.put(`/api/adminauth/update-student/${studentId}`, studentData, {
+      const formData = new FormData();
+
+      Object.keys(parentData).forEach(key => {
+        if (key !== 'aadharCard' && key !== 'panCard') {
+          formData.append(key, parentData[key]);
+        }
+      });
+
+      if (parentData.aadharCard) {
+        formData.append('aadharCard', parentData.aadharCard);
+      }
+      if (parentData.panCard) {
+        formData.append('panCard', parentData.panCard);
+      }
+
+      const response = await api.post(`/api/adminauth/register-parent`, formData, {
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
         }
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to update student' };
+      throw error.response?.data || { message: 'Failed to register parent' };
     }
   };
 
-const fetchStudentsAPI = async () => {
-  try {
-    const response = await api.get(`/api/adminauth/students`, {});
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch students' };
-  }
-};
+  const updateStudentAPI = async (studentId, studentData) => {
+    try {
+      const response = await api.put(
+        `/api/adminauth/update-student/${studentId}`,
+        studentData,
+        {
+          headers: {
+            // ✅ Don't set Content-Type manually for FormData
+            // axios sets it automatically with correct boundary
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: "Failed to update student" };
+    }
+  };
 
-const fetchStudentsWithoutParentsAPI = async () => {
-  try {
-    const response = await api.get(`/api/adminauth/students-without-parents`, {});
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch students without parents' };
-  }
-};
+  const fetchStudentsAPI = async () => {
+    try {
+      const response = await api.get(`/api/adminauth/students`, {});
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch students' };
+    }
+  };
 
-const fetchAvailableRoomsAPI = async () => {
-  try {
-    const response = await api.get(`/api/adminauth/inventory/available-beds`, {});
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch available rooms' };
-  }
-};
-const fetchAvailableRoomsNumbersAPI = async () => {
-  try {
-    const response = await api.get(`/api/adminauth/inventory/available-rooms`, {});
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch available rooms' };
-  }
-};
+  const fetchStudentsWithoutParentsAPI = async () => {
+    try {
+      const response = await api.get(`/api/adminauth/students-without-parents`, {});
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch students without parents' };
+    }
+  };
+
+  const fetchAvailableRoomsAPI = async () => {
+    try {
+      const response = await api.get(`/api/adminauth/inventory/available-beds`, {});
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch available rooms' };
+    }
+  };
+  const fetchAvailableRoomsNumbersAPI = async () => {
+    try {
+      const response = await api.get(`/api/adminauth/inventory/available-rooms`, {});
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch available rooms' };
+    }
+  };
 
   const deleteStudentAPI = async (studentId) => {
     try {
@@ -2764,7 +2769,7 @@ const fetchAvailableRoomsNumbersAPI = async () => {
     if (!data.lastName.trim()) {
       newErrors.lastName = "Last Name is required.";
     }
-   
+
     if (!data.contactNumber.trim()) {
       newErrors.contactNumber = "Contact Number is required.";
     }
@@ -2776,518 +2781,534 @@ const fetchAvailableRoomsNumbersAPI = async () => {
     return newErrors;
   };
 
-const extractAadharInfo = (text) => {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  
-  let firstName = '';
-  let lastName = '';
-  let dob = '';
-  let aadharNumber = '';
-  let mobileNumber = '';
-  
-  const dobRegex = /DOB[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i;
-  for (const line of lines) {
-    const match = line.match(dobRegex);
-    if (match) {
-      dob = match[1].replace(/\//g, '-');
-      break;
-    }
-  }
-  
-  const aadharRegex = /(\d{4}\s*\d{4}\s*\d{4})/;
-  for (const line of lines) {
-    const match = line.match(aadharRegex);
-    if (match) {
-      const number = match[1].replace(/\s/g, '');
-      if (number.length === 12) {
-        aadharNumber = number;
-        break;
-      }
-    }
-  }
-  
-  const mobileRegex = /(?:Mobile\s*No\.?[:\s]*)?([6-9]\d{9})(?!\d)/i;
-  for (const line of lines) {
-    if (/\d{4}\s*\d{4}\s*\d{4}/.test(line)) {
-      continue;
-    }
-    
-    const match = line.match(mobileRegex);
-    if (match) {
-      const number = match[1];
-      if (number.length === 10 && /^[6-9]/.test(number)) {
-        mobileNumber = number;
-        break;
-      }
-    }
-  }
-  
-  let dobLineIndex = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (/DOB/i.test(lines[i])) {
-      dobLineIndex = i;
-      break;
-    }
-  }
-  
-  if (dobLineIndex > 0) {
-    for (let i = dobLineIndex - 1; i >= Math.max(0, dobLineIndex - 3); i--) {
-      const line = lines[i];
-      const lowerLine = line.toLowerCase();
-      
-      if (
-        lowerLine.includes('government') ||
-        lowerLine.includes('india') ||
-        lowerLine.includes('भारत') ||
-        lowerLine.includes('सरकार') ||
-        lowerLine.includes('tetet') ||
-        /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
-        /mobile/i.test(line) ||
-        line.length < 4 ||
-        line.length > 50
-      ) {
-        continue;
-      }
-      
-      const words = line.split(/\s+/).filter(w => w.length > 1);
-      
-      if (words.length >= 2 && words.length <= 4) {
-        const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
-        const hasProperCase = words.every(w => /^[A-Z][a-z]*$/.test(w) || /^[A-Z]+$/.test(w));
-        const noSpecialChars = !/[:\-_@#$%^&*()+=\[\]{}|\\;'"<>?/]/.test(line);
-        
-        const isRepetitive = words.some(w => {
-          if (w.length >= 4) {
-            const half = w.substring(0, Math.floor(w.length / 2));
-            return w.toLowerCase().startsWith(half.toLowerCase()) && 
-                   w.toLowerCase().endsWith(half.toLowerCase());
-          }
-          return false;
-        });
-        
-        if (alphaRatio > 0.85 && hasProperCase && noSpecialChars && !isRepetitive) {
-          firstName = words[0];
-          
-          if (words.length === 2) {
-            lastName = words[1];
-          } else if (words.length === 3) {
-            lastName = words[2];
-          } else if (words.length === 4) {
-            lastName = words[3];
-          }
-          
-          console.log('Found name:', firstName, lastName, '(from:', line, ')');
-          break;
-        }
-      }
-    }
-  }
-  
-  if (!firstName) {
+  const extractAadharInfo = (text) => {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+    let firstName = '';
+    let lastName = '';
+    let dob = '';
+    let aadharNumber = '';
+    let mobileNumber = '';
+
+    const dobRegex = /DOB[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i;
     for (const line of lines) {
-      const lowerLine = line.toLowerCase();
-      
-      if (
-        lowerLine.includes('government') ||
-        lowerLine.includes('india') ||
-        lowerLine.includes('dob') ||
-        lowerLine.includes('male') ||
-        lowerLine.includes('female') ||
-        lowerLine.includes('scanned') ||
-        lowerLine.includes('mobile') ||
-        /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
-        line.length < 4
-      ) {
-        continue;
+      const match = line.match(dobRegex);
+      if (match) {
+        dob = match[1].replace(/\//g, '-');
+        break;
       }
-      
-      const words = line.split(/\s+/).filter(w => w.length > 1);
-      
-      if (words.length >= 2 && words.length <= 4 && line.length <= 50) {
-        const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
-        const hasProperCase = words.every(w => /^[A-Z]/.test(w));
-        const noSpecialChars = !/[:\-_]/.test(line);
-        
-        if (alphaRatio > 0.85 && hasProperCase && noSpecialChars) {
-          firstName = words[0];
-          
-          if (words.length === 2) {
-            lastName = words[1];
-          } else if (words.length === 3) {
-            lastName = words[2];
-          } else if (words.length === 4) {
-            lastName = words[3];
-          }
-          
-          console.log('Found name (fallback):', firstName, lastName);
+    }
+
+    const aadharRegex = /(\d{4}\s*\d{4}\s*\d{4})/;
+    for (const line of lines) {
+      const match = line.match(aadharRegex);
+      if (match) {
+        const number = match[1].replace(/\s/g, '');
+        if (number.length === 12) {
+          aadharNumber = number;
           break;
         }
       }
     }
-  }
-  
-  console.log('Extracted info:', { firstName, lastName, dob, aadharNumber, mobileNumber });
-  return { firstName, lastName, dob, aadharNumber, mobileNumber };
-};
 
-const extractPanInfo = (text) => {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  
-  let name = '';
-  const nameIndex = lines.findIndex(line => line.toLowerCase().includes('name'));
-  if (nameIndex !== -1 && lines[nameIndex + 1]) {
-    name = lines[nameIndex + 1];
-  }
-  
-  let panNumber = '';
-  const panRegex = /([A-Z]{5}\d{4}[A-Z])/;
-  for (const line of lines) {
-    const match = line.match(panRegex);
-    if (match) {
-      panNumber = match[1];
-      break;
-    }
-  }
-  
-  let dob = '';
-  const dobRegex = /(\d{2}[\/\-]\d{2}[\/\-]\d{4})/;
-  for (const line of lines) {
-    const match = line.match(dobRegex);
-    if (match) {
-      dob = match[1].replace(/\//g, '-');
-      break;
-    }
-  }
-  
-  return { name, dob, panNumber };
-};
+    const mobileRegex = /(?:Mobile\s*No\.?[:\s]*)?([6-9]\d{9})(?!\d)/i;
+    for (const line of lines) {
+      if (/\d{4}\s*\d{4}\s*\d{4}/.test(line)) {
+        continue;
+      }
 
-const processDocument = async (file, documentType, formType) => {
-  setOcrLoading(true);
-  setOcrProgress(0);
-  
-  try {
-    const result = await Tesseract.recognize(
-      file,
-      'eng',
-      {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setOcrProgress(Math.round(m.progress * 100));
+      const match = line.match(mobileRegex);
+      if (match) {
+        const number = match[1];
+        if (number.length === 10 && /^[6-9]/.test(number)) {
+          mobileNumber = number;
+          break;
+        }
+      }
+    }
+
+    let dobLineIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/DOB/i.test(lines[i])) {
+        dobLineIndex = i;
+        break;
+      }
+    }
+
+    if (dobLineIndex > 0) {
+      for (let i = dobLineIndex - 1; i >= Math.max(0, dobLineIndex - 3); i--) {
+        const line = lines[i];
+        const lowerLine = line.toLowerCase();
+
+        if (
+          lowerLine.includes('government') ||
+          lowerLine.includes('india') ||
+          lowerLine.includes('भारत') ||
+          lowerLine.includes('सरकार') ||
+          lowerLine.includes('tetet') ||
+          /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
+          /mobile/i.test(line) ||
+          line.length < 4 ||
+          line.length > 50
+        ) {
+          continue;
+        }
+
+        const words = line.split(/\s+/).filter(w => w.length > 1);
+
+        if (words.length >= 2 && words.length <= 4) {
+          const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
+          const hasProperCase = words.every(w => /^[A-Z][a-z]*$/.test(w) || /^[A-Z]+$/.test(w));
+          const noSpecialChars = !/[:\-_@#$%^&*()+=\[\]{}|\\;'"<>?/]/.test(line);
+
+          const isRepetitive = words.some(w => {
+            if (w.length >= 4) {
+              const half = w.substring(0, Math.floor(w.length / 2));
+              return w.toLowerCase().startsWith(half.toLowerCase()) &&
+                w.toLowerCase().endsWith(half.toLowerCase());
+            }
+            return false;
+          });
+
+          if (alphaRatio > 0.85 && hasProperCase && noSpecialChars && !isRepetitive) {
+            firstName = words[0];
+
+            if (words.length === 2) {
+              lastName = words[1];
+            } else if (words.length === 3) {
+              lastName = words[2];
+            } else if (words.length === 4) {
+              lastName = words[3];
+            }
+
+            console.log('Found name:', firstName, lastName, '(from:', line, ')');
+            break;
           }
         }
       }
-    );
-    
-    const extractedText = result.data.text;
-    console.log('Extracted text:', extractedText);
-    
-    let extractedInfo = {};
-    if (documentType === 'aadhar') {
-      extractedInfo = extractAadharInfo(extractedText);
-    } else if (documentType === 'pan') {
-      extractedInfo = extractPanInfo(extractedText);
     }
-    
-    console.log('Parsed info:', extractedInfo);
-    
-if (formType === 'student') {
-  setFormData(prev => ({
-    ...prev,
-    firstName: extractedInfo.firstName || prev.firstName,
-    lastName: extractedInfo.lastName || prev.lastName,
-    contactNumber: extractedInfo.mobileNumber || prev.contactNumber,
-  }));
-  console.log('Updated student form'); 
-} else if (formType === 'parent') {
-  setParentFormData(prev => ({
-    ...prev,
-    firstName: extractedInfo.firstName || prev.firstName,
-    lastName: extractedInfo.lastName || prev.lastName,
-    contactNumber: extractedInfo.mobileNumber || prev.contactNumber,
-  }));
-  console.log('Updated parent form');
-}
-    
-if (extractedInfo.firstName || extractedInfo.lastName) {
-  toast.success(`Document processed successfully!
+
+    if (!firstName) {
+      for (const line of lines) {
+        const lowerLine = line.toLowerCase();
+
+        if (
+          lowerLine.includes('government') ||
+          lowerLine.includes('india') ||
+          lowerLine.includes('dob') ||
+          lowerLine.includes('male') ||
+          lowerLine.includes('female') ||
+          lowerLine.includes('scanned') ||
+          lowerLine.includes('mobile') ||
+          /\d{4}\s*\d{4}\s*\d{4}/.test(line) ||
+          line.length < 4
+        ) {
+          continue;
+        }
+
+        const words = line.split(/\s+/).filter(w => w.length > 1);
+
+        if (words.length >= 2 && words.length <= 4 && line.length <= 50) {
+          const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.replace(/\s/g, '').length;
+          const hasProperCase = words.every(w => /^[A-Z]/.test(w));
+          const noSpecialChars = !/[:\-_]/.test(line);
+
+          if (alphaRatio > 0.85 && hasProperCase && noSpecialChars) {
+            firstName = words[0];
+
+            if (words.length === 2) {
+              lastName = words[1];
+            } else if (words.length === 3) {
+              lastName = words[2];
+            } else if (words.length === 4) {
+              lastName = words[3];
+            }
+
+            console.log('Found name (fallback):', firstName, lastName);
+            break;
+          }
+        }
+      }
+    }
+
+    console.log('Extracted info:', { firstName, lastName, dob, aadharNumber, mobileNumber });
+    return { firstName, lastName, dob, aadharNumber, mobileNumber };
+  };
+
+  const extractPanInfo = (text) => {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+    let name = '';
+    const nameIndex = lines.findIndex(line => line.toLowerCase().includes('name'));
+    if (nameIndex !== -1 && lines[nameIndex + 1]) {
+      name = lines[nameIndex + 1];
+    }
+
+    let panNumber = '';
+    const panRegex = /([A-Z]{5}\d{4}[A-Z])/;
+    for (const line of lines) {
+      const match = line.match(panRegex);
+      if (match) {
+        panNumber = match[1];
+        break;
+      }
+    }
+
+    let dob = '';
+    const dobRegex = /(\d{2}[\/\-]\d{2}[\/\-]\d{4})/;
+    for (const line of lines) {
+      const match = line.match(dobRegex);
+      if (match) {
+        dob = match[1].replace(/\//g, '-');
+        break;
+      }
+    }
+
+    return { name, dob, panNumber };
+  };
+
+  const processDocument = async (file, documentType, formType) => {
+    setOcrLoading(true);
+    setOcrProgress(0);
+
+    try {
+      const result = await Tesseract.recognize(
+        file,
+        'eng',
+        {
+          logger: (m) => {
+            if (m.status === 'recognizing text') {
+              setOcrProgress(Math.round(m.progress * 100));
+            }
+          }
+        }
+      );
+
+      const extractedText = result.data.text;
+      console.log('Extracted text:', extractedText);
+
+      let extractedInfo = {};
+      if (documentType === 'aadhar') {
+        extractedInfo = extractAadharInfo(extractedText);
+      } else if (documentType === 'pan') {
+        extractedInfo = extractPanInfo(extractedText);
+      }
+
+      console.log('Parsed info:', extractedInfo);
+
+      if (formType === 'student') {
+        setFormData(prev => ({
+          ...prev,
+          firstName: extractedInfo.firstName || prev.firstName,
+          lastName: extractedInfo.lastName || prev.lastName,
+          contactNumber: extractedInfo.mobileNumber || prev.contactNumber,
+        }));
+        console.log('Updated student form');
+      } else if (formType === 'parent') {
+        setParentFormData(prev => ({
+          ...prev,
+          firstName: extractedInfo.firstName || prev.firstName,
+          lastName: extractedInfo.lastName || prev.lastName,
+          contactNumber: extractedInfo.mobileNumber || prev.contactNumber,
+        }));
+        console.log('Updated parent form');
+      }
+
+      if (extractedInfo.firstName || extractedInfo.lastName) {
+        toast.success(`Document processed successfully!
 Name: ${extractedInfo.firstName} ${extractedInfo.lastName}
 DOB: ${extractedInfo.dob || 'Not found'}
 Mobile: ${extractedInfo.mobileNumber || 'Not found'}
 Aadhar: ${extractedInfo.aadharNumber || 'Not found'}
 
 Please verify the auto-filled information.`);
-} else {
-  toast.error('Document processed but name could not be extracted. Please enter details manually.');
-}
-    
-  } catch (error) {
-    console.error('OCR Error:', error);
-    toast.error('Failed to process document. Please try again or enter details manually.');
-  } finally {
-    setOcrLoading(false);
-    setOcrProgress(0);
-  }
-};
+      } else {
+        toast.error('Document processed but name could not be extracted. Please enter details manually.');
+      }
 
-// const handleDocumentUpload = async (e, documentType, formType) => {
-//   const file = e.target.files[0];
-//   if (!file) return;
-  
-//   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-//   if (!validTypes.includes(file.type)) {
-//     toast.warning('Please upload a valid image file (JPEG, PNG, or WebP)');
-//     return;
-//   }
-  
-//   if (formType === 'student') {
-//     setStudentDocuments(prev => ({
-//       ...prev,
-//       [documentType]: file
-//     }));
-//   } else if (formType === 'parent') {
-//     setParentDocuments(prev => ({
-//       ...prev,
-//       [documentType]: file
-//     }));
-//   }
-  
-//   await processDocument(file, documentType, formType);
-// };
+    } catch (error) {
+      console.error('OCR Error:', error);
+      toast.error('Failed to process document. Please try again or enter details manually.');
+    } finally {
+      setOcrLoading(false);
+      setOcrProgress(0);
+    }
+  };
+
+  // const handleDocumentUpload = async (e, documentType, formType) => {
+  //   const file = e.target.files[0];
+  //   if (!file) return;
+
+  //   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  //   if (!validTypes.includes(file.type)) {
+  //     toast.warning('Please upload a valid image file (JPEG, PNG, or WebP)');
+  //     return;
+  //   }
+
+  //   if (formType === 'student') {
+  //     setStudentDocuments(prev => ({
+  //       ...prev,
+  //       [documentType]: file
+  //     }));
+  //   } else if (formType === 'parent') {
+  //     setParentDocuments(prev => ({
+  //       ...prev,
+  //       [documentType]: file
+  //     }));
+  //   }
+
+  //   await processDocument(file, documentType, formType);
+  // };
 
 
-const handleDocumentUpload = async (
-  e,
-  documentType,
-  formType
-) => {
+  const handleDocumentUpload = async (
+    e,
+    documentType,
+    formType
+  ) => {
 
-  const file = e.target.files[0];
+    const file = e.target.files[0];
 
-  if (!file) return;
+    if (!file) return;
 
-  const validTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-  ];
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
 
-  if (!validTypes.includes(file.type)) {
+    if (!validTypes.includes(file.type)) {
 
-    toast.warning(
-      "Please upload a valid file"
-    );
+      toast.warning(
+        "Please upload a valid file"
+      );
 
-    return;
-  }
+      return;
+    }
 
-  // FIELD NAME FIX
-  let fieldName = "";
+    // FIELD NAME FIX
+    let fieldName = "";
 
-  if (documentType === "aadhar") {
-    fieldName = "aadharCard";
-  }
-  else if (documentType === "pan") {
-    fieldName = "panCard";
-  }
-  else if (documentType === "studentId") {
-    fieldName = "studentIdCard";
-  }
-  else if (documentType === "feesReceipt") {
-    fieldName = "feesReceipt";
-  }
+    if (documentType === "aadhar") {
+      fieldName = "aadharCard";
+    }
+    else if (documentType === "pan") {
+      fieldName = "panCard";
+    }
+    else if (documentType === "studentId") {
+      fieldName = "studentIdCard";
+    }
+    else if (documentType === "feesReceipt") {
+      fieldName = "feesReceipt";
+    }
 
-  // STUDENT
-  if (formType === "student") {
+    // STUDENT
+    if (formType === "student") {
 
-    setStudentDocuments((prev) => ({
-      ...prev,
-      [fieldName]: file
-    }));
+      setStudentDocuments((prev) => ({
+        ...prev,
+        [fieldName]: file
+      }));
 
-  }
+    }
 
-  // PARENT
-  else if (formType === "parent") {
+    // PARENT
+    else if (formType === "parent") {
 
-    setParentDocuments((prev) => ({
-      ...prev,
-      [fieldName]: file
-    }));
-  }
+      setParentDocuments((prev) => ({
+        ...prev,
+        [fieldName]: file
+      }));
+    }
 
-  // OCR only for image docs
-  if (
-    file.type.includes("image") &&
-    (documentType === "aadhar" ||
-      documentType === "pan")
-  ) {
+    // OCR only for image docs
+    if (
+      file.type.includes("image") &&
+      (documentType === "aadhar" ||
+        documentType === "pan")
+    ) {
 
-    await processDocument(
-      file,
-      documentType,
-      formType
-    );
-  }
-};
-const resetForm = () => {
-  setFormData({
-    firstName: "",
-    lastName: "",
-    contactNumber: "",
-    email: "",
-    roomNumber: "",
-    bedNumber: "",
-    emergencyContactNumber: "",
-    admissionDate: getTodaysDate(),
-    emergencyContactName: "",
-    feeStatus: "",
-  });
-  setStudentDocuments({ aadharCard: null, panCard: null, studentIdCard: null, feesReceipt: null });
-  setEditingStudent(null);
-  setErrors({});
-  setShowEditModal(false);
-};
-
-const handleSubmit = async () => {
-  const newErrors = validateForm(formData);
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const studentData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      contactNumber: formData.contactNumber,
-      roomBedNumber: formData.bedNumber || "Not Assigned",
-      email: formData.email,
-      admissionDate: formData.admissionDate,
-      feeStatus: formData.feeStatus,
-      emergencyContactName: formData.emergencyContactName,
-      emergencyContactNumber: formData.emergencyContactNumber,
-      aadharCard: studentDocuments.aadharCard,
-      panCard: studentDocuments.panCard,
-      studentIdCard: studentDocuments.studentIdCard,
-      feesReceipt: studentDocuments.feesReceipt,
-      hasCollegeId: formData.hasCollegeId,
-    };
-
-    const response = await registerStudentAPI(studentData);
-    
-    const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
-    const roomDisplay = selectedRoom 
-      ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
-      : formData.bedNumber || "Not Assigned";
-    
-    const newStudent = {
-      id: response.student.studentId,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      name: `${formData.firstName} ${formData.lastName}`,
-      room: roomDisplay,
-      contact: formData.contactNumber,
-      email: formData.email,
-      emergencyContactNumber: formData.emergencyContactNumber,
-      admissionDate: formData.admissionDate,
-      emergencyContactName: formData.emergencyContactName,
-      feeStatus: formData.feeStatus,
-      dues: "₹ 0/-",
-      roomDetails: selectedRoom,
-      roomObjectId: formData.bedNumber,
-      // ✅ FIX 4: Store documents from response so they show correctly
-      documents: response.student?.documents || {}
-    };
-    
-    setStudents((prev) => [...prev, newStudent]);
-    const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
-    setStudentsWithoutParents(studentsWithoutParentsData.students || []);
-    resetForm();
-
-    toast.success(
-  `Student registered successfully! Password: ${response.student?.password}`,
-  { autoClose: 6000 }
-);
-  } catch (error) {
-    console.error('Error registering student:', error);
-    toast.error(error.message || 'Error registering student. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleEdit = (studentId) => {
-  const student = students.find((s) => s.id === studentId);
-
-  if (student) {
-    const roomNumber = student.roomDetails?.roomNo || "";
-
+      await processDocument(
+        file,
+        documentType,
+        formType
+      );
+    }
+  };
+  const resetForm = () => {
     setFormData({
-      firstName: student.firstName || student.name?.split(" ")[0] || "",
-      lastName: student.lastName || student.name?.split(" ").slice(1).join(" ") || "",
-      contactNumber: student.contact,
-      email: student.email || "",
-      roomNumber: roomNumber,
-      bedNumber: student.roomObjectId || "",
-      emergencyContactNumber: student.emergencyContactNumber || "",
-      admissionDate: student.admissionDate
-        ? new Date(student.admissionDate).toISOString().split("T")[0]
-        : "",
-      emergencyContactName: student.emergencyContactName || "",
-      feeStatus: student.feeStatus,
-      hasCollegeId: student.hasCollegeId ?? true,
+      firstName: "",
+      lastName: "",
+      contactNumber: "",
+      email: "",
+      roomNumber: "",
+      bedNumber: "",
+      emergencyContactNumber: "",
+      admissionDate: getTodaysDate(),
+      emergencyContactName: "",
+      feeStatus: "",
     });
-
-    // ✅ FIX 5: Pass server document objects directly so view links work
-    setStudentDocuments({
-      aadharCard: student.documents?.aadharCard || null,
-      panCard: student.documents?.panCard || null,
-      studentIdCard: student.documents?.studentIdCard || null,
-      feesReceipt: student.documents?.feesReceipt || null,
-    });
-
-    setEditingStudent(studentId);
+    setStudentDocuments({ aadharCard: null, panCard: null, studentIdCard: null, feesReceipt: null });
+    setEditingStudent(null);
     setErrors({});
-    setShowEditModal(true);
-  }
-};
+    setShowEditModal(false);
+  };
 
-const handleUpdate = async () => {
-  const newErrors = validateForm(formData, true);
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
+  const handleSubmit = async () => {
+    const newErrors = validateForm(formData);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const studentData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      contactNumber: formData.contactNumber,
-      email: formData.email,
-      roomBedNumber: formData.bedNumber,
-      emergencyContactNumber: formData.emergencyContactNumber,
-      admissionDate: formData.admissionDate,
-      emergencyContactName: formData.emergencyContactName,
-      feeStatus: formData.feeStatus,
-    };
+    setLoading(true);
+    try {
+      const studentData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        contactNumber: formData.contactNumber,
+        roomBedNumber: formData.bedNumber || "Not Assigned",
+        email: formData.email,
+        admissionDate: formData.admissionDate,
+        feeStatus: formData.feeStatus,
+        emergencyContactName: formData.emergencyContactName,
+        emergencyContactNumber: formData.emergencyContactNumber,
+        aadharCard: studentDocuments.aadharCard,
+        panCard: studentDocuments.panCard,
+        studentIdCard: studentDocuments.studentIdCard,
+        feesReceipt: studentDocuments.feesReceipt,
+        hasCollegeId: formData.hasCollegeId,
+      };
 
-    await updateStudentAPI(editingStudent, studentData);
+      const response = await registerStudentAPI(studentData);
 
-    const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
-    const roomDisplay = selectedRoom 
-      ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
-      : formData.bedNumber || "Not Assigned";
+      const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
+      const roomDisplay = selectedRoom
+        ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
+        : formData.bedNumber || "Not Assigned";
 
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.id === editingStudent
-          ? {
+      const newStudent = {
+        id: response.student.studentId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
+        room: roomDisplay,
+        contact: formData.contactNumber,
+        email: formData.email,
+        emergencyContactNumber: formData.emergencyContactNumber,
+        admissionDate: formData.admissionDate,
+        emergencyContactName: formData.emergencyContactName,
+        feeStatus: formData.feeStatus,
+        dues: "₹ 0/-",
+        roomDetails: selectedRoom,
+        roomObjectId: formData.bedNumber,
+        // ✅ FIX 4: Store documents from response so they show correctly
+        documents: response.student?.documents || {}
+      };
+
+      setStudents((prev) => [...prev, newStudent]);
+      const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
+      setStudentsWithoutParents(studentsWithoutParentsData.students || []);
+      resetForm();
+
+      toast.success(
+        `Student registered successfully! Password: ${response.student?.password}`,
+        { autoClose: 6000 }
+      );
+    } catch (error) {
+      console.error('Error registering student:', error);
+      toast.error(error.message || 'Error registering student. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (studentId) => {
+    const student = students.find((s) => s.id === studentId);
+
+    if (student) {
+      const roomNumber = student.roomDetails?.roomNo || "";
+
+      setFormData({
+        firstName: student.firstName || student.name?.split(" ")[0] || "",
+        lastName: student.lastName || student.name?.split(" ").slice(1).join(" ") || "",
+        contactNumber: student.contact,
+        email: student.email || "",
+        roomNumber: roomNumber,
+        bedNumber: student.roomObjectId || "",
+        emergencyContactNumber: student.emergencyContactNumber || "",
+        admissionDate: student.admissionDate
+          ? new Date(student.admissionDate).toISOString().split("T")[0]
+          : "",
+        emergencyContactName: student.emergencyContactName || "",
+        feeStatus: student.feeStatus,
+        hasCollegeId: student.hasCollegeId ?? true,
+      });
+
+      // ✅ FIX 5: Pass server document objects directly so view links work
+      setStudentDocuments({
+        aadharCard: student.documents?.aadharCard || null,
+        panCard: student.documents?.panCard || null,
+        studentIdCard: student.documents?.studentIdCard || null,
+        feesReceipt: student.documents?.feesReceipt || null,
+      });
+
+      setEditingStudent(studentId);
+      setErrors({});
+      setShowEditModal(true);
+    }
+  };
+
+  const handleUpdate = async () => {
+    const newErrors = validateForm(formData, true);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // ✅ Use FormData to support file uploads
+      const data = new FormData();
+      data.append("firstName", formData.firstName);
+      data.append("lastName", formData.lastName);
+      data.append("contactNumber", formData.contactNumber);
+      data.append("email", formData.email);
+      data.append("roomBedNumber", formData.bedNumber);
+      data.append("emergencyContactNumber", formData.emergencyContactNumber);
+      data.append("admissionDate", formData.admissionDate);
+      data.append("emergencyContactName", formData.emergencyContactName);
+      data.append("feeStatus", formData.feeStatus);
+
+      // ✅ Only append files if a NEW file was selected
+      if (studentDocuments.aadharCard instanceof File) {
+        data.append("aadharCard", studentDocuments.aadharCard);
+      }
+      if (studentDocuments.panCard instanceof File) {
+        data.append("panCard", studentDocuments.panCard);
+      }
+      if (studentDocuments.studentIdCard instanceof File) {
+        data.append("studentIdCard", studentDocuments.studentIdCard);
+      }
+      if (studentDocuments.feesReceipt instanceof File) {
+        data.append("feesReceipt", studentDocuments.feesReceipt);
+      }
+
+      await updateStudentAPI(editingStudent, data);
+
+      // await updateStudentAPI(editingStudent, studentData);
+
+      const selectedRoom = availableRooms.find(room => room._id === formData.bedNumber);
+      const roomDisplay = selectedRoom
+        ? `${selectedRoom.barcodeId} - Floor ${selectedRoom.floor}, Room ${selectedRoom.roomNo}`
+        : formData.bedNumber || "Not Assigned";
+
+      setStudents((prev) =>
+        prev.map((student) =>
+          student.id === editingStudent
+            ? {
               ...student,
               firstName: formData.firstName,
               lastName: formData.lastName,
@@ -3302,174 +3323,174 @@ const handleUpdate = async () => {
               roomDetails: selectedRoom,
               roomObjectId: formData.bedNumber
             }
-          : student
-      )
-    );
-    resetForm();
-    toast.success("Student updated successfully!");
-  } catch (error) {
-    console.error('Error updating student:', error);
-    toast.error(error.message || 'Error updating student. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+            : student
+        )
+      );
+      resetForm();
+      toast.success("Student updated successfully!");
+    } catch (error) {
+      console.error('Error updating student:', error);
+      toast.error(error.message || 'Error updating student. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const handleParentInputChange = (e) => {
-  const { name, value } = e.target;
-  setParentFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-  if (parentErrors[name]) {
-    setParentErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[name];
-      return newErrors;
+  const handleParentInputChange = (e) => {
+    const { name, value } = e.target;
+    setParentFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (parentErrors[name]) {
+      setParentErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateParentForm = (data) => {
+    const newErrors = {};
+    if (!data.firstName.trim()) {
+      newErrors.firstName = "First Name is required.";
+    }
+    if (!data.lastName.trim()) {
+      newErrors.lastName = "Last Name is required.";
+    }
+    if (!data.email.trim()) {
+      newErrors.email = "Email is required.";
+    } else if (!/\S+@\S+\.\S+/.test(data.email)) {
+      newErrors.email = "Email is invalid.";
+    }
+    if (!data.contactNumber.trim()) {
+      newErrors.contactNumber = "Contact Number is required.";
+    }
+    if (!data.relation.trim()) {
+      newErrors.relation = "Relation is required";
+    }
+    if (!data.studentId.trim()) {
+      newErrors.studentId = "Student ID is required.";
+    }
+    return newErrors;
+  };
+
+  const resetParentForm = () => {
+    setParentFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      relation: "",
+      contactNumber: "",
+      studentId: "",
     });
-  }
-};
+    setParentDocuments({ aadharCard: null, panCard: null });
+    setParentErrors({});
+  };
 
-const validateParentForm = (data) => {
-  const newErrors = {};
-  if (!data.firstName.trim()) {
-    newErrors.firstName = "First Name is required.";
-  }
-  if (!data.lastName.trim()) {
-    newErrors.lastName = "Last Name is required.";
-  }
-  if (!data.email.trim()) {
-    newErrors.email = "Email is required.";
-  } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-    newErrors.email = "Email is invalid.";
-  }
-  if (!data.contactNumber.trim()) {
-    newErrors.contactNumber = "Contact Number is required.";
-  }
-   if (!data.relation.trim()) {
-    newErrors.relation = "Relation is required";
-  }
-  if (!data.studentId.trim()) {
-    newErrors.studentId = "Student ID is required.";
-  }
-  return newErrors;
-};
+  const handleParentSubmit = async () => {
+    const newErrors = validateParentForm(parentFormData);
+    if (Object.keys(newErrors).length > 0) {
+      setParentErrors(newErrors);
+      return;
+    }
 
-const resetParentForm = () => {
-  setParentFormData({
-    firstName: "",
-    lastName: "",
-    email: "",
-    relation:"",
-    contactNumber: "",
-    studentId: "",
-  });
-  setParentDocuments({ aadharCard: null, panCard: null });
-  setParentErrors({});
-};
-
-const handleParentSubmit = async () => {
-  const newErrors = validateParentForm(parentFormData);
-  if (Object.keys(newErrors).length > 0) {
-    setParentErrors(newErrors);
-    return;
-  }
-
-  setParentLoading(true);
-  try {
-    const response = await registerParentAPI(parentFormData);
-    
-    const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
-    setStudentsWithoutParents(studentsWithoutParentsData.students || []);
-    
-    resetParentForm();
-    toast.success(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
-  } catch (error) {
-    console.error('Error registering parent:', error);
-    toast.error(error.message || 'Error registering parent. Please try again.');
-  } finally {
-    setParentLoading(false);
-  }
-};
-
-  const fetchRoomDetailsAPI = async (roomObjectId) => {
-  try {
-    const response = await api.get(`/api/adminauth/inventory/${roomObjectId}`, {});
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching room details for ${roomObjectId}:`, error);
-    return null;
-  }
-};
-
-const loadStudents = async () => {
-  try {
-    const studentsData = await fetchStudentsAPI();
-    
-    const transformedStudents = await Promise.all(
-      studentsData.students?.map(async (student) => {
-        let roomDisplay = "Not Assigned";
-        let roomDetails = null;
-        
-        if (student.roomBedNumber && typeof student.roomBedNumber === 'string' && student.roomBedNumber.length === 24) {
-          roomDetails = await fetchRoomDetailsAPI(student.roomBedNumber);
-          if (roomDetails && roomDetails.inventory) {
-            roomDisplay = `${roomDetails.inventory.barcodeId} - Floor ${roomDetails.inventory.floor}, Room ${roomDetails.inventory.roomNo}`;
-          }
-        } else if (student.roomBedNumber && typeof student.roomBedNumber === 'object') {
-          roomDisplay = `${student.roomBedNumber.barcodeId} - Floor ${student.roomBedNumber.floor}, Room ${student.roomBedNumber.roomNo}`;
-          roomDetails = student.roomBedNumber;
-        } else if (student.roomBedNumber) {
-          roomDisplay = student.roomBedNumber;
-        }
-
-        return {
-          id: student.studentId,
-          firstName: student.firstName,
-          lastName: student.lastName,
-          name: `${student.firstName} ${student.lastName}`,
-          room: roomDisplay,
-          contact: student.contactNumber,
-          email: student.email,
-          emergencyContactNumber: student.emergencyContactNumber,
-          admissionDate: student.admissionDate,
-          emergencyContactName: student.emergencyContactName,
-          feeStatus: student.feeStatus,
-          dues: "₹ 0/-",
-          roomDetails: roomDetails,
-          roomObjectId: student.roomBedNumber,
-          documents: student.documents || {}
-        };
-      }) || []
-    );
-    
-    setStudents(transformedStudents);
-  } catch (error) {
-    console.error('Error loading students:', error);
-  }
-};
-
-
-useEffect(() => {
-  const loadData = async () => {
+    setParentLoading(true);
     try {
-      await loadStudents();
-      
-      const bedsData = await fetchAvailableRoomsAPI();
-      setAvailableRooms(bedsData.availableBeds || []);
-
-      const roomsData = await fetchAvailableRoomsNumbersAPI();
-      setAvailableRoomNumbers(roomsData.availableRooms || []);
+      const response = await registerParentAPI(parentFormData);
 
       const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
       setStudentsWithoutParents(studentsWithoutParentsData.students || []);
+
+      resetParentForm();
+      toast.success(`Parent registered successfully! Login instructions sent to ${parentFormData.email}`);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error registering parent:', error);
+      toast.error(error.message || 'Error registering parent. Please try again.');
+    } finally {
+      setParentLoading(false);
     }
   };
-  
-  loadData();
-}, []);
+
+  const fetchRoomDetailsAPI = async (roomObjectId) => {
+    try {
+      const response = await api.get(`/api/adminauth/inventory/${roomObjectId}`, {});
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching room details for ${roomObjectId}:`, error);
+      return null;
+    }
+  };
+
+  const loadStudents = async () => {
+    try {
+      const studentsData = await fetchStudentsAPI();
+
+      const transformedStudents = await Promise.all(
+        studentsData.students?.map(async (student) => {
+          let roomDisplay = "Not Assigned";
+          let roomDetails = null;
+
+          if (student.roomBedNumber && typeof student.roomBedNumber === 'string' && student.roomBedNumber.length === 24) {
+            roomDetails = await fetchRoomDetailsAPI(student.roomBedNumber);
+            if (roomDetails && roomDetails.inventory) {
+              roomDisplay = `${roomDetails.inventory.barcodeId} - Floor ${roomDetails.inventory.floor}, Room ${roomDetails.inventory.roomNo}`;
+            }
+          } else if (student.roomBedNumber && typeof student.roomBedNumber === 'object') {
+            roomDisplay = `${student.roomBedNumber.barcodeId} - Floor ${student.roomBedNumber.floor}, Room ${student.roomBedNumber.roomNo}`;
+            roomDetails = student.roomBedNumber;
+          } else if (student.roomBedNumber) {
+            roomDisplay = student.roomBedNumber;
+          }
+
+          return {
+            id: student.studentId,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            name: `${student.firstName} ${student.lastName}`,
+            room: roomDisplay,
+            contact: student.contactNumber,
+            email: student.email,
+            emergencyContactNumber: student.emergencyContactNumber,
+            admissionDate: student.admissionDate,
+            emergencyContactName: student.emergencyContactName,
+            feeStatus: student.feeStatus,
+            dues: "₹ 0/-",
+            roomDetails: roomDetails,
+            roomObjectId: student.roomBedNumber,
+            documents: student.documents || {}
+          };
+        }) || []
+      );
+
+      setStudents(transformedStudents);
+    } catch (error) {
+      console.error('Error loading students:', error);
+    }
+  };
+
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await loadStudents();
+
+        const bedsData = await fetchAvailableRoomsAPI();
+        setAvailableRooms(bedsData.availableBeds || []);
+
+        const roomsData = await fetchAvailableRoomsNumbersAPI();
+        setAvailableRoomNumbers(roomsData.availableRooms || []);
+
+        const studentsWithoutParentsData = await fetchStudentsWithoutParentsAPI();
+        setStudentsWithoutParents(studentsWithoutParentsData.students || []);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
 
 
   const handleViewDetails = (studentId) => {
@@ -3480,36 +3501,36 @@ useEffect(() => {
     }
   };
 
-const getBedsForRoom = (roomNumber) => {
-  if (!roomNumber) return availableRooms;
-  return availableRooms.filter(bed => bed.roomNo === roomNumber);
-};
+  const getBedsForRoom = (roomNumber) => {
+    if (!roomNumber) return availableRooms;
+    return availableRooms.filter(bed => bed.roomNo === roomNumber);
+  };
 
-const getFeeStatusStyle = (status) => ({
-  width: "120px",
-  height: "26px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "8px",
-  fontFamily: "Poppins",
-  fontWeight: "600",
-  textAlign: "center",
-  background:
-    status === "Paid"
-      ? "#22C55E"
-      : status === "Unpaid"
-      ? "#FF9D00"
-      : status === "Partial"
-      ? "#F59E0B"
-      : "#FFFFFF",
-  color:
-    status === "Paid" || status === "Unpaid" || status === "Partial"
-      ? "#FFFFFF"
-      : "#000000",
-  fontSize: "12px",
-  lineHeight: "16px",
-});
+  const getFeeStatusStyle = (status) => ({
+    width: "120px",
+    height: "26px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "8px",
+    fontFamily: "Poppins",
+    fontWeight: "600",
+    textAlign: "center",
+    background:
+      status === "Paid"
+        ? "#22C55E"
+        : status === "Unpaid"
+          ? "#FF9D00"
+          : status === "Partial"
+            ? "#F59E0B"
+            : "#FFFFFF",
+    color:
+      status === "Paid" || status === "Unpaid" || status === "Partial"
+        ? "#FFFFFF"
+        : "#000000",
+    fontSize: "12px",
+    lineHeight: "16px",
+  });
 
   const inputStyle = {
     height: "40px",
@@ -3526,7 +3547,7 @@ const getFeeStatusStyle = (status) => ({
     fontWeight: "500",
     fontSize: "18px",
     lineHeight: "100%",
-    textAlign: "left",   
+    textAlign: "left",
   };
 
   // ✅ FIX 6: Reusable DocumentViewRow component — handles both new File objects and server-stored doc objects
@@ -3582,9 +3603,8 @@ const getFeeStatusStyle = (status) => ({
             value={formData.firstName}
             onChange={handleInputChange}
             placeholder="Enter First Name"
-            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.firstName ? "border-red-500" : ""
-            }`}
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.firstName ? "border-red-500" : ""
+              }`}
             style={inputStyle}
             required
           />
@@ -3594,7 +3614,7 @@ const getFeeStatusStyle = (status) => ({
             </p>
           )}
         </div>
-        
+
         {/* Last Name */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -3606,9 +3626,8 @@ const getFeeStatusStyle = (status) => ({
             value={formData.lastName}
             onChange={handleInputChange}
             placeholder="Enter Last Name"
-            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.lastName ? "border-red-500" : ""
-            }`}
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.lastName ? "border-red-500" : ""
+              }`}
             style={inputStyle}
             required
           />
@@ -3661,34 +3680,7 @@ const getFeeStatusStyle = (status) => ({
                 <p className="text-xs text-green-600 mt-1">
                   ✓ {studentDocuments.aadharCard.name}
                 </p>
-                
               )}
-
-              {studentDocuments.aadharCard && (
-  <>
-    <p className="text-xs text-green-600 mt-1">
-      ✓ {
-        studentDocuments.aadharCard.name ||
-        studentDocuments.aadharCard.filename
-      }
-    </p>
-
-    <a
-      href={
-        studentDocuments.aadharCard.path
-          ? `http://localhost:5224/${studentDocuments.aadharCard.path}`
-          : URL.createObjectURL(
-              studentDocuments.aadharCard
-            )
-      }
-      target="_blank"
-      rel="noreferrer"
-      className="text-blue-600 text-xs underline mt-1 block"
-    >
-      View Uploaded Aadhar Card
-    </a>
-  </>
-)}
             </div>
 
             {/* Checkbox */}
@@ -3745,34 +3737,11 @@ const getFeeStatusStyle = (status) => ({
                   className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
                 />
 
-               {studentDocuments.studentIdCard && (
-  <>
-    <p className="text-xs text-green-600 mt-1">
-      ✓ {
-        studentDocuments.studentIdCard.name ||
-        studentDocuments.studentIdCard.filename
-      }
-    </p>
-
-    <a
-      href={
-        studentDocuments.studentIdCard.path
-          ? `http://localhost:5224/${studentDocuments.studentIdCard.path.replace(
-              /\\/g,
-              "/"
-            )}`
-          : URL.createObjectURL(
-              studentDocuments.studentIdCard
-            )
-      }
-      target="_blank"
-      rel="noreferrer"
-      className="text-blue-600 text-xs underline mt-1 block"
-    >
-      View Uploaded Student ID Card
-    </a>
-  </>
-)}
+                {studentDocuments.studentIdCard instanceof File && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ {studentDocuments.studentIdCard.name}
+                  </p>
+                )}
               </div>
             )}
 
@@ -3840,7 +3809,7 @@ const getFeeStatusStyle = (status) => ({
             )}
           </div>
         </div>
-        
+
         {/* Contact Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -3852,9 +3821,8 @@ const getFeeStatusStyle = (status) => ({
             value={formData.contactNumber}
             onChange={handleInputChange}
             placeholder="Enter Phone Number"
-            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.contactNumber ? "border-red-500" : ""
-            }`}
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.contactNumber ? "border-red-500" : ""
+              }`}
             style={inputStyle}
             required
           />
@@ -3864,7 +3832,7 @@ const getFeeStatusStyle = (status) => ({
             </p>
           )}
         </div>
-        
+
         {/* Email */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>
@@ -3876,9 +3844,8 @@ const getFeeStatusStyle = (status) => ({
             value={formData.email}
             onChange={handleInputChange}
             placeholder="Enter E-Mail"
-            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-              errors.email ? "border-red-500" : ""
-            }`}
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${errors.email ? "border-red-500" : ""
+              }`}
             style={inputStyle}
             required
           />
@@ -3886,7 +3853,7 @@ const getFeeStatusStyle = (status) => ({
             <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>
           )}
         </div>
-        
+
         {/* Room Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
@@ -3900,13 +3867,12 @@ const getFeeStatusStyle = (status) => ({
                 handleInputChange(e);
                 setFormData(prev => ({ ...prev, bedNumber: "" }));
               }}
-              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-                formData.roomNumber === "" ? "text-[#0000008A]" : "text-black"
-              }`}
+              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${formData.roomNumber === "" ? "text-[#0000008A]" : "text-black"
+                }`}
               style={{
                 WebkitAppearance: "none",
                 MozAppearance: "none",
-                appearance: "none", 
+                appearance: "none",
                 boxShadow: "0px 4px 10px 0px #00000040",
               }}
             >
@@ -3945,15 +3911,13 @@ const getFeeStatusStyle = (status) => ({
               value={formData.bedNumber}
               onChange={handleInputChange}
               disabled={!formData.roomNumber}
-              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-                !formData.roomNumber ? "bg-gray-100 cursor-not-allowed" : ""
-              } ${
-                formData.bedNumber === "" ? "text-[#0000008A]" : "text-black"
-              }`}
+              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${!formData.roomNumber ? "bg-gray-100 cursor-not-allowed" : ""
+                } ${formData.bedNumber === "" ? "text-[#0000008A]" : "text-black"
+                }`}
               style={{
                 WebkitAppearance: "none",
                 MozAppearance: "none",
-                appearance: "none", 
+                appearance: "none",
                 boxShadow: "0px 4px 10px 0px #00000040",
               }}
             >
@@ -3980,7 +3944,7 @@ const getFeeStatusStyle = (status) => ({
             </svg>
           </div>
         </div>
-        
+
         {/* Emergency Contact Number */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -3996,7 +3960,7 @@ const getFeeStatusStyle = (status) => ({
             style={inputStyle}
           />
         </div>
-        
+
         {/* Admission Date */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -4043,7 +4007,7 @@ const getFeeStatusStyle = (status) => ({
             Admission date is automatically set to today's date
           </p>
         </div>
-        
+
         {/* Emergency Contact Name */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>
@@ -4059,7 +4023,7 @@ const getFeeStatusStyle = (status) => ({
             style={inputStyle}
           />
         </div>
-        
+
         {/* Fee Status */}
         <div className="w-full px-2">
           <label
@@ -4072,9 +4036,8 @@ const getFeeStatusStyle = (status) => ({
             name="feeStatus"
             value={formData.feeStatus}
             onChange={handleInputChange}
-            className={`px-4 bg-white rounded-[10px] border-0 outline-none text-black text-[12px] font-[Poppins] font-semibold cursor-pointer appearance-none ${
-              formData.feeStatus === "" ? "text-[#0000008A]" : "text-black"
-            }`}
+            className={`px-4 bg-white rounded-[10px] border-0 outline-none text-black text-[12px] font-[Poppins] font-semibold cursor-pointer appearance-none ${formData.feeStatus === "" ? "text-[#0000008A]" : "text-black"
+              }`}
             style={{
               ...inputStyle,
               width: "300px",
@@ -4094,15 +4057,14 @@ const getFeeStatusStyle = (status) => ({
           </select>
         </div>
       </div>
-      
+
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         <button
           onClick={isEditMode ? handleUpdate : handleSubmit}
           disabled={loading}
-          className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           style={{
             fontWeight: "600",
             fontSize: "15px",
@@ -4124,253 +4086,246 @@ const getFeeStatusStyle = (status) => ({
     </>
   );
 
-const parentFormContent = () => (
-  <>
-    <h2
-      className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
-      style={{ fontFamily: "Inter", fontWeight: "700" }}
-    >
-      Register Parent Account
-    </h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-      {/* First Name */}
-      <div className="w-full px-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          First Name
-        </label>
-        <input
-          type="text"
-          name="firstName"
-          value={parentFormData.firstName}
-          onChange={handleParentInputChange}
-          placeholder="Enter First Name"
-          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-            parentErrors.firstName ? "border-red-500" : ""
-          }`}
-          style={inputStyle}
-          required
-        />
-        {parentErrors.firstName && (
-          <p className="text-red-500 text-xs mt-1 ml-2">
-            {parentErrors.firstName}
-          </p>
-        )}
-      </div>
-      
-      {/* Last Name */}
-      <div className="w-full px-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          Last Name
-        </label>
-        <input
-          type="text"
-          name="lastName"
-          value={parentFormData.lastName}
-          onChange={handleParentInputChange}
-          placeholder="Enter Last Name"
-          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-            parentErrors.lastName ? "border-red-500" : ""
-          }`}
-          style={inputStyle}
-          required
-        />
-        {parentErrors.lastName && (
-          <p className="text-red-500 text-xs mt-1 ml-2">
-            {parentErrors.lastName}
-          </p>
-        )}
-      </div>
-      
-      {/* Email */}
-      <div className="w-full px-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          E-Mail
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={parentFormData.email}
-          onChange={handleParentInputChange}
-          placeholder="Enter E-Mail"
-          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-            parentErrors.email ? "border-red-500" : ""
-          }`}
-          style={inputStyle}
-          required
-        />
-        {parentErrors.email && (
-          <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.email}</p>
-        )}
-      </div>
-      
-      {/* Contact Number */}
-      <div className="w-full px-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          Contact Number
-        </label>
-        <input
-          type="tel"
-          name="contactNumber"
-          value={parentFormData.contactNumber}
-          onChange={handleParentInputChange}
-          placeholder="Enter Phone Number"
-          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-            parentErrors.contactNumber ? "border-red-500" : ""
-          }`}
-          style={inputStyle}
-          required
-        />
-        {parentErrors.contactNumber && (
-          <p className="text-red-500 text-xs mt-1 ml-2">
-            {parentErrors.contactNumber}
-          </p>
-        )}
-      </div>
-
-      <div className="w-full px-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          Relation
-        </label>
-        <input
-          type="text"
-          name="relation"
-          value={parentFormData.relation}
-          onChange={handleParentInputChange}
-          placeholder="Enter the relation to the student"
-          className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${
-            parentErrors.relation ? "border-red-500" : ""
-          }`}
-          style={inputStyle}
-          required
-        />
-        {parentErrors.relation && (
-          <p className="text-red-500 text-xs mt-1 ml-2">
-            {parentErrors.relation}
-          </p>
-        )}
-      </div>
-
-      {/* Document Upload Section for Parent */}
-      <div className="w-full px-2 md:col-span-2">
-        <div className="bg-white/50 rounded-lg p-4 space-y-4">
-          <h3 className="font-semibold text-black mb-2">Upload Documents (Optional - Auto-fill with OCR)</h3>
-          
-          {/* Aadhar Card Upload */}
-          <div>
-            <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
-              Aadhar Card
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleDocumentUpload(e, 'aadhar', 'parent')}
-              className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
-              disabled={ocrLoading}
-            />
-            {parentDocuments.aadharCard && (
-              <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.aadharCard.name}</p>
-            )}
-          </div>
-          
-          {/* PAN Card Upload */}
-          <div>
-            <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
-              PAN Card
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleDocumentUpload(e, 'pan', 'parent')}
-              className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
-              disabled={ocrLoading}
-            />
-            {parentDocuments.panCard && (
-              <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.panCard.name}</p>
-            )}
-          </div>
-          
-          {/* OCR Progress */}
-          {ocrLoading && (
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${ocrProgress}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-center mt-1">Processing document... {ocrProgress}%</p>
-            </div>
+  const parentFormContent = () => (
+    <>
+      <h2
+        className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
+        style={{ fontFamily: "Inter", fontWeight: "700" }}
+      >
+        Register Parent Account
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* First Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            First Name
+          </label>
+          <input
+            type="text"
+            name="firstName"
+            value={parentFormData.firstName}
+            onChange={handleParentInputChange}
+            placeholder="Enter First Name"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${parentErrors.firstName ? "border-red-500" : ""
+              }`}
+            style={inputStyle}
+            required
+          />
+          {parentErrors.firstName && (
+            <p className="text-red-500 text-xs mt-1 ml-2">
+              {parentErrors.firstName}
+            </p>
           )}
         </div>
-      </div>  
-      
-      {/* Student ID */}
-      <div className="w-full px-2 md:col-span-2">
-        <label className="block mb-1 text-black ml-2" style={labelStyle}>
-          Student ID
-        </label>
-        <div className="relative w-full h-[40px]">
-          <select
-            name="studentId"
-            value={parentFormData.studentId}
+
+        {/* Last Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            Last Name
+          </label>
+          <input
+            type="text"
+            name="lastName"
+            value={parentFormData.lastName}
             onChange={handleParentInputChange}
-            className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
-              parentFormData.studentId === "" ? "text-[#0000008A]" : "text-black"
-            } ${parentErrors.studentId ? "border-red-500" : ""}`}
-            style={{
-              WebkitAppearance: "none",
-              MozAppearance: "none",
-              appearance: "none", 
-              boxShadow: "0px 4px 10px 0px #00000040",
-            }}
+            placeholder="Enter Last Name"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${parentErrors.lastName ? "border-red-500" : ""
+              }`}
+            style={inputStyle}
             required
-          >
-            <option value="" disabled hidden>
-              Select Student ID
-            </option>
-            {studentsWithoutParents.map((student) => (
-              <option key={student.studentId} value={student.studentId}>
-                {student.studentId} - {student.firstName} {student.lastName}
-              </option>
-            ))}
-          </select>
-          <svg
-            className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
+          />
+          {parentErrors.lastName && (
+            <p className="text-red-500 text-xs mt-1 ml-2">
+              {parentErrors.lastName}
+            </p>
+          )}
         </div>
-        {parentErrors.studentId && (
-          <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.studentId}</p>
-        )}
+
+        {/* Email */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            E-Mail
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={parentFormData.email}
+            onChange={handleParentInputChange}
+            placeholder="Enter E-Mail"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${parentErrors.email ? "border-red-500" : ""
+              }`}
+            style={inputStyle}
+            required
+          />
+          {parentErrors.email && (
+            <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.email}</p>
+          )}
+        </div>
+
+        {/* Contact Number */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            Contact Number
+          </label>
+          <input
+            type="tel"
+            name="contactNumber"
+            value={parentFormData.contactNumber}
+            onChange={handleParentInputChange}
+            placeholder="Enter Phone Number"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${parentErrors.contactNumber ? "border-red-500" : ""
+              }`}
+            style={inputStyle}
+            required
+          />
+          {parentErrors.contactNumber && (
+            <p className="text-red-500 text-xs mt-1 ml-2">
+              {parentErrors.contactNumber}
+            </p>
+          )}
+        </div>
+
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            Relation
+          </label>
+          <input
+            type="text"
+            name="relation"
+            value={parentFormData.relation}
+            onChange={handleParentInputChange}
+            placeholder="Enter the relation to the student"
+            className={`w-full px-4 bg-white rounded-[10px] border-0 outline-none placeholder-gray-500 text-black font-semibold text-[12px] leading-[100%] tracking-normal text-left font-[Poppins] ${parentErrors.relation ? "border-red-500" : ""
+              }`}
+            style={inputStyle}
+            required
+          />
+          {parentErrors.relation && (
+            <p className="text-red-500 text-xs mt-1 ml-2">
+              {parentErrors.relation}
+            </p>
+          )}
+        </div>
+
+        {/* Document Upload Section for Parent */}
+        <div className="w-full px-2 md:col-span-2">
+          <div className="bg-white/50 rounded-lg p-4 space-y-4">
+            <h3 className="font-semibold text-black mb-2">Upload Documents (Optional - Auto-fill with OCR)</h3>
+
+            {/* Aadhar Card Upload */}
+            <div>
+              <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+                Aadhar Card
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleDocumentUpload(e, 'aadhar', 'parent')}
+                className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+                disabled={ocrLoading}
+              />
+              {parentDocuments.aadharCard && (
+                <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.aadharCard.name}</p>
+              )}
+            </div>
+
+            {/* PAN Card Upload */}
+            <div>
+              <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>
+                PAN Card
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleDocumentUpload(e, 'pan', 'parent')}
+                className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300"
+                disabled={ocrLoading}
+              />
+              {parentDocuments.panCard && (
+                <p className="text-xs text-green-600 mt-1">✓ {parentDocuments.panCard.name}</p>
+              )}
+            </div>
+
+            {/* OCR Progress */}
+            {ocrLoading && (
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${ocrProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-center mt-1">Processing document... {ocrProgress}%</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Student ID */}
+        <div className="w-full px-2 md:col-span-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>
+            Student ID
+          </label>
+          <div className="relative w-full h-[40px]">
+            <select
+              name="studentId"
+              value={parentFormData.studentId}
+              onChange={handleParentInputChange}
+              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${parentFormData.studentId === "" ? "text-[#0000008A]" : "text-black"
+                } ${parentErrors.studentId ? "border-red-500" : ""}`}
+              style={{
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                appearance: "none",
+                boxShadow: "0px 4px 10px 0px #00000040",
+              }}
+              required
+            >
+              <option value="" disabled hidden>
+                Select Student ID
+              </option>
+              {studentsWithoutParents.map((student) => (
+                <option key={student.studentId} value={student.studentId}>
+                  {student.studentId} - {student.firstName} {student.lastName}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          {parentErrors.studentId && (
+            <p className="text-red-500 text-xs mt-1 ml-2">{parentErrors.studentId}</p>
+          )}
+        </div>
       </div>
-    </div>
-    
-    {/* Submit Button */}
-    <div className="flex justify-center">
-      <button
-        onClick={handleParentSubmit}
-        disabled={parentLoading}
-        className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${
-          parentLoading ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-        style={{
-          fontWeight: "600",
-          fontSize: "15px",
-        }}
-      >
-        {parentLoading ? "Registering..." : "Register Parent"}
-      </button>
-    </div>
-  </>
-);
+
+      {/* Submit Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleParentSubmit}
+          disabled={parentLoading}
+          className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] cursor-pointer ${parentLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          style={{
+            fontWeight: "600",
+            fontSize: "15px",
+          }}
+        >
+          {parentLoading ? "Registering..." : "Register Parent"}
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div
@@ -4389,35 +4344,33 @@ const parentFormContent = () => (
             </span>
           </h1>
         </div>
-        
+
         {/* Tabbed Registration Forms */}
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto">
             <div className="flex mb-4">
               <button
                 onClick={() => setActiveTab("student")}
-                className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${
-                  activeTab === "student"
+                className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${activeTab === "student"
                     ? "bg-[#BEC5AD] text-black border-b-2 border-[#4F8CCF]"
                     : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
+                  }`}
                 style={{ fontFamily: "Poppins", fontWeight: "600" }}
               >
                 Register Student
               </button>
               <button
                 onClick={() => setActiveTab("parent")}
-                className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${
-                  activeTab === "parent"
+                className={`px-6 py-3 rounded-t-[20px] font-semibold transition-colors ${activeTab === "parent"
                     ? "bg-[#BEC5AD] text-black border-b-2 border-[#4F8CCF]"
                     : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
+                  }`}
                 style={{ fontFamily: "Poppins", fontWeight: "600" }}
               >
                 Register Parent
               </button>
             </div>
-            
+
             <div
               className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8"
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
@@ -4426,7 +4379,7 @@ const parentFormContent = () => (
             </div>
           </div>
         )}
-        
+
         {/* Edit Student Modal */}
         {showEditModal && editingStudent && (
           <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -4461,7 +4414,7 @@ const parentFormContent = () => (
 
         {/* Student Details Modal */}
         {showDetailsModal && studentDetailsData && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
             <div
               className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto relative max-h-[90vh] overflow-y-auto"
               style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}
@@ -4476,7 +4429,7 @@ const parentFormContent = () => (
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  fill="none"   
+                  fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
@@ -4489,14 +4442,14 @@ const parentFormContent = () => (
                   />
                 </svg>
               </button>
-              
+
               <h2
                 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6"
                 style={{ fontFamily: "Inter", fontWeight: "700" }}
               >
                 Student Details
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-black">
                 <div>
                   <p className="font-semibold" style={labelStyle}>Student ID:</p>
@@ -4551,7 +4504,7 @@ const parentFormContent = () => (
                   Uploaded Documents
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
+
                   {/* Aadhar Card */}
                   <div className="bg-white/50 rounded-lg p-4">
                     <p className="font-semibold text-black mb-2">Aadhar Card</p>
@@ -4662,7 +4615,7 @@ const parentFormContent = () => (
             Student List & Fee status
           </h2>
         </div>
-        
+
         {/* Student List Table */}
         <div className="w-full max-w-7xl mx-auto mt-4 px-4 sm:px-0">
           <div
@@ -4679,7 +4632,7 @@ const parentFormContent = () => (
                 <div className="bg-white text-black flex text-center">
                   {[
                     "Student ID",
-                    "Name", 
+                    "Name",
                     "Room/Bed",
                     "Contact",
                     "Fees Status",
@@ -4712,7 +4665,7 @@ const parentFormContent = () => (
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Table Body */}
                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                   {students.map((student, i) => (
@@ -4746,7 +4699,7 @@ const parentFormContent = () => (
                           />
                           <button
                             onClick={() => handleEdit(student.id)}
-                            className="text-gray-800 hover:text-black flex items-center justify-center transition-colors cursor-pointer hover:scale-110 transition-transform"
+                            className="text-gray-800 hover:text-black flex items-center justify-center transition cursor-pointer hover:scale-110"
                             title="Edit Student"
                           >
                             <svg
@@ -4846,7 +4799,7 @@ const parentFormContent = () => (
           </div>
         </div>
       </div>
-      <ToastContainer/>
+      <ToastContainer />
     </div>
   );
 };
