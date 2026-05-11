@@ -1,8 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaSearch, FaFilter, FaDownload, FaSpinner, FaEye } from "react-icons/fa";
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  Loader2, 
+  Eye, 
+  Calendar, 
+  User, 
+  Activity,
+  Clock,
+  TrendingUp,
+  FileText,
+  RefreshCw,
+  X
+} from "lucide-react";
 import api from "@/lib/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function AuditLogsSection() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,9 +47,7 @@ export default function AuditLogsSection() {
   });
   const [statistics, setStatistics] = useState(null);
   const [exporting, setExporting] = useState(false);
-
-  // API base URL - adjust this to match your backend
-  const API_BASE = process.env.NEXT_PUBLIC_PROD_API_URL // Update with your actual API URL
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Fetch audit logs
   const fetchAuditLogs = async (page = 1, search = '', filtersObj = activeFilters) => {
@@ -60,6 +74,7 @@ export default function AuditLogsSection() {
     } catch (err) {
       console.error('Error fetching audit logs:', err);
       setError('Failed to fetch audit logs. Please try again.');
+      toast.error('Failed to fetch audit logs');
     } finally {
       setLoading(false);
     }
@@ -90,7 +105,6 @@ export default function AuditLogsSection() {
         responseType: 'blob'
       });
 
-      // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -98,9 +112,11 @@ export default function AuditLogsSection() {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      toast.success('Audit logs exported successfully');
     } catch (err) {
       console.error('Error exporting logs:', err);
-      setError('Failed to export logs. Please try again.');
+      toast.error('Failed to export logs. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -117,6 +133,18 @@ export default function AuditLogsSection() {
     return () => clearTimeout(delayedSearch);
   }, [searchTerm]);
 
+  // Auto refresh every 30 seconds
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      fetchAuditLogs(pagination.currentPage, searchTerm, activeFilters);
+      fetchStatistics();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, pagination.currentPage, searchTerm, activeFilters]);
+
   // Initial load
   useEffect(() => {
     fetchAuditLogs();
@@ -127,6 +155,7 @@ export default function AuditLogsSection() {
   const applyFilters = () => {
     fetchAuditLogs(1, searchTerm, activeFilters);
     setIsFilterModalOpen(false);
+    toast.info('Filters applied');
   };
 
   const clearFilters = () => {
@@ -140,16 +169,22 @@ export default function AuditLogsSection() {
     setActiveFilters(resetFilters);
     fetchAuditLogs(1, searchTerm, resetFilters);
     setIsFilterModalOpen(false);
+    toast.info('Filters cleared');
   };
 
   const getColorForAction = (action) => {
-    if (action === "Student Registered") return "text-blue-600";
-    if (action === "Notice Issued") return "text-orange-600";
-    if (action === "Leave Approved") return "text-green-600";
-    if (action === "User Created") return "text-purple-600";
-    if (action === "User Updated") return "text-yellow-600";
-    if (action === "User Deleted") return "text-red-600";
-    return "text-gray-600";
+    const colorMap = {
+      "Student Registered": "text-blue-600 bg-blue-50",
+      "Notice Issued": "text-orange-600 bg-orange-50",
+      "Leave Approved": "text-green-600 bg-green-50",
+      "User Created": "text-purple-600 bg-purple-50",
+      "User Updated": "text-yellow-600 bg-yellow-50",
+      "User Deleted": "text-red-600 bg-red-50",
+      "Complaint Resolved": "text-teal-600 bg-teal-50",
+      "Inspection Scheduled": "text-indigo-600 bg-indigo-50",
+      "Invoice Generated": "text-pink-600 bg-pink-50"
+    };
+    return colorMap[action] || "text-gray-600 bg-gray-50";
   };
 
   const formatTimestamp = (timestamp) => {
@@ -162,277 +197,439 @@ export default function AuditLogsSection() {
       minute: '2-digit',
       second: '2-digit',
       hour12: false
-    }).replace(',', '\n');
+    });
   };
 
   const handlePageChange = (newPage) => {
     fetchAuditLogs(newPage, searchTerm, activeFilters);
   };
 
-  return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
-        Audit Logs
-      </h2>
+ const statCards = statistics
+? [
+{
+id: "total",
+label: "Total Logs",
+value: statistics.statistics.total,
+subLabel: "All Records",
+borderColor: "border-blue-200",
+bgColor: "bg-blue-50",
+textColor: "text-blue-500",
+badgeColor: "bg-blue-50 text-blue-600",
+icon: <FileText size={18} />,
+},
 
-      {/* Statistics Cards */}
-      {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-md">
-            <h3 className="text-sm font-medium text-gray-600">Total Logs</h3>
-            <p className="text-2xl font-bold text-blue-600">{statistics.statistics.total}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-md">
-            <h3 className="text-sm font-medium text-gray-600">Today</h3>
-            <p className="text-2xl font-bold text-green-600">{statistics.statistics.today}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-md">
-            <h3 className="text-sm font-medium text-gray-600">This Week</h3>
-            <p className="text-2xl font-bold text-orange-600">{statistics.statistics.thisWeek}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-md">
-            <h3 className="text-sm font-medium text-gray-600">This Month</h3>
-            <p className="text-2xl font-bold text-purple-600">{statistics.statistics.thisMonth}</p>
+  {
+    id: "today",
+    label: "Today",
+    value: statistics.statistics.today,
+    subLabel: "24 Hours",
+    borderColor: "border-green-200",
+    bgColor: "bg-green-50",
+    textColor: "text-green-500",
+    badgeColor: "bg-green-50 text-green-600",
+    icon: <Activity size={18} />,
+  },
+
+  {
+    id: "week",
+    label: "This Week",
+    value: statistics.statistics.thisWeek,
+    subLabel: "7 Days",
+    borderColor: "border-orange-200",
+    bgColor: "bg-orange-50",
+    textColor: "text-orange-500",
+    badgeColor: "bg-orange-50 text-orange-600",
+    icon: <Calendar size={18} />,
+  },
+
+  {
+    id: "month",
+    label: "This Month",
+    value: statistics.statistics.thisMonth,
+    subLabel: "30 Days",
+    borderColor: "border-purple-200",
+    bgColor: "bg-purple-50",
+    textColor: "text-purple-500",
+    badgeColor: "bg-purple-50 text-purple-600",
+    icon: <TrendingUp size={18} />,
+  },
+]
+
+
+: [];
+
+
+  return (
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-black">
+            <span className="border-l-4 border-[#4F8CCF] pl-3 inline-block">
+              Audit Logs
+            </span>
+          </h2>
+          <p className="text-gray-600 mt-2 ml-3">Track all system activities and user actions</p>
+        </div>
+
+        {/* Modern Stats Cards */}
+       {statistics && (
+
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    {statCards.map((card) => (
+      <div
+        key={card.id}
+        className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+      >
+        <div
+          className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
+        >
+          <div className={card.textColor}>
+            {card.icon}
           </div>
         </div>
-      )}
 
-      <div className="bg-[#A4B494] rounded-2xl p-4 md:p-6 shadow-md">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h3 className="text-xl font-semibold text-black">Audit Log Entries</h3>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <input
-                type="text"
-                placeholder="Search Logs…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 rounded-md bg-white border border-white pl-10 pr-4 text-sm text-black shadow"
-              />
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+    <div className="text-4xl font-bold text-black">
+      {card.value}
+    </div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      {card.label}
+    </div>
+
+    <div
+      className={`inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full ${card.badgeColor}`}
+    >
+      {card.subLabel}
+    </div>
+  </div>
+))}
+
+
+  </div>
+)}
+
+
+        {/* Main Content */}
+        <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
+          {/* Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Activity size={20} className="text-black" />
+              <h3 className="text-xl font-semibold text-black">Audit Log Entries</h3>
             </div>
 
-            <button 
-              className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md px-4 py-2 shadow-md whitespace-nowrap" 
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-              <FaFilter />
-              <span>Filter</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search logs by user, action, or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
 
-            <button 
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md px-4 py-2 shadow-md whitespace-nowrap"
-              onClick={handleExport}
-              disabled={exporting}
-            >
-              {exporting ? <FaSpinner className="animate-spin" /> : <FaDownload />}
-              <span>{exporting ? 'Exporting...' : 'Export'}</span>
-            </button>
-          </div>
-        </div>
+              <div className="flex gap-2">
+                <button 
+                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300"
+                  onClick={() => setIsFilterModalOpen(true)}
+                >
+                  <Filter size={16} />
+                  <span>Filter</span>
+                </button>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+                <button 
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300"
+                  onClick={handleExport}
+                  disabled={exporting}
+                >
+                  {exporting ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                  <span>{exporting ? 'Exporting...' : 'Export'}</span>
+                </button>
 
-        {/* Loading Spinner */}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <FaSpinner className="text-2xl animate-spin text-gray-600" />
-            <span className="ml-2 text-gray-600">Loading audit logs...</span>
+                <button 
+                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 shadow-md transition-all duration-300 ${
+                    autoRefresh 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                      : 'bg-gray-500 hover:bg-gray-600 text-white'
+                  }`}
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  title={autoRefresh ? 'Auto-refresh enabled' : 'Auto-refresh disabled'}
+                >
+                  <RefreshCw size={16} className={autoRefresh ? 'animate-spin' : ''} />
+                  <span>Auto</span>
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <>
-            {/* Mobile Card View */}
-            <div className="block md:hidden space-y-4">
-              {logs.length > 0 ? (
-                logs.map((log, idx) => (
-                  <div key={log._id || idx} className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <span className="font-semibold text-sm text-gray-600">Timestamp:</span>
-                        <span className="font-bold text-right whitespace-pre-line">
-                          {formatTimestamp(log.timestamp)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-sm text-gray-600">User:</span>
-                        <p className="mt-1 font-semibold">{log.user}</p>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-sm text-gray-600">Action Type:</span>
-                        <p className={`mt-1 font-semibold ${getColorForAction(log.actionType)}`}>
-                          {log.actionType}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-sm text-gray-600">Description:</span>
-                        <p className="mt-1 font-semibold">{log.description}</p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
+                <X size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* Loading Spinner */}
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="text-2xl animate-spin text-gray-600" size={32} />
+              <span className="ml-2 text-gray-600">Loading audit logs...</span>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-4">
+                {logs.length > 0 ? (
+                  logs.map((log, idx) => (
+                    <div key={log._id || idx} className="bg-white rounded-xl p-4 shadow-md">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <Clock size={14} className="text-gray-500" />
+                            <span className="text-xs text-gray-500">{formatTimestamp(log.timestamp)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <User size={14} className="text-gray-500" />
+                            <span className="text-xs font-semibold text-gray-600">User:</span>
+                          </div>
+                          <p className="font-semibold text-sm ml-6">{log.user}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-semibold text-gray-600">Action:</span>
+                          <p className={`inline-block ml-2 px-2 py-1 rounded-full text-xs font-medium ${getColorForAction(log.actionType)}`}>
+                            {log.actionType}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-semibold text-gray-600">Description:</span>
+                          <p className="mt-1 text-sm text-gray-700">{log.description}</p>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+                    No logs found matching your criteria.
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-700">
-                  No logs found.
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-white rounded-lg">
+                      <th className="px-4 py-3 rounded-tl-lg text-sm font-semibold text-gray-700">Timestamp</th>
+                      <th className="px-4 py-3 text-sm font-semibold text-gray-700">User</th>
+                      <th className="px-4 py-3 text-sm font-semibold text-gray-700">Action Type</th>
+                      <th className="px-4 py-3 rounded-tr-lg text-sm font-semibold text-gray-700">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.length > 0 ? (
+                      logs.map((log, idx) => (
+                        <tr key={log._id || idx} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                            {formatTimestamp(log.timestamp)}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-800">{log.user}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getColorForAction(log.actionType)}`}>
+                              {log.actionType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{log.description}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-gray-600">
+                          No logs found matching your criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPreviousPage}
+                    className="px-4 py-2 bg-white text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex gap-2">
+                    {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-10 h-10 rounded-lg transition-colors ${
+                            pagination.currentPage === pageNum
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white text-black hover:bg-gray-100'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage}
+                    className="px-4 py-2 bg-white text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  >
+                    Next
+                  </button>
                 </div>
               )}
-            </div>
+              
+              {/* Total logs info */}
+              <div className="text-center mt-4 text-sm text-gray-600">
+                Showing {logs.length} of {pagination.totalLogs} logs
+              </div>
+            </>
+          )}
+        </div>
 
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-base text-left text-black border-separate border-spacing-y-2">
-                <thead>
-                  <tr className="bg-white font-semibold text-black">
-                    <th className="px-4 py-3 whitespace-nowrap">TimeStamp</th>
-                    <th className="px-4 py-3 whitespace-nowrap">User</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Action Type</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.length > 0 ? (
-                    logs.map((log, idx) => (
-                      <tr key={log._id || idx} className="bg-[#A4B494] even:bg-opacity-90 hover:bg-[#90A884] transition-all rounded-md">
-                        <td className="px-4 py-4 whitespace-pre-line font-semibold">
-                          {formatTimestamp(log.timestamp)}
-                        </td>
-                        <td className="px-4 py-4 whitespace-pre-line font-semibold">{log.user}</td>
-                        <td className={`px-4 py-4 text-center font-semibold ${getColorForAction(log.actionType)}`}>
-                          {log.actionType}
-                        </td>
-                        <td className="px-4 py-4 text-center font-semibold">{log.description}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="text-center py-6 font-medium">No logs found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        {/* Filter Modal */}
+        {isFilterModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/50">
+            <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                    <Filter size={20} /> Filter Audit Logs
+                  </h3>
+                  <button
+                    onClick={() => setIsFilterModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Action Type</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={activeFilters.actionType}
+                    onChange={(e) => setActiveFilters({...activeFilters, actionType: e.target.value})}
+                  >
+                    <option value="all">All Actions</option>
+                    {filters.actionTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin User</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={activeFilters.adminId}
+                    onChange={(e) => setActiveFilters({...activeFilters, adminId: e.target.value})}
+                  >
+                    <option value="all">All Users</option>
+                    {filters.admins.map(admin => (
+                      <option key={admin._id} value={admin._id}>
+                        {admin.name} ({admin.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Type</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={activeFilters.targetType}
+                    onChange={(e) => setActiveFilters({...activeFilters, targetType: e.target.value})}
+                  >
+                    <option value="all">All Target Types</option>
+                    {filters.targetTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date From</label>
+                  <input
+                    type="date"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={activeFilters.startDate}
+                    onChange={(e) => setActiveFilters({...activeFilters, startDate: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date To</label>
+                  <input
+                    type="date"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={activeFilters.endDate}
+                    onChange={(e) => setActiveFilters({...activeFilters, endDate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex gap-3">
                 <button
-                  onClick={() => handlePageChange(pagination.currentPage - 1)}
-                  disabled={!pagination.hasPreviousPage}
-                  className="px-4 py-2 bg-white text-black rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  onClick={clearFilters}
+                  className="flex-1 bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
-                  Previous
+                  Clear All
                 </button>
-                
-                <span className="text-black font-medium">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                </span>
-                
                 <button
-                  onClick={() => handlePageChange(pagination.currentPage + 1)}
-                  disabled={!pagination.hasNextPage}
-                  className="px-4 py-2 bg-white text-black rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  onClick={applyFilters}
+                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  Next
+                  Apply Filters
                 </button>
               </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Filter Modal */}
-      {isFilterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md mx-4">
-            <h3 className="text-xl font-semibold mb-4 text-gray-700">Filter Audit Logs</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-black">Action Type</label>
-                <select 
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-gray-700"
-                  value={activeFilters.actionType}
-                  onChange={(e) => setActiveFilters({...activeFilters, actionType: e.target.value})}
-                >
-                  <option value="all">All Actions</option>
-                  {filters.actionTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Admin User</label>
-                <select 
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-gray-700"
-                  value={activeFilters.adminId}
-                  onChange={(e) => setActiveFilters({...activeFilters, adminId: e.target.value})}
-                >
-                  <option value="all">All Users</option>
-                  {filters.admins.map(admin => (
-                    <option key={admin._id} value={admin._id}>
-                      {admin.name} ({admin.count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Target Type</label>
-                <select 
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-gray-700"
-                  value={activeFilters.targetType}
-                  onChange={(e) => setActiveFilters({...activeFilters, targetType: e.target.value})}
-                >
-                  <option value="all">All Target Types</option>
-                  {filters.targetTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date From</label>
-                <input
-                  type="date"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-gray-700"
-                  value={activeFilters.startDate}
-                  onChange={(e) => setActiveFilters({...activeFilters, startDate: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date To</label>
-                <input
-                  type="date"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-gray-700"
-                  value={activeFilters.endDate}
-                  onChange={(e) => setActiveFilters({...activeFilters, endDate: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:justify-between">
-              <button
-                onClick={clearFilters}
-                className="bg-gray-300 text-black px-4 py-2 rounded-md order-2 sm:order-1 hover:bg-gray-400"
-              >
-                Clear Filters
-              </button>
-              <button
-                onClick={applyFilters}
-                className="bg-green-500 text-white px-4 py-2 rounded-md order-1 sm:order-2 hover:bg-green-600"
-              >
-                Apply Filters
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </div>
   );
 }

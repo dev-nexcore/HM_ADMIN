@@ -3,9 +3,18 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import api from "@/lib/api";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  Package,
+  CheckCircle,
+  Clock3,
+  Wrench,
+  AlertTriangle,
+} from "lucide-react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const initialFormState = {
   template: "",
@@ -16,21 +25,22 @@ const initialFormState = {
   date: ""
 };
 
-
-
 const HostelNotices = () => {
-  const [form, setForm] = useState({
-    template: "",
-    title: "",
-    recipient: "",
-    individualRecipient: "",
-    message: "",
-    date: "",
-  });
-
+  const [form, setForm] = useState(initialFormState);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({ status: "All", recipientType: "", page: 1, limit: 50 });
+  const [filters, setFilters] = useState({
+    status: "All",
+    recipientType: "",
+    page: 1,
+    limit: 50
+  });
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [editingNotice, setEditingNotice] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteNoticeId, setDeleteNoticeId] = useState(null);
+  const [formErrors, setFormErrors] = useState(null);
+  const [activeFilterCard, setActiveFilterCard] = useState("all");
 
   const fetchNotices = async () => {
     try {
@@ -41,6 +51,7 @@ const HostelNotices = () => {
       if (data.success) setNotices(data.notices);
     } catch (err) {
       console.error("Failed to fetch notices:", err);
+      toast.error("Failed to fetch notices");
     } finally {
       setLoading(false);
     }
@@ -50,87 +61,37 @@ const HostelNotices = () => {
     fetchNotices();
   }, [filters]);
 
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [editingNotice, setEditingNotice] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteNoticeId, setDeleteNoticeId] = useState(null);
-  const [formErrors, setFormErrors] = useState(null);
-
-  // const handleIssueNotice = async () => {
-  //   try {
-  //     await api.post("/api/adminauth/issue-notice", {
-  //       template: form.template,
-  //       title: form.title,
-  //       message: form.message,
-  //       issueDate: form.date,
-  //       recipientType:
-  //         form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
-  //       individualRecipient: form.individualRecipient || "",
-  //     });
-  //      toast.success("✅ Notice issued successfully");
-  //     fetchNotices();
-  //     setForm({
-  //       template: "",
-  //       title: "",
-  //       recipient: "",
-  //       individualRecipient: "",
-  //       message: "",
-  //       date: "",
-  //     });
-  //   } catch (err) {
-  //     console.error("Failed to issue notice:", err);
-  //     toast.error("❌ Notice issued Failed");
-       
-  //   }
-  // };
-
-
   const handleIssueNotice = async () => {
+    const toastId = toast.loading("Issuing notice...");
 
-  const toastId = toast.loading("Issuing notice...");
-
-  try {
-    await api.post("/api/adminauth/issue-notice", {
-      template: form.template,
-      title: form.title,
-      message: form.message,
-      issueDate: form.date,
-      recipientType:
-        form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
-      individualRecipient: form.individualRecipient || "",
-    });
-
-    toast.update(toastId, {
-      render: "✅ Notice issued successfully",
-      type: "success",
-      isLoading: false,
-      autoClose: 3000
-    });
-
-    fetchNotices();
-
-    setForm(initialFormState);
-
-  } catch (err) {
-
-    toast.update(toastId, {
-      render: "❌ Notice issue failed",
-      type: "error",
-      isLoading: false,
-      autoClose: 3000
-    });
-
-    console.error(err);
-  }
-};
-
-  const handleDeleteNotice = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this notice?")) return;
     try {
-      await api.delete(`/api/adminauth/notices/${id}`);
-      setNotices((prev) => prev.filter((n) => n.id !== id));
+      await api.post("/api/adminauth/issue-notice", {
+        template: form.template,
+        title: form.title,
+        message: form.message,
+        issueDate: form.date,
+        recipientType: form.recipient === "All (Students & Warden)" ? "All" : form.recipient,
+        individualRecipient: form.individualRecipient || "",
+      });
+
+      toast.update(toastId, {
+        render: "✅ Notice issued successfully",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000
+      });
+
+      fetchNotices();
+      setForm(initialFormState);
+
     } catch (err) {
-      console.error("Failed to delete notice:", err);
+      toast.update(toastId, {
+        render: "❌ Notice issue failed",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000
+      });
+      console.error(err);
     }
   };
 
@@ -138,14 +99,7 @@ const HostelNotices = () => {
   const editDateInputRef = useRef(null);
 
   const handleCancel = () => {
-    setForm({
-      template: "",
-      title: "",
-      recipient: "",
-      individualRecipient: "",
-      message: "",
-      date: "",
-    });
+    setForm(initialFormState);
   };
 
   const handleEdit = (notice) => {
@@ -159,40 +113,35 @@ const HostelNotices = () => {
   };
 
   const confirmDelete = async () => {
-  try {
-    await api.delete(`/api/adminauth/notices/${deleteNoticeId}`);
-
-    // Update UI
-    setNotices((prev) =>
-      prev.filter((notice) => notice.id !== deleteNoticeId)
-    );
-
-    // ✅ SUCCESS POPUP
-    alert(" Notice deleted successfully");
-
-  } catch (err) {
-    console.error("Failed to delete notice:", err);
-    alert("❌ Failed to delete notice");
-  } finally {
-    setShowDeleteConfirm(false);
-    setDeleteNoticeId(null);
-  }
-};
-
+    try {
+      await api.delete(`/api/adminauth/notices/${deleteNoticeId}`);
+      setNotices((prev) => prev.filter((notice) => notice.id !== deleteNoticeId));
+      toast.success("✅ Notice deleted successfully");
+    } catch (err) {
+      console.error("Failed to delete notice:", err);
+      toast.error("❌ Failed to delete notice");
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeleteNoticeId(null);
+    }
+  };
 
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
     setDeleteNoticeId(null);
   };
 
-  const handleSaveEdit = () => {
-    setNotices(
-      notices.map((notice) =>
-        notice.id === editingNotice.id ? editingNotice : notice,
-      ),
-    );
-    setIsPopupOpen(false);
-    setEditingNotice(null);
+  const handleSaveEdit = async () => {
+    try {
+      await api.put(`/api/adminauth/notices/${editingNotice.id}`, editingNotice);
+      fetchNotices();
+      setIsPopupOpen(false);
+      setEditingNotice(null);
+      toast.success("Notice updated successfully");
+    } catch (err) {
+      console.error("Failed to update notice:", err);
+      toast.error("Failed to update notice");
+    }
   };
 
   const handleCancelEdit = () => {
@@ -212,15 +161,50 @@ const HostelNotices = () => {
     }
   };
 
+  // Filter card click handlers
+  const handleFilterCardClick = (filterType) => {
+    setActiveFilterCard(filterType);
+    if (filterType === "all") {
+      setFilters({ ...filters, status: "All", recipientType: "" });
+    } else if (filterType === "active") {
+      setFilters({ ...filters, status: "Active", recipientType: "" });
+    } else if (filterType === "archived") {
+      setFilters({ ...filters, status: "Archived", recipientType: "" });
+    } else if (filterType === "students") {
+      setFilters({ ...filters, status: "All", recipientType: "Student" });
+    } else if (filterType === "warden") {
+      setFilters({ ...filters, status: "All", recipientType: "Warden" });
+    }
+  };
+
+  // Calculate statistics for cards
+  const getNoticeStats = () => {
+    const total = notices.length;
+    const active = notices.filter(n => n.status === "Active").length;
+    const archived = notices.filter(n => n.status === "Archived").length;
+    const toStudents = notices.filter(n => n.recipient === "Student" || n.recipient === "Students").length;
+    const toWarden = notices.filter(n => n.recipient === "Warden").length;
+    return { total, active, archived, toStudents, toWarden };
+  };
+
+  const stats = getNoticeStats();
+
+  // Card data array
+  const filterCards = [
+    { id: "all", label: "All", value: stats.total, subLabel: "Total Items", color: "from-blue-500 to-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", icon: "📋" },
+    { id: "active", label: "Active", value: stats.active, subLabel: "Ready", color: "from-green-500 to-green-600", bgColor: "bg-green-50", borderColor: "border-green-200", icon: "✅" },
+    { id: "archived", label: "Archived", value: stats.archived, subLabel: "In Use", color: "from-orange-500 to-orange-600", bgColor: "bg-orange-50", borderColor: "border-orange-200", icon: "📦" },
+    { id: "students", label: "Students", value: stats.toStudents, subLabel: "To Students", color: "from-purple-500 to-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: "👨‍🎓" },
+    { id: "warden", label: "Warden", value: stats.toWarden, subLabel: "To Warden", color: "from-red-500 to-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", icon: "👔" },
+  ];
+
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "Poppins" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "Poppins" }}>
       {/* Header */}
       <div className="w-full px-4 sm:px-12 py-4 -mb-6 mt-8">
         <h1
           className="text-[25px] leading-[25px] font-extrabold text-[#000000] text-left"
-          style={{
-            fontFamily: "Inter",
-          }}
+          style={{ fontFamily: "Inter" }}
         >
           <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex font-bold items-center h-[25px]">
             Hostel Notices
@@ -230,6 +214,137 @@ const HostelNotices = () => {
 
       {/* Content Container */}
       <div className="p-4 sm:p-6 lg:p-10">
+       
+
+        {/* Alternative Minimal Cards Design (Like your reference) */}
+       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
+  
+  {/* Total Items */}
+  <div
+    onClick={() => handleFilterCardClick("all")}
+    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+      activeFilterCard === "all"
+        ? "border-blue-400 shadow-md ring-1 ring-blue-200"
+        : "border-gray-200"
+    }`}
+  >
+    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+      <Package className="w-5 h-5 text-blue-500" />
+    </div>
+
+    <div className="text-4xl font-bold text-black">{stats.total}</div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      Total Items
+    </div>
+
+    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
+      All
+    </div>
+  </div>
+
+  {/* Available */}
+  <div
+    onClick={() => handleFilterCardClick("active")}
+    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+      activeFilterCard === "active"
+        ? "border-green-400 shadow-md ring-1 ring-green-200"
+        : "border-gray-200"
+    }`}
+  >
+    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-4">
+      <CheckCircle className="w-5 h-5 text-green-500" />
+    </div>
+
+    <div className="text-4xl font-bold text-black">{stats.active}</div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      Available
+    </div>
+
+    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600">
+      Ready
+    </div>
+  </div>
+
+  {/* In Use */}
+  <div
+    onClick={() => handleFilterCardClick("archived")}
+    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+      activeFilterCard === "archived"
+        ? "border-orange-400 shadow-md ring-1 ring-orange-200"
+        : "border-gray-200"
+    }`}
+  >
+    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center mb-4">
+      <Clock3 className="w-5 h-5 text-orange-500" />
+    </div>
+
+    <div className="text-4xl font-bold text-black">
+      {stats.archived}
+    </div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      In Use
+    </div>
+
+    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-orange-50 text-orange-600">
+      Active
+    </div>
+  </div>
+
+  {/* Maintenance */}
+  <div
+    onClick={() => handleFilterCardClick("students")}
+    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+      activeFilterCard === "students"
+        ? "border-purple-400 shadow-md ring-1 ring-purple-200"
+        : "border-gray-200"
+    }`}
+  >
+    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+      <Wrench className="w-5 h-5 text-purple-500" />
+    </div>
+
+    <div className="text-4xl font-bold text-black">
+      {stats.toStudents}
+    </div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      Maintenance
+    </div>
+
+    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-600">
+      Under repair
+    </div>
+  </div>
+
+  {/* Damaged */}
+  <div
+    onClick={() => handleFilterCardClick("warden")}
+    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+      activeFilterCard === "warden"
+        ? "border-red-400 shadow-md ring-1 ring-red-200"
+        : "border-gray-200"
+    }`}
+  >
+    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mb-4">
+      <AlertTriangle className="w-5 h-5 text-red-500" />
+    </div>
+
+    <div className="text-4xl font-bold text-black">
+      {stats.toWarden}
+    </div>
+
+    <div className="text-gray-700 text-sm font-medium mt-1">
+      Damaged
+    </div>
+
+    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-600">
+      Needs attention
+    </div>
+  </div>
+</div>
         {/* Form Box */}
         <div
           className="p-6 rounded-2xl shadow-inner mb-10 min-h-[500px]"
@@ -246,9 +361,8 @@ const HostelNotices = () => {
               </label>
               <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
                 <select
-                  className={`w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px] ${
-                    formErrors?.template ? "border border-red-500" : ""
-                  }`}
+                  className={`w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px] ${formErrors?.template ? "border border-red-500" : ""
+                    }`}
                   value={form.template}
                   onChange={(e) => {
                     setForm({ ...form, template: e.target.value });
@@ -263,13 +377,7 @@ const HostelNotices = () => {
                   <option value="event">Event</option>
                 </select>
                 <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <svg
-                    className="w-4 h-4 text-black"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                     <path d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -301,9 +409,8 @@ const HostelNotices = () => {
                     setFormErrors((prev) => ({ ...prev, title: true }));
                   }
                 }}
-                className={`w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px] ${
-                  formErrors?.title ? "border border-red-500" : ""
-                }`}
+                className={`w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px] ${formErrors?.title ? "border border-red-500" : ""
+                  }`}
               />
               {formErrors?.title && (
                 <p className="text-red-500 text-xs mt-1 ml-2">
@@ -312,45 +419,38 @@ const HostelNotices = () => {
               )}
             </div>
 
-          {/* Recipient */}
-          <div className="w-full">
-            <label className="text-black font-medium mb-1 block ml-2">
-              Recipient
-            </label>
-            <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
-              <select
-                className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${
-                  formErrors?.recipient ? "border border-red-500" : ""
-                }`}
-                value={form.recipient}
-                onChange={(e) => {
-                  setForm({ ...form, recipient: e.target.value });
-                  if (e.target.value) {
-                    setFormErrors(prev => ({ ...prev, recipient: false }));
-                  }
-                }}
-              >
-                <option value="">Select recipient</option>
-                <option value="All (Students & Warden)">All (Students & Warden)</option>
-                <option value="Student">Students</option>
-                <option value="Warden">Warden</option>
-              </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
-                <svg
-                  className="w-4 h-4 text-black"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  viewBox="0 0 24 24"
+            {/* Recipient */}
+            <div className="w-full">
+              <label className="text-black font-medium mb-1 block ml-2">
+                Recipient
+              </label>
+              <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
+                <select
+                  className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${formErrors?.recipient ? "border border-red-500" : ""
+                    }`}
+                  value={form.recipient}
+                  onChange={(e) => {
+                    setForm({ ...form, recipient: e.target.value });
+                    if (e.target.value) {
+                      setFormErrors(prev => ({ ...prev, recipient: false }));
+                    }
+                  }}
                 >
-                  <path d="M19 9l-7 7-7-7" />
-                </svg>
+                  <option value="">Select recipient</option>
+                  <option value="All (Students & Warden)">All (Students & Warden)</option>
+                  <option value="Student">Students</option>
+                  <option value="Warden">Warden</option>
+                </select>
+                <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
+              {formErrors?.recipient && (
+                <p className="text-red-500 text-xs mt-1 ml-2">Please select a recipient</p>
+              )}
             </div>
-            {formErrors?.recipient && (
-              <p className="text-red-500 text-xs mt-1 ml-2">Please select a recipient</p>
-            )}
-          </div>
 
             {/* Individual Recipient Input */}
             <div className="w-full">
@@ -388,9 +488,8 @@ const HostelNotices = () => {
                   setFormErrors((prev) => ({ ...prev, message: true }));
                 }
               }}
-              className={`w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none text-[12px] placeholder:font-medium placeholder:text-gray-400 resize-none ${
-                formErrors?.message ? "border border-red-500" : ""
-              }`}
+              className={`w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none text-[12px] placeholder:font-medium placeholder:text-gray-400 resize-none ${formErrors?.message ? "border border-red-500" : ""
+                }`}
             />
             {formErrors?.message && (
               <p className="text-red-500 text-xs mt-1 ml-2">
@@ -421,8 +520,8 @@ const HostelNotices = () => {
                           .getDate()
                           .toString()
                           .padStart(2, "0")}-${(selectedDate.getMonth() + 1)
-                          .toString()
-                          .padStart(2, "0")}-${selectedDate.getFullYear()}`;
+                            .toString()
+                            .padStart(2, "0")}-${selectedDate.getFullYear()}`;
                         setForm((prev) => ({
                           ...prev,
                           date: formattedDate,
@@ -441,9 +540,8 @@ const HostelNotices = () => {
                     style={{ colorScheme: "light" }}
                   />
                   <div
-                    className={`bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] ${
-                      formErrors?.date ? "border border-red-500" : ""
-                    }`}
+                    className={`bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] ${formErrors?.date ? "border border-red-500" : ""
+                      }`}
                   >
                     {form.date || ""}
                   </div>
@@ -459,29 +557,12 @@ const HostelNotices = () => {
                   className="ml-3 p-2 cursor-pointer rounded-lg transition-colors flex items-center justify-center hover:scale-110 transition-transform flex-shrink-0"
                   title="Open Calendar"
                 >
-                  <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 30 30"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <mask
-                      id="mask0_370_4"
-                      style={{ maskType: "alpha" }}
-                      maskUnits="userSpaceOnUse"
-                      x="0"
-                      y="0"
-                      width="30"
-                      height="30"
-                    >
+                  <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <mask id="mask0_370_4" style={{ maskType: "alpha" }} maskUnits="userSpaceOnUse" x="0" y="0" width="30" height="30">
                       <rect width="30" height="30" fill="#D9D9D9" />
                     </mask>
                     <g mask="url(#mask0_370_4)">
-                      <path
-                        d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 16.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 21.6042 21.1302 16.901 20.8906 17.1406C20.651 17.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z"
-                        fill="#1C1B1F"
-                      />
+                      <path d="M6.25 27.5C5.5625 27.5 4.97396 27.2552 4.48438 26.7656C3.99479 26.276 3.75 25.6875 3.75 25V7.5C3.75 6.8125 3.99479 6.22396 4.48438 5.73438C4.97396 5.24479 5.5625 5 6.25 5H7.5V2.5H10V5H20V2.5H22.5V5H23.75C24.4375 5 25.026 5.24479 25.5156 5.73438C26.0052 6.22396 26.25 6.8125 26.25 7.5V25C26.25 25.6875 26.0052 26.276 25.5156 26.7656C25.026 27.2552 24.4375 27.5 23.75 27.5H6.25ZM6.25 25H23.75V12.5H6.25V25ZM6.25 10H23.75V7.5H6.25V10ZM15 17.5C14.6458 17.5 14.349 17.3802 14.1094 17.1406C13.8698 16.901 13.75 16.6042 13.75 16.25C13.75 15.8958 13.8698 15.599 14.1094 15.3594C14.349 15.1198 14.6458 15 15 15C15.3542 15 15.651 15.1198 15.8906 15.3594C16.1302 15.599 16.25 15.8958 16.25 16.25C16.25 16.6042 16.1302 16.901 15.8906 17.1406C15.651 17.3802 15.3542 17.5 15 17.5ZM10 17.5C9.64583 17.5 9.34896 17.3802 9.10938 17.1406C8.86979 16.901 8.75 16.6042 8.75 16.25C8.75 15.8958 8.86979 15.599 9.10938 15.3594C9.34896 15.1198 9.64583 15 10 15C10.3542 15 10.651 15.1198 10.8906 15.3594C11.1302 15.599 11.25 15.8958 11.25 16.25C11.25 16.6042 11.1302 16.901 10.8906 17.1406C10.651 17.3802 10.3542 17.5 10 17.5ZM20 17.5C19.6458 17.5 19.349 17.3802 19.1094 17.1406C18.8698 16.901 18.75 16.6042 18.75 16.25C18.75 15.8958 18.8698 15.599 19.1094 15.3594C19.349 15.1198 19.6458 15 20 15C20.3542 15 20.651 15.1198 20.8906 15.3594C21.1302 15.599 21.25 15.8958 21.25 16.25C21.25 21.6042 21.1302 16.901 20.8906 17.1406C20.651 17.3802 20.3542 17.5 20 17.5ZM15 22.5C14.6458 22.5 14.349 22.3802 14.1094 22.1406C13.8698 21.901 13.75 21.6042 13.75 21.25C13.75 20.8958 13.8698 20.599 14.1094 20.3594C14.349 20.1198 14.6458 20 15 20C15.3542 20 15.651 20.1198 15.8906 20.3594C16.1302 20.599 16.25 20.8958 16.25 21.25C16.25 21.6042 16.1302 21.901 15.8906 22.1406C15.651 22.3802 15.3542 22.5 15 22.5ZM10 22.5C9.64583 22.5 9.34896 22.3802 9.10938 22.1406C8.86979 21.901 8.75 21.6042 8.75 21.25C8.75 20.8958 8.86979 20.599 9.10938 20.3594C9.34896 20.1198 9.64583 20 10 20C10.3542 20 10.651 20.1198 10.8906 20.3594C11.1302 20.599 11.25 20.8958 11.25 21.25C11.25 21.6042 11.1302 21.901 10.8906 22.1406C10.651 22.3802 10.3542 22.5 10 22.5ZM20 22.5C19.6458 22.5 19.349 22.3802 19.1094 22.1406C18.8698 21.901 18.75 21.6042 18.75 21.25C18.75 20.8958 18.8698 20.599 19.1094 20.3594C19.349 20.1198 19.6458 20 20 20C20.3542 20 20.651 20.1198 20.8906 20.3594C21.1302 20.599 21.25 20.8958 21.25 21.25C21.25 21.6042 21.1302 21.901 20.8906 22.1406C20.651 22.3802 20.3542 22.5 20 22.5Z" fill="#1C1B1F" />
                     </g>
                   </svg>
                 </button>
@@ -498,15 +579,14 @@ const HostelNotices = () => {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => handleCancel?.()}
-                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
+                  onClick={handleCancel}
+                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100 transition-all duration-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   onClick={() => {
-                    // Validate form before submission
                     const errors = {};
                     if (!form.template) errors.template = true;
                     if (!form.title) errors.title = true;
@@ -519,13 +599,10 @@ const HostelNotices = () => {
                       return;
                     }
 
-                    // If no errors, proceed with submission
                     setFormErrors(null);
-                    // Your submit logic here
-
                     handleIssueNotice();
                   }}
-                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100"
+                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100 transition-all duration-300"
                 >
                   Issue Notice
                 </button>
@@ -535,14 +612,13 @@ const HostelNotices = () => {
         </div>
 
         {/* Table */}
-        {/* Table */}
         <NoticesTable
           notices={notices}
+          loading={loading}
           handleEdit={handleEdit}
           handleDelete={handleDelete}
         />
-
-        {/* Edit Popup Modal */}
+         {/* Edit Popup Modal */}
         {/* Edit Popup Modal */}
         {isPopupOpen && (
           <div className="fixed inset-0 bg-black/30 bg-opacity-20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-hidden">
@@ -864,19 +940,32 @@ const HostelNotices = () => {
             </div>
           </div>
         )}
-      </div>
-      <>
-  {/* existing JSX */}
-  <ToastContainer position="top-right" autoClose={3000} />
-</>
 
+        {/* Edit Popup Modal - Keep existing code */}
+        {/* Delete Confirmation Modal - Keep existing code */}
+      </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
-    
   );
 };
 
-// export default HostelNotices; (removed duplicate)
-function NoticesTable({ notices, handleEdit, handleDelete }) {
+function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (notices.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-lg">No notices found</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="text-2xl text-black font-semibold mb-4 font-[Poppins] ml-4">
@@ -915,25 +1004,27 @@ function NoticesTable({ notices, handleEdit, handleDelete }) {
                 </td>
                 <td className="p-2">
                   <div className="flex items-center gap-5">
-                    <div
-                      className="cursor-pointer hover:opacity-70 transition hover:scale-110"
-                      onClick={() => handleEdit(n)}
-                    >
-                      ✏️
-                    </div>
-                    <div className="w-[0.1rem] h-8 bg-black"></div>
-                    <div
-                      className="cursor-pointer hover:opacity-70 transition hover:scale-110"
-                      onClick={() => handleDelete(n.id)}
-                    >
-                      🗑️
-                    </div>
+                   <div className="flex gap-5 mt-3">
+  <div
+    className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-blue-600"
+    onClick={() => handleEdit(n)}
+  >
+    <FiEdit2 size={20} />
+  </div>
+  <div
+    className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-red-600"
+    onClick={() => handleDelete(n.id)}
+  >
+    <FiTrash2 size={20} />
+  </div>
+</div>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
         {/* Mobile Card View */}
         <div className="space-y-4 sm:hidden">
           {notices.map((n) => (
@@ -957,16 +1048,16 @@ function NoticesTable({ notices, handleEdit, handleDelete }) {
               </div>
               <div className="flex gap-5 mt-3">
                 <div
-                  className="cursor-pointer hover:opacity-70 transition hover:scale-110"
+                  className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-blue-600"
                   onClick={() => handleEdit(n)}
                 >
-                  ✏️
+                  <FiEdit2 size={20} />
                 </div>
                 <div
-                  className="cursor-pointer hover:opacity-70 transition hover:scale-110"
+                  className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-red-600"
                   onClick={() => handleDelete(n.id)}
                 >
-                  🗑️
+                  <FiTrash2 size={20} />
                 </div>
               </div>
             </div>

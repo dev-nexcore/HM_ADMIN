@@ -1,6 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  FileText, 
+  Paperclip, 
+  Image as ImageIcon, 
+  Video, 
+  File, 
+  AlertCircle,
+  Ticket,
+  Users,
+  CheckSquare,
+  MessageSquare
+} from "lucide-react";
 import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -13,6 +29,29 @@ export default function TicketsSection() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [attachmentModal, setAttachmentModal] = useState({ show: false, url: '', type: '', filename: '' });
+  const [stats, setStats] = useState({
+    total: 0,
+    open: 0,
+    resolved: 0,
+    highPriority: 0
+  });
+
+  // Calculate statistics
+  const calculateStats = (open, resolved) => {
+    const totalOpen = open.length;
+    const totalResolved = resolved.length;
+    const highPriority = open.filter(ticket => 
+      ticket.complaintType?.toLowerCase().includes('urgent') || 
+      ticket.complaintType?.toLowerCase().includes('emergency')
+    ).length;
+    
+    setStats({
+      total: totalOpen + totalResolved,
+      open: totalOpen,
+      resolved: totalResolved,
+      highPriority: highPriority
+    });
+  };
 
   // Fetch open complaints/tickets
   const fetchOpenTickets = async () => {
@@ -34,6 +73,7 @@ export default function TicketsSection() {
         complaintType: complaint.displayType || complaint.complaintType,
         raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
         studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
+        studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
         status: "Pending",
         dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
         hasAttachments: complaint.hasAttachments,
@@ -42,6 +82,7 @@ export default function TicketsSection() {
       }));
       
       setOpenTickets(formattedTickets);
+      calculateStats(formattedTickets, resolvedTickets);
     } catch (error) {
       console.error("Failed to fetch open tickets:", error);
       toast.error("Failed to fetch open tickets. Please try again.");
@@ -68,6 +109,7 @@ export default function TicketsSection() {
         complaintType: complaint.complaintType,
         raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
         studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
+        studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
         status: "Resolved",
         dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
         resolvedDate: new Date(complaint.resolvedDate).toLocaleDateString('en-GB'),
@@ -77,6 +119,7 @@ export default function TicketsSection() {
       }));
       
       setResolvedTickets(formattedTickets);
+      calculateStats(openTickets, formattedTickets);
     } catch (error) {
       console.error("Failed to fetch resolved tickets:", error);
       toast.error("Failed to fetch resolved tickets. Please try again.");
@@ -179,6 +222,7 @@ export default function TicketsSection() {
 
       setResolvedTickets(prev => [resolvedTicket, ...prev]);
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
+      calculateStats(openTickets.filter((_, i) => i !== index), [resolvedTicket, ...resolvedTickets]);
 
       toast.success("✅ Complaint has been approved and resolved successfully!");
 
@@ -203,6 +247,7 @@ export default function TicketsSection() {
 
     try {
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
+      calculateStats(openTickets.filter((_, i) => i !== index), resolvedTickets);
       toast.error("❌ Complaint has been rejected and removed from the list.");
     } catch (error) {
       console.error("Failed to reject complaint:", error);
@@ -220,426 +265,578 @@ export default function TicketsSection() {
     setAttachmentModal({ show: false, url: '', type: '', filename: '' });
   };
 
+  // Card data for stats
+  const statCards = [
+{
+id: "total",
+label: "Total Tickets",
+value: stats.total,
+subLabel: "All Tickets",
+borderColor: "border-blue-200",
+bgColor: "bg-blue-50",
+textColor: "text-blue-500",
+badgeColor: "bg-blue-50 text-blue-600",
+icon: <Ticket size={18} />,
+},
+
+{
+id: "open",
+label: "Open Tickets",
+value: stats.open,
+subLabel: "Pending Action",
+borderColor: "border-orange-200",
+bgColor: "bg-orange-50",
+textColor: "text-orange-500",
+badgeColor: "bg-orange-50 text-orange-600",
+icon: <MessageSquare size={18} />,
+},
+
+{
+id: "resolved",
+label: "Resolved",
+value: stats.resolved,
+subLabel: "Completed",
+borderColor: "border-green-200",
+bgColor: "bg-green-50",
+textColor: "text-green-500",
+badgeColor: "bg-green-50 text-green-600",
+icon: <CheckCircle size={18} />,
+},
+
+{
+id: "priority",
+label: "High Priority",
+value: stats.highPriority,
+subLabel: "Urgent",
+borderColor: "border-red-200",
+bgColor: "bg-red-50",
+textColor: "text-red-500",
+badgeColor: "bg-red-50 text-red-600",
+icon: <AlertCircle size={18} />,
+},
+];
+
+
   if (loading) {
     return (
-      <div className="p-4 space-y-6">
-        <h2 className="text-2xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
-          Tickets & Queries
-        </h2>
-        <div className="text-center py-8">
-          <p className="text-gray-600">Loading tickets...</p>
+      <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
+              Tickets & Queries
+            </h2>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-bold text-black border-l-4 border-[#4F8CCF] pl-3">
-        Tickets & Queries
-      </h2>
-
-      {/* Open Tickets */}
-      <div className="bg-[#A4B494] rounded-2xl p-4 md:p-6 shadow-md">
-        <h2 className="text-xl font-semibold text-black mb-4">
-          Open Tickets ({openTickets.length})
-        </h2>
-
-        {/* Mobile Card View */}
-        <div className="block lg:hidden space-y-4">
-          {openTickets.length > 0 ? (
-            openTickets.map((ticket, index) => (
-              <div key={ticket.id} className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="font-semibold text-sm text-gray-600">ID:</span>
-                    <span className="font-bold">{ticket.id}</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-sm text-gray-600">Subject:</span>
-                    <p className="mt-1 font-medium">{ticket.subject}</p>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-sm text-gray-600">Type:</span>
-                    <p className="text-sm text-gray-700">{ticket.complaintType}</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Raised By:</span>
-                      <p className="text-sm">{ticket.raisedBy}</p>
-                      {ticket.studentId && (
-                        <p className="text-xs text-gray-500">({ticket.studentId})</p>
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Date:</span>
-                      <p className="text-sm">{ticket.dateRaised}</p>
-                    </div>
-                  </div>
-                  {ticket.hasAttachments && (
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Attachments:</span>
-                      <button
-                        onClick={() => viewTicketDetails(ticket)}
-                        className="block text-sm text-blue-600 hover:text-blue-800 underline"
-                      >
-                        📎 {ticket.attachmentCount} file(s) - View Details
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Status:</span>
-                      <span className="ml-2 font-bold text-[#4F8CCF]">{ticket.status}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      className="bg-lime-500 text-black font-semibold flex-1 py-2 rounded-md hover:bg-lime-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handleApprove(index)}
-                      disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
-                    >
-                      {actionLoading[`approve_${index}`] ? "Processing..." : "Approve"}
-                    </button>
-                    <button
-                      className="bg-red-600 text-white font-semibold flex-1 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handleReject(index)}
-                      disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
-                    >
-                      {actionLoading[`reject_${index}`] ? "Processing..." : "Reject"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-gray-700">
-              No open tickets available.
-            </div>
-          )}
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-black">
+            <span className="border-l-4 border-[#4F8CCF] pl-3 inline-block">
+              Tickets & Queries
+            </span>
+          </h2>
+          <p className="text-gray-600 mt-2 ml-3">Manage student complaints and support tickets</p>
         </div>
 
-        {/* Desktop Table View - Responsive */}
-        <div className="hidden lg:block">
-          <div className="grid grid-cols-12 gap-2 bg-white text-black font-bold p-3 rounded-t-lg">
-            <div className="col-span-1 text-sm">Ticket ID</div>
-            <div className="col-span-3 text-sm">Subject & Files</div>
-            <div className="col-span-2 text-sm">Type</div>
-            <div className="col-span-2 text-sm">Raised By</div>
-            <div className="col-span-1 text-sm">Status</div>
-            <div className="col-span-1 text-sm">Date</div>
-            <div className="col-span-2 text-sm">Actions</div>
+        {/* Stats Cards Section */}
+       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+  {statCards.map((card) => (
+    <div
+      key={card.id}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+    >
+      <div
+        className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
+      >
+        <div className={card.textColor}>
+          {card.icon}
+        </div>
+      </div>
+
+
+  <div className="text-4xl font-bold text-black">
+    {card.value}
+  </div>
+
+  <div className="text-gray-700 text-sm font-medium mt-1">
+    {card.label}
+  </div>
+
+  <div
+    className={`inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full ${card.badgeColor}`}
+  >
+    {card.subLabel}
+  </div>
+</div>
+
+
+))}
+
+</div>
+
+        {/* Alternative Minimal Cards Design */}
+      
+
+        {/* Open Tickets */}
+        <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner mb-8">
+          <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
+            <MessageSquare size={20} />
+            Open Tickets ({openTickets.length})
+          </h2>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white text-black font-semibold rounded-lg">
+                  <th className="p-3 rounded-tl-lg">Ticket ID</th>
+                  <th className="p-3">Subject & Files</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">Raised By</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3 rounded-tr-lg">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {openTickets.length > 0 ? (
+                  openTickets.map((ticket, index) => (
+                    <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-3 font-semibold text-sm">{ticket.id}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
+                          {ticket.subject}
+                        </div>
+                        {ticket.hasAttachments && (
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 flex items-center gap-1"
+                          >
+                            <Paperclip size={12} /> {ticket.attachmentCount} file(s)
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-3 text-sm">{ticket.complaintType}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                        {ticket.studentId && (
+                          <div className="text-xs text-gray-500">ID: {ticket.studentId}</div>
+                        )}
+                        {ticket.studentRoom && (
+                          <div className="text-xs text-gray-500">Room: {ticket.studentRoom}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <Clock size={12} /> {ticket.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">{ticket.dateRaised}</td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleApprove(index)}
+                            disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
+                            className="p-1 text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
+                            title="Approve"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleReject(index)}
+                            disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
+                            className="p-1 text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+                            title="Reject"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-gray-600">
+                      No open tickets available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          
-          <div className="space-y-2">
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
             {openTickets.length > 0 ? (
               openTickets.map((ticket, index) => (
-                <div key={ticket.id} className="grid grid-cols-12 gap-2 bg-white p-3 rounded-lg shadow-sm">
-                  <div className="col-span-1 text-sm font-semibold">{ticket.id}</div>
-                  <div className="col-span-3">
-                    <div className="text-sm font-medium truncate" title={ticket.subject}>
-                      {ticket.subject}
+                <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Ticket ID</span>
+                      <p className="font-bold text-sm">{ticket.id}</p>
                     </div>
-                    {ticket.hasAttachments && (
-                      <button
-                        onClick={() => viewTicketDetails(ticket)}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
-                      >
-                        📎 {ticket.attachmentCount} file(s) - View
-                      </button>
-                    )}
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <Clock size={12} /> {ticket.status}
+                    </span>
                   </div>
-                  <div className="col-span-2 text-sm">{ticket.complaintType}</div>
-                  <div className="col-span-2">
-                    <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Subject</span>
+                    <p className="text-sm font-medium">{ticket.subject}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Type</span>
+                    <p className="text-sm">{ticket.complaintType}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Raised By</span>
+                    <p className="text-sm font-medium">{ticket.raisedBy}</p>
                     {ticket.studentId && (
-                      <div className="text-xs text-gray-500">({ticket.studentId})</div>
+                      <p className="text-xs text-gray-500">ID: {ticket.studentId}</p>
+                    )}
+                    {ticket.studentRoom && (
+                      <p className="text-xs text-gray-500">Room: {ticket.studentRoom}</p>
                     )}
                   </div>
-                  <div className="col-span-1 font-bold text-[#4F8CCF] text-sm">{ticket.status}</div>
-                  <div className="col-span-1 text-sm">{ticket.dateRaised}</div>
-                  <div className="col-span-2 space-y-1">
+                  
+                  <div className="mb-3">
+                    <span className="text-xs font-semibold text-gray-500">Date</span>
+                    <p className="text-sm">{ticket.dateRaised}</p>
+                  </div>
+                  
+                  {ticket.hasAttachments && (
                     <button
-                      className="bg-lime-500 text-black font-semibold w-full py-1 rounded-md hover:bg-lime-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                      onClick={() => viewTicketDetails(ticket)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1 mb-3"
+                    >
+                      <Paperclip size={12} /> {ticket.attachmentCount} attachment(s)
+                    </button>
+                  )}
+                  
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <button
                       onClick={() => handleApprove(index)}
                       disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
+                      className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {actionLoading[`approve_${index}`] ? "..." : "Approve"}
+                      <CheckCircle size={16} /> Approve
                     </button>
                     <button
-                      className="bg-red-600 text-white font-semibold w-full py-1 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                       onClick={() => handleReject(index)}
                       disabled={actionLoading[`approve_${index}`] || actionLoading[`reject_${index}`]}
+                      className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {actionLoading[`reject_${index}`] ? "..." : "Reject"}
+                      <XCircle size={16} /> Reject
                     </button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-700 col-span-12">
+              <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
                 No open tickets available.
               </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Resolved Tickets */}
-      <div className="bg-[#A4B494] rounded-2xl p-4 md:p-6 shadow-md">
-        <h3 className="text-xl font-semibold mb-4 text-black">
-          Resolved Tickets ({resolvedTickets.length})
-        </h3>
+        {/* Resolved Tickets */}
+        <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
+          <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
+            <CheckCircle size={20} />
+            Resolved Tickets ({resolvedTickets.length})
+          </h3>
 
-        {/* Mobile Card View */}
-        <div className="block lg:hidden space-y-4">
-          {resolvedTickets.length > 0 ? (
-            resolvedTickets.map((ticket, index) => (
-              <div key={ticket.id} className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="font-semibold text-sm text-gray-600">ID:</span>
-                    <span className="font-bold">{ticket.id}</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-sm text-gray-600">Subject:</span>
-                    <p className="mt-1 font-medium">{ticket.subject}</p>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-sm text-gray-600">Type:</span>
-                    <p className="text-sm text-gray-700">{ticket.complaintType}</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Raised By:</span>
-                      <p className="text-sm">{ticket.raisedBy}</p>
-                      {ticket.studentId && (
-                        <p className="text-xs text-gray-500">({ticket.studentId})</p>
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Filed:</span>
-                      <p className="text-sm">{ticket.dateRaised}</p>
-                      {ticket.resolvedDate && (
-                        <>
-                          <span className="font-semibold text-sm text-gray-600">Resolved:</span>
-                          <p className="text-sm">{ticket.resolvedDate}</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {ticket.hasAttachments && (
-                    <div>
-                      <span className="font-semibold text-sm text-gray-600">Attachments:</span>
-                      <button
-                        onClick={() => viewTicketDetails(ticket)}
-                        className="block text-sm text-blue-600 hover:text-blue-800 underline"
-                      >
-                        📎 {ticket.attachmentCount} file(s) - View Details
-                      </button>
-                    </div>
-                  )}
-                  <div>
-                    <span className="font-semibold text-sm text-gray-600">Status:</span>
-                    <span className="ml-2 text-green-600 font-semibold">{ticket.status}</span>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-gray-900 font-semibold">
-              No resolved tickets available.
-            </div>
-          )}
-        </div>
-
-        {/* Desktop Grid View */}
-        <div className="hidden lg:block">
-          <div className="grid grid-cols-12 gap-2 bg-white text-black font-bold p-3 rounded-t-lg">
-            <div className="col-span-1 text-sm">Ticket ID</div>
-            <div className="col-span-3 text-sm">Subject & Files</div>
-            <div className="col-span-2 text-sm">Type</div>
-            <div className="col-span-2 text-sm">Raised By</div>
-            <div className="col-span-1 text-sm">Status</div>
-            <div className="col-span-1 text-sm">Filed</div>
-            <div className="col-span-2 text-sm">Resolved</div>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white text-black font-semibold rounded-lg">
+                  <th className="p-3 rounded-tl-lg">Ticket ID</th>
+                  <th className="p-3">Subject & Files</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">Raised By</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Filed</th>
+                  <th className="p-3 rounded-tr-lg">Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resolvedTickets.length > 0 ? (
+                  resolvedTickets.map((ticket) => (
+                    <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-3 font-semibold text-sm">{ticket.id}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
+                          {ticket.subject}
+                        </div>
+                        {ticket.hasAttachments && (
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 flex items-center gap-1"
+                          >
+                            <Paperclip size={12} /> {ticket.attachmentCount} file(s)
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-3 text-sm">{ticket.complaintType}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                        {ticket.studentId && (
+                          <div className="text-xs text-gray-500">{ticket.studentId}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle size={12} /> {ticket.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">{ticket.dateRaised}</td>
+                      <td className="p-3 text-sm">{ticket.resolvedDate || 'N/A'}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-gray-600">
+                      No resolved tickets available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          
-          <div className="space-y-2">
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
             {resolvedTickets.length > 0 ? (
-              resolvedTickets.map((ticket, index) => (
-                <div key={ticket.id} className="grid grid-cols-12 gap-2 bg-white p-3 rounded-lg shadow-sm">
-                  <div className="col-span-1 text-sm font-semibold">{ticket.id}</div>
-                  <div className="col-span-3">
-                    <div className="text-sm font-medium truncate" title={ticket.subject}>
-                      {ticket.subject}
+              resolvedTickets.map((ticket) => (
+                <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Ticket ID</span>
+                      <p className="font-bold text-sm">{ticket.id}</p>
                     </div>
-                    {ticket.hasAttachments && (
-                      <button
-                        onClick={() => viewTicketDetails(ticket)}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
-                      >
-                        📎 {ticket.attachmentCount} file(s) - View
-                      </button>
-                    )}
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <CheckCircle size={12} /> {ticket.status}
+                    </span>
                   </div>
-                  <div className="col-span-2 text-sm">{ticket.complaintType}</div>
-                  <div className="col-span-2">
-                    <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Subject</span>
+                    <p className="text-sm font-medium">{ticket.subject}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Type</span>
+                    <p className="text-sm">{ticket.complaintType}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Raised By</span>
+                    <p className="text-sm font-medium">{ticket.raisedBy}</p>
                     {ticket.studentId && (
-                      <div className="text-xs text-gray-500">({ticket.studentId})</div>
+                      <p className="text-xs text-gray-500">{ticket.studentId}</p>
                     )}
                   </div>
-                  <div className="col-span-1 text-green-600 font-semibold text-sm">{ticket.status}</div>
-                  <div className="col-span-1 text-sm">{ticket.dateRaised}</div>
-                  <div className="col-span-2 text-sm">{ticket.resolvedDate || 'N/A'}</div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Filed</span>
+                      <p className="text-sm">{ticket.dateRaised}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Resolved</span>
+                      <p className="text-sm">{ticket.resolvedDate || 'N/A'}</p>
+                    </div>
+                  </div>
+                  
+                  {ticket.hasAttachments && (
+                    <button
+                      onClick={() => viewTicketDetails(ticket)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                    >
+                      <Paperclip size={12} /> {ticket.attachmentCount} attachment(s)
+                    </button>
+                  )}
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-900 font-semibold">
+              <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
                 No resolved tickets available.
               </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Ticket Details Modal */}
-      {showModal && selectedTicket && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold text-gray-900">Ticket Details</h3>
+        {/* Ticket Details Modal */}
+        {showModal && selectedTicket && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <FileText size={24} /> Ticket Details
+                  </h3>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600">Ticket ID</label>
+                      <p className="text-lg font-bold">{selectedTicket.id}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600">Status</label>
+                      <p className={`text-lg font-bold ${selectedTicket.status === 'Resolved' ? 'text-green-600' : 'text-yellow-600'}`}>
+                        {selectedTicket.status}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600">Subject</label>
+                    <p className="text-gray-900">{selectedTicket.subject}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600">Description</label>
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedTicket.description}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600">Type</label>
+                      <p className="text-gray-900">{selectedTicket.complaintType}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600">Raised By</label>
+                      <p className="text-gray-900">{selectedTicket.raisedBy}</p>
+                      {selectedTicket.studentId && (
+                        <p className="text-sm text-gray-500">ID: {selectedTicket.studentId}</p>
+                      )}
+                      {selectedTicket.studentRoom && (
+                        <p className="text-sm text-gray-500">Room: {selectedTicket.studentRoom}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600 mb-2">
+                        Attachments ({selectedTicket.attachments.length})
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {selectedTicket.attachments.map((attachment, idx) => (
+                          <div key={idx} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium truncate flex-1" title={attachment.originalName}>
+                                {attachment.originalName || attachment.filename}
+                              </span>
+                              {attachment.mimeType?.startsWith('image/') ? (
+                                <ImageIcon size={16} className="text-blue-500" />
+                              ) : attachment.mimeType?.startsWith('video/') ? (
+                                <Video size={16} className="text-purple-500" />
+                              ) : (
+                                <File size={16} className="text-gray-500" />
+                              )}
+                            </div>
+                            <button
+                              onClick={() => viewAttachment(selectedTicket._id, attachment._id, attachment.originalName, attachment.mimeType)}
+                              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 text-sm transition-colors"
+                            >
+                              View File
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attachment Viewer Modal */}
+        {attachmentModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-900 truncate">{attachmentModal.filename}</h3>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={closeAttachmentModal}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
                   ×
                 </button>
               </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600">Ticket ID</label>
-                    <p className="text-lg font-bold">{selectedTicket.id}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600">Status</label>
-                    <p className="text-lg font-bold text-blue-600">{selectedTicket.status}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600">Subject</label>
-                  <p className="text-gray-900">{selectedTicket.subject}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600">Description</label>
-                  <p className="text-gray-900">{selectedTicket.description}</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600">Type</label>
-                    <p className="text-gray-900">{selectedTicket.complaintType}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600">Raised By</label>
-                    <p className="text-gray-900">{selectedTicket.raisedBy}</p>
-                    {selectedTicket.studentId && (
-                      <p className="text-sm text-gray-500">({selectedTicket.studentId})</p>
-                    )}
-                  </div>
-                </div>
-                
-                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600 mb-2">
-                      Attachments ({selectedTicket.attachments.length})
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedTicket.attachments.map((attachment, idx) => (
-                        <div key={idx} className="border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium truncate" title={attachment.originalName}>
-                              {attachment.originalName || attachment.filename}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {attachment.mimeType?.startsWith('image/') ? '📷' : 
-                               attachment.mimeType?.startsWith('video/') ? '🎥' : '📄'}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => viewAttachment(selectedTicket._id, attachment._id, attachment.originalName, attachment.mimeType)}
-                            className="w-full bg-blue-500 text-white py-2 px-3 rounded hover:bg-blue-600 text-sm"
-                          >
-                            View File
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+              <div className="p-4 max-h-[calc(90vh-100px)] overflow-auto flex items-center justify-center bg-gray-100">
+                {attachmentModal.type === 'image' && (
+                  <img
+                    src={attachmentModal.url}
+                    alt={attachmentModal.filename}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                  />
+                )}
+                {attachmentModal.type === 'video' && (
+                  <video
+                    src={attachmentModal.url}
+                    controls
+                    className="max-w-full max-h-full rounded-lg"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+                {attachmentModal.type === 'document' && (
+                  <div className="text-center p-8">
+                    <File size={48} className="mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-600 mb-4">Preview not available for this file type</p>
+                    <a
+                      href={attachmentModal.url}
+                      download={attachmentModal.filename}
+                      className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      <FileText size={18} /> Download File
+                    </a>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Attachment Viewer Modal */}
-      {attachmentModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">{attachmentModal.filename}</h3>
-              <button
-                onClick={closeAttachmentModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-4 max-h-[calc(90vh-100px)] overflow-auto flex items-center justify-center">
-              {attachmentModal.type === 'image' && (
-                <img
-                  src={attachmentModal.url}
-                  alt={attachmentModal.filename}
-                  className="max-w-full max-h-full object-contain"
-                />
-              )}
-              {attachmentModal.type === 'video' && (
-                <video
-                  src={attachmentModal.url}
-                  controls
-                  className="max-w-full max-h-full"
-                >
-                  Your browser does not support the video tag.
-                </video>
-              )}
-              {attachmentModal.type === 'document' && (
-                <div className="text-center">
-                  <p className="text-gray-600 mb-4">Preview not available for this file type</p>
-                  <a
-                    href={attachmentModal.url}
-                    download={attachmentModal.filename}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  >
-                    Download File
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
       <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  theme="colored"
-/>
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </div>
   );
 }

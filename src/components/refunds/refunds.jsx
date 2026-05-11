@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Filter, X, Calendar, DollarSign, User, Clock, CheckCircle, XCircle, AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import api from "@/lib/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Refunds = () => {
   // Form state
@@ -31,49 +34,119 @@ const Refunds = () => {
     amountMax: "",
   });
 
-  // Sample refund history data
-  const refundHistory = [
-    {
-      date: "25-10-2025",
-      recipientName: "Chinmay Gawade",
-      amount: "₹500",
-      reason: "Overpayment",
-      status: "Completed",
-      processedBy: "Admin A",
-    },
-    {
-      date: "26-10-2025",
-      recipientName: "Sullivan Khan",
-      amount: "₹750",
-      reason: "Course Cancellation",
-      status: "Pending",
-      processedBy: "Admin B",
-    },
-    {
-      date: "27-10-2025",
-      recipientName: "Priya Sharma",
-      amount: "₹300",
-      reason: "Duplicate Payment",
-      status: "Rejected",
-      processedBy: "Admin A",
-    },
-    {
-      date: "28-10-2025",
-      recipientName: "Rahul Verma",
-      amount: "₹1200",
-      reason: "Overpayment",
-      status: "Completed",
-      processedBy: "Admin C",
-    },
-    {
-      date: "29-10-2025",
-      recipientName: "Anita Desai",
-      amount: "₹450",
-      reason: "Service Not Provided",
-      status: "Pending",
-      processedBy: "Admin B",
-    },
-  ];
+  // Sample refund history data replaced with API state
+  const [refundHistory, setRefundHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRefunds = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/api/adminauth/refunds');
+      if (res.data && res.data.refunds) {
+        const mapped = res.data.refunds.map(r => ({
+          id: r.refundId,
+          date: new Date(r.date).toLocaleDateString("en-IN").replace(/\//g, '-'),
+          recipientName: r.recipientName,
+          studentId: "N/A", // Backend doesn't return student ID string by default in mapping, fallback to N/A
+          amount: `₹${r.amount}`,
+          reason: r.reason,
+          status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+          processedBy: r.processedBy,
+          processedDate: r.processedDate ? new Date(r.processedDate).toLocaleDateString("en-IN").replace(/\//g, '-') : "-",
+        }));
+        setRefundHistory(mapped);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch refunds");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRefunds();
+  }, []);
+
+  // Calculate statistics
+  const calculateStats = () => {
+    const totalRefunds = refundHistory.length;
+    const totalAmount = refundHistory.reduce((sum, refund) => {
+      const amount = parseInt(refund.amount.replace("₹", "").replace(",", ""));
+      return sum + amount;
+    }, 0);
+    const completed = refundHistory.filter(r => r.status === "Completed").length;
+    const pending = refundHistory.filter(r => r.status === "Pending").length;
+    const rejected = refundHistory.filter(r => r.status === "Rejected").length;
+    
+    return { totalRefunds, totalAmount, completed, pending, rejected };
+  };
+
+  const stats = calculateStats();
+
+  // Card data for stats
+ const statCards = [
+{
+id: "total",
+label: "Total Refunds",
+value: stats.totalRefunds,
+subLabel: "All Requests",
+borderColor: "border-blue-200",
+bgColor: "bg-blue-50",
+textColor: "text-blue-500",
+badgeColor: "bg-blue-50 text-blue-600",
+icon: <CreditCard size={18} />,
+},
+
+{
+id: "amount",
+label: "Total Amount",
+value: `₹${stats.totalAmount.toLocaleString()}`,
+subLabel: "Processed",
+borderColor: "border-green-200",
+bgColor: "bg-green-50",
+textColor: "text-green-500",
+badgeColor: "bg-green-50 text-green-600",
+icon: <DollarSign size={18} />,
+},
+
+{
+id: "completed",
+label: "Completed",
+value: stats.completed,
+subLabel: "Successful",
+borderColor: "border-emerald-200",
+bgColor: "bg-emerald-50",
+textColor: "text-emerald-500",
+badgeColor: "bg-emerald-50 text-emerald-600",
+icon: <CheckCircle size={18} />,
+},
+
+{
+id: "pending",
+label: "Pending",
+value: stats.pending,
+subLabel: "Awaiting",
+borderColor: "border-orange-200",
+bgColor: "bg-orange-50",
+textColor: "text-orange-500",
+badgeColor: "bg-orange-50 text-orange-600",
+icon: <Clock size={18} />,
+},
+
+{
+id: "rejected",
+label: "Rejected",
+value: stats.rejected,
+subLabel: "Declined",
+borderColor: "border-red-200",
+bgColor: "bg-red-50",
+textColor: "text-red-500",
+badgeColor: "bg-red-50 text-red-600",
+icon: <XCircle size={18} />,
+},
+];
+
 
   // Form validation
   const validateForm = () => {
@@ -88,7 +161,7 @@ const Refunds = () => {
     if (!formData.refundAmount.trim()) {
       errors.refundAmount = "Amount is required";
       isValid = false;
-    } else if (!/^₹?\d+(,\d{3})*(\.\d{2})?$/.test(formData.refundAmount)) {
+    } else if (!/^\d+(\.\d{2})?$/.test(formData.refundAmount)) {
       errors.refundAmount = "Enter a valid amount";
       isValid = false;
     }
@@ -112,7 +185,6 @@ const Refunds = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error when field is changed
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -141,10 +213,24 @@ const Refunds = () => {
   };
 
   // Submit form
-  const handleProceedToPay = () => {
+  const handleProceedToPay = async () => {
     if (validateForm()) {
-      console.log("Processing refund:", formData);
-      // Add logic to process refund
+      try {
+        await api.post('/api/adminauth/refunds', {
+          studentId: formData.studentId,
+          amount: parseFloat(formData.refundAmount),
+          reason: formData.reason,
+          paymentMethod: formData.paymentMethod
+        });
+        toast.success("Refund request submitted successfully!");
+        handleCancel();
+        fetchRefunds(); // Refresh the list
+      } catch (err) {
+        console.error("Refund error:", err);
+        toast.error(err.response?.data?.message || "Failed to submit refund request");
+      }
+    } else {
+      toast.error("Please fill all required fields correctly");
     }
   };
 
@@ -157,25 +243,39 @@ const Refunds = () => {
       amountMin: "",
       amountMax: "",
     });
+    toast.info("Filters cleared");
   };
 
   // Status badge styling
   const getStatusBadge = (status) => {
-    const baseClasses = "px-2 sm:px-3 py-1 rounded-md text-xs font-semibold";
     switch (status) {
       case "Completed":
-        return `${baseClasses} bg-[#28C404] text-white`;
+        return "bg-green-100 text-green-800";
       case "Pending":
-        return `${baseClasses} bg-[#FF0000] text-white`;
+        return "bg-orange-100 text-orange-800";
       case "Rejected":
-        return `${baseClasses} bg-[#FF7700] text-white`;
+        return "bg-red-100 text-red-800";
       default:
-        return `${baseClasses} bg-gray-500 text-white`;
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Completed":
+        return <CheckCircle size={14} className="text-green-600" />;
+      case "Pending":
+        return <Clock size={14} className="text-orange-600" />;
+      case "Rejected":
+        return <XCircle size={14} className="text-red-600" />;
+      default:
+        return <AlertCircle size={14} className="text-gray-600" />;
     }
   };
 
   // Date parsing helper
   const parseDate = (dateString) => {
+    if (!dateString || dateString === "-") return null;
     const [day, month, year] = dateString.split("-").map(Number);
     return new Date(year, month - 1, day);
   };
@@ -188,21 +288,21 @@ const Refunds = () => {
       refund.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.processedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
       refund.date.includes(searchTerm) ||
-      refund.amount.includes(searchTerm);
+      refund.amount.includes(searchTerm) ||
+      refund.studentId.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = !filters.status || refund.status === filters.status;
-    const matchesDateFrom =
-      !filters.dateFrom || parseDate(refund.date) >= new Date(filters.dateFrom);
-    const matchesDateTo =
-      !filters.dateTo || parseDate(refund.date) <= new Date(filters.dateTo);
+    
+    const refundDate = parseDate(refund.date);
+    const fromDate = filters.dateFrom ? new Date(filters.dateFrom) : null;
+    const toDate = filters.dateTo ? new Date(filters.dateTo) : null;
+    
+    const matchesDateFrom = !fromDate || (refundDate && refundDate >= fromDate);
+    const matchesDateTo = !toDate || (refundDate && refundDate <= toDate);
 
-    const refundAmount = Number.parseInt(
-      refund.amount.replace("₹", "").replace(",", "")
-    );
-    const matchesAmountMin =
-      !filters.amountMin || refundAmount >= Number.parseInt(filters.amountMin);
-    const matchesAmountMax =
-      !filters.amountMax || refundAmount <= Number.parseInt(filters.amountMax);
+    const refundAmount = parseInt(refund.amount.replace("₹", "").replace(",", ""));
+    const matchesAmountMin = !filters.amountMin || refundAmount >= parseInt(filters.amountMin);
+    const matchesAmountMax = !filters.amountMax || refundAmount <= parseInt(filters.amountMax);
 
     return (
       matchesSearch &&
@@ -215,449 +315,481 @@ const Refunds = () => {
   });
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 bg-white min-h-screen w-full">
-      {/* Header */}
-      <div className="flex items-center gap-2 mt-1">
-        <div className=" w-1 h-6 bg-[#4F8CCF]"></div>
-        <h1 className="text-xl sm:text-2xl font-bold text-black">Refunds</h1>
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-6 bg-[#4F8CCF] rounded-full"></div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-black">Refunds</h1>
+          </div>
+          <p className="text-gray-600 mt-2 ml-3">Manage student refund requests and payment processing</p>
+        </div>
+
+        {/* Modern Stats Cards */}
+       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
+  {statCards.map((card) => (
+    <div
+      key={card.id}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+    >
+      <div
+        className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
+      >
+        <div className={card.textColor}>
+          {card.icon}
+        </div>
       </div>
 
-      {/* Initiate New Refund Form */}
-    <div
-  className="rounded-lg px-4 sm:px-6 py-6 mx-auto"
-  style={{
-    backgroundColor: "#A4B494",
-    boxShadow: "0px 4px 20px 0px #00000040 inset",
-    width: "95%",
-    maxWidth: "1000px", // Adjusted container width
-  }}
->
-  <h2 className="text-lg sm:text-xl lg:text-2xl pt-3 font-bold text-black mb-6 pl-10">
-    Initiate New Refund
-  </h2>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 justify-items-center">
-    <div className="w-full max-w-[370px]"> 
-      <label
-        htmlFor="studentId"
-        className="text-sm sm:text-md font-bold text-black mb-2 block"
-      >
-        Student / Resident ID
-      </label>
-      <input
-        id="studentId"
-        type="text"
-        name="studentId"
-        value={formData.studentId}
-        onChange={handleInputChange}
-        placeholder="Enter Student ID/ Resident ID"
-        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
-          formErrors.studentId ? "border-red-500" : "border-gray-300"
-        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-      />
-      {formErrors.studentId && (
-        <p className="text-red-500 text-xs mt-1">
-          {formErrors.studentId}
-        </p>
-      )}
-    </div>
-    <div className="w-full max-w-[370px]"> 
-      <label
-        htmlFor="refundAmount"
-        className="text-sm sm:text-md font-bold text-black mb-2 block"
-      >
-        Refund Amount
-      </label>
-      <input
-        id="refundAmount"
-        type="text"
-        name="refundAmount"
-        value={formData.refundAmount}
-        onChange={handleInputChange}
-        placeholder="Enter Amount"
-        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
-          formErrors.refundAmount ? "border-red-500" : "border-gray-300"
-        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-      />
-      {formErrors.refundAmount && (
-        <p className="text-red-500 text-xs mt-1">
-          {formErrors.refundAmount}
-        </p>
-      )}
-    </div>
 
-    {/* Reason Input */}
-    <div className="w-full max-w-[370px]"> 
-      <label
-        htmlFor="reason"
-        className="text-sm sm:text-md font-bold text-black mb-2 block"
-      >
-        Reason For Refund
-      </label>
-      <input
-        id="reason"
-        type="text"
-        name="reason"
-        value={formData.reason}
-        onChange={handleInputChange}
-        placeholder="Enter Reason"
-        className={`w-full bg-white px-3 sm:px-4 py-2 rounded-lg border ${
-          formErrors.reason ? "border-red-500" : "border-gray-300"
-        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-      />
-      {formErrors.reason && (
-        <p className="text-red-500 text-xs mt-1">{formErrors.reason}</p>
-      )}
-    </div>
-
-    {/* Payment Method Select */}
-    <div className="w-full max-w-[370px]"> 
-      <label
-        htmlFor="paymentMethod"
-        className="text-sm sm:text-md font-bold text-black mb-2 block"
-      >
-        Payment Method
-      </label>
-      <select
-        id="paymentMethod"
-        name="paymentMethod"
-        value={formData.paymentMethod}
-        onChange={handleInputChange}
-        className={`w-full text-gray-500 bg-white px-3 sm:px-4 py-2.5 rounded-lg border ${
-          formErrors.paymentMethod ? "border-red-500" : "border-gray-300"
-        } focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base`}
-      >
-        <option value="">Select Method</option>
-        <option value="bank_transfer">Bank Transfer</option>
-        <option value="upi">UPI</option>
-        <option value="cash">Cash</option>
-        <option value="cheque">Cheque</option>
-      </select>
-      {formErrors.paymentMethod && (
-        <p className="text-red-500 text-xs mt-1">
-          {formErrors.paymentMethod}
-        </p>
-      )}
-    </div>
+  <div className="text-3xl font-bold text-black">
+    {card.value}
   </div>
-  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-5 mb-5">
-    <button
-      onClick={handleCancel}
-      className="bg-white cursor-pointer border border-gray-400 px-6 sm:px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 text-sm sm:text-base shadow-[0px_4px_20px_0px_#0000001A]"
-    >
-      Cancel
-    </button>
-    <button
-      onClick={handleProceedToPay}
-      className="bg-white cursor-pointer text-black px-6 sm:px-8 py-2 rounded-xl font-bold hover:bg-gray-100 text-sm sm:text-base shadow-[0px_4px_20px_0px_#0000001A]"
-    >
-      Proceed To Pay
-    </button>
+
+  <div className="text-gray-700 text-sm font-medium mt-1">
+    {card.label}
+  </div>
+
+  <div
+    className={`inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full ${card.badgeColor}`}
+  >
+    {card.subLabel}
   </div>
 </div>
 
-      {/* Refund History Section */}
-      <div
-        className="rounded-lg px-4 sm:px-6 py-4"
-        style={{
-          backgroundColor: "#A4B494",
-          boxShadow: "0px 4px 20px 0px #00000040 inset",
-        }}
-      >
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-3">
-          <h2 className="text-lg sm:text-xl font-semibold pl-0 sm:pl-10 text-black">
-            Refund History
+
+))}
+
+</div>
+
+        {/* Alternative Minimal Cards */}
+       
+
+        {/* Initiate New Refund Form */}
+        <div
+          className="rounded-2xl p-6 mb-10"
+          style={{
+            backgroundColor: "#BEC5AD",
+            boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
+          }}
+        >
+          <h2 className="text-xl font-bold text-black mb-6 flex items-center gap-2">
+            <CreditCard size={22} />
+            Initiate New Refund
           </h2>
-          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-            <div className="relative flex-1 sm:flex-initial">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">
+                Student / Resident ID
+              </label>
+              <div className="relative">
+                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  name="studentId"
+                  value={formData.studentId}
+                  onChange={handleInputChange}
+                  placeholder="Enter Student ID / Resident ID"
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border ${
+                    formErrors.studentId ? "border-red-500" : "border-gray-200"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                />
+              </div>
+              {formErrors.studentId && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.studentId}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">
+                Refund Amount
+              </label>
+              <div className="relative">
+                <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  name="refundAmount"
+                  value={formData.refundAmount}
+                  onChange={handleInputChange}
+                  placeholder="Enter Amount"
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border ${
+                    formErrors.refundAmount ? "border-red-500" : "border-gray-200"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                />
+              </div>
+              {formErrors.refundAmount && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.refundAmount}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">
+                Reason For Refund
+              </label>
               <input
                 type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search For Refunds"
-                className="w-full sm:w-64 lg:w-80 pl-3 pr-4 py-1.5 rounded-md bg-white border border-[#BAC2A7] text-black focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
+                name="reason"
+                value={formData.reason}
+                onChange={handleInputChange}
+                placeholder="Enter Reason"
+                className={`w-full px-4 py-2.5 rounded-lg bg-white border ${
+                  formErrors.reason ? "border-red-500" : "border-gray-200"
+                } focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
               />
-              <Search className="absolute right-8 top-1/2 transform -translate-y-1/2 text-black w-4 h-4" />
+              {formErrors.reason && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.reason}</p>
+              )}
             </div>
-            <button
-              onClick={() => setShowFilterModal(true)}
-              className="ml-2 mr-7 flex items-center justify-center gap-2 sm:gap-4 bg-[#28C404] text-white px-4 sm:px-6 py-1.5 cursor-pointer rounded-md font-semibold text-sm sm:text-base hover:bg-[#22A803] transition-colors shadow-[0px_4px_20px_0px_#00000040]"
-            >
-              <svg
-                width="18"
-                height="12"
-                viewBox="0 0 24 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">
+                Payment Method
+              </label>
+              <select
+                name="paymentMethod"
+                value={formData.paymentMethod}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-2.5 rounded-lg bg-white border ${
+                  formErrors.paymentMethod ? "border-red-500" : "border-gray-200"
+                } focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm text-gray-700`}
               >
-                <path
-                  d="M9.5 15.5V13H14.5V15.5H9.5ZM4.5 9.25V6.75H19.5V9.25H4.5ZM0.75 3V0.5H23.25V3H0.75Z"
-                  fill="white"
-                />
-              </svg>
-              Filter
+                <option value="">Select Method</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="upi">UPI</option>
+                <option value="cash">Cash</option>
+                <option value="cheque">Cheque</option>
+              </select>
+              {formErrors.paymentMethod && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.paymentMethod}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+            <button
+              onClick={handleCancel}
+              className="bg-white cursor-pointer px-8 py-2 rounded-xl font-bold text-black hover:bg-gray-100 transition-all duration-300 shadow-md"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleProceedToPay}
+              className="bg-white cursor-pointer text-black px-8 py-2 rounded-xl font-bold hover:bg-gray-100 transition-all duration-300 shadow-md"
+            >
+              Proceed To Pay
             </button>
           </div>
         </div>
 
-        {/* Active Filters Display */}
-        {(filters.status ||
-          filters.dateFrom ||
-          filters.dateTo ||
-          filters.amountMin ||
-          filters.amountMax) && (
-          <div className="mb-4 p-3 bg-white rounded-md">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">
-                Active Filters:
-              </span>
-              {filters.status && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  Status: {filters.status}
-                </span>
-              )}
-              {filters.dateFrom && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  From: {filters.dateFrom}
-                </span>
-              )}
-              {filters.dateTo && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  To: {filters.dateTo}
-                </span>
-              )}
-              {filters.amountMin && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  Min: ₹{filters.amountMin}
-                </span>
-              )}
-              {filters.amountMax && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  Max: ₹{filters.amountMax}
-                </span>
-              )}
+        {/* Refund History Section */}
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            backgroundColor: "#BEC5AD",
+            boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
+          }}
+        >
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-3">
+            <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+              <Clock size={20} />
+              Refund History
+            </h2>
+            
+            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search refunds..."
+                  className="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-200 text-black focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              </div>
+              
               <button
-                onClick={clearFilters}
-                className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs hover:bg-red-200 transition-colors"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center justify-center gap-2 bg-green-500 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-green-600 transition-all duration-300 shadow-md"
               >
-                Clear All
+                <Filter size={16} />
+                Filter
               </button>
+            </div>
+          </div>
+
+          {/* Active Filters Display */}
+          {(filters.status || filters.dateFrom || filters.dateTo || filters.amountMin || filters.amountMax) && (
+            <div className="mb-4 p-3 bg-white rounded-lg">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-700">Active Filters:</span>
+                {filters.status && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center gap-1">
+                    Status: {filters.status}
+                  </span>
+                )}
+                {filters.dateFrom && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center gap-1">
+                    <Calendar size={12} /> From: {filters.dateFrom}
+                  </span>
+                )}
+                {filters.dateTo && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center gap-1">
+                    <Calendar size={12} /> To: {filters.dateTo}
+                  </span>
+                )}
+                {filters.amountMin && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    Min: ₹{filters.amountMin}
+                  </span>
+                )}
+                {filters.amountMax && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    Max: ₹{filters.amountMax}
+                  </span>
+                )}
+                <button
+                  onClick={clearFilters}
+                  className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs hover:bg-red-200 transition-colors flex items-center gap-1"
+                >
+                  <X size={12} /> Clear All
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="animate-spin text-gray-500" size={32} />
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-white rounded-lg">
+                    <th className="px-4 py-3 rounded-tl-lg text-sm font-semibold text-gray-700">Refund ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Date</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Student Name</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Student ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Amount</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Reason</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Status</th>
+                    <th className="px-4 py-3 rounded-tr-lg text-sm font-semibold text-gray-700">Processed By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRefunds.length > 0 ? (
+                    filteredRefunds.map((refund, idx) => (
+                      <tr key={idx} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{refund.id}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{refund.date}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800">{refund.recipientName}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{refund.studentId}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800">{refund.amount}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{refund.reason}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(refund.status)}`}>
+                            {getStatusIcon(refund.status)}
+                            {refund.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{refund.processedBy}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-gray-600 bg-white">
+                        No refunds found matching your search criteria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="animate-spin text-gray-500" size={32} />
+              </div>
+            ) : filteredRefunds.length > 0 ? (
+              filteredRefunds.map((refund, idx) => (
+                <div key={idx} className="bg-white rounded-xl p-4 shadow-md">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Refund ID</span>
+                      <p className="font-mono text-sm font-semibold">{refund.id}</p>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(refund.status)}`}>
+                      {getStatusIcon(refund.status)}
+                      {refund.status}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Date</span>
+                      <p className="text-sm">{refund.date}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Amount</span>
+                      <p className="text-sm font-bold text-gray-800">{refund.amount}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Student</span>
+                    <p className="text-sm font-medium">{refund.recipientName}</p>
+                    <p className="text-xs text-gray-500">ID: {refund.studentId}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Reason</span>
+                    <p className="text-sm">{refund.reason}</p>
+                  </div>
+                  
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500">Processed By</span>
+                    <p className="text-sm">{refund.processedBy}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+                No refunds found matching your search criteria.
+              </div>
+            )}
+          </div>
+          
+          {/* Total results info */}
+          <div className="text-center mt-4 text-sm text-gray-600">
+            Showing {filteredRefunds.length} of {refundHistory.length} refunds
+          </div>
+        </div>
+
+        {/* Filter Modal */}
+        {showFilterModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-300">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Filter size={20} /> Filter Refunds
+                  </h3>
+                  <button
+                    onClick={() => setShowFilterModal(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Date From
+                    </label>
+                    <input
+                      type="date"
+                      name="dateFrom"
+                      value={filters.dateFrom}
+                      onChange={handleFilterChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Date To
+                    </label>
+                    <input
+                      type="date"
+                      name="dateTo"
+                      value={filters.dateTo}
+                      onChange={handleFilterChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Min Amount
+                    </label>
+                    <input
+                      type="number"
+                      name="amountMin"
+                      value={filters.amountMin}
+                      onChange={handleFilterChange}
+                      placeholder="Min ₹"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Max Amount
+                    </label>
+                    <input
+                      type="number"
+                      name="amountMax"
+                      value={filters.amountMax}
+                      onChange={handleFilterChange}
+                      placeholder="Max ₹"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowFilterModal(false)}
+                  className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Refunds Table */}
-        <div className="overflow-x-auto">
-  <style jsx>{`
-    .refund-table th {
-      position: relative;
-    }
-    .refund-table th:not(:last-child)::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      top: 6px;
-      bottom: 6px;
-      width: 1px;
-      background-color: #000000;
-    }
-    @media (max-width: 640px) {
-      .refund-table {
-        display: none;
-      }
-      .refund-card {
-        display: block;
-      }
-    }
-    @media (min-width: 641px) {
-      .refund-card {
-        display: none;
-      }
-    }
-  `}</style>
-
-  {/* Table View (Desktop & Tablet) */}
-  <table className="refund-table w-full bg-[#A4B494] rounded-md overflow-hidden text-xs sm:text-sm text-left border-separate border-spacing-0 min-w-[600px]">
-    <thead>
-      <tr className="text-black">
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Date</th>
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Recipient Name</th>
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Amount</th>
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Reason</th>
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Status</th>
-        <th className="px-2 sm:px-4 py-2 bg-white font-bold">Processed By</th>
-      </tr>
-    </thead>
-    <tbody className="text-black">
-      {filteredRefunds.length > 0 ? (
-        filteredRefunds.map((refund, idx) => (
-          <tr key={idx} className="hover:bg-[#9BA085] transition-colors duration-200">
-            <td className="px-2 sm:px-4 py-2">{refund.date}</td>
-            <td className="px-2 sm:px-4 py-2">{refund.recipientName}</td>
-            <td className="px-2 sm:px-4 py-2">{refund.amount}</td>
-            <td className="px-2 sm:px-4 py-2">{refund.reason}</td>
-            <td className="px-2 sm:px-4 py-2">
-              <span className={getStatusBadge(refund.status)}>{refund.status}</span>
-            </td>
-            <td className="px-2 sm:px-4 py-2">{refund.processedBy}</td>
-          </tr>
-        ))
-      ) : (
-        <tr>
-          <td colSpan={6} className="px-4 py-8 text-center text-gray-600">
-            No refunds found matching your search criteria.
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-
-  {/* Card View (Mobile Only) */}
-  <div className="refund-card space-y-4">
-    {filteredRefunds.length > 0 ? (
-      filteredRefunds.map((refund, idx) => (
-        <div key={idx} className="bg-[white] rounded-md p-4 text-sm shadow-md">
-          <div className="mb-2">
-            <strong>Date:</strong> {refund.date}
-          </div>
-          <div className="mb-2">
-            <strong>Recipient Name:</strong> {refund.recipientName}
-          </div>
-          <div className="mb-2">
-            <strong>Amount:</strong> {refund.amount}
-          </div>
-          <div className="mb-2">
-            <strong>Reason:</strong> {refund.reason}
-          </div>
-          <div className="mb-2">
-            <strong>Status:</strong>{" "}
-            <span className={getStatusBadge(refund.status)}>{refund.status}</span>
-          </div>
-          <div>
-            <strong>Processed By:</strong> {refund.processedBy}
-          </div>
-        </div>
-      ))
-    ) : (
-      <div className="text-center text-gray-600 py-8">
-        No refunds found matching your search criteria.
       </div>
-    )}
-  </div>
-</div>
-
-      </div>
-
-      {/* Filter Modal */}
-      {showFilterModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-black">Filter Refunds</h3>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Close filter modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="filterStatus"
-                  className="block text-sm font-bold text-black mb-2"
-                >
-                  Status
-                </label>
-                <select
-                  id="filterStatus"
-                  name="status"
-                  value={filters.status}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                >
-                  <option value="">All Status</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="dateFrom"
-                  className="block text-sm font-bold text-black mb-2"
-                >
-                  Date From
-                </label>
-                <input
-                  id="dateFrom"
-                  type="date"
-                  name="dateFrom"
-                  value={filters.dateFrom}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="dateTo"
-                  className="block text-sm font-bold text-black mb-2"
-                >
-                  Date To
-                </label>
-                <input
-                  id="dateTo"
-                  type="date"
-                  name="dateTo"
-                  value={filters.dateTo}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="amountRange"
-                  className="block text-sm font-bold text-black mb-2"
-                >
-                  Amount Range
-                </label>
-                <div id="amountRange" className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    name="amountMin"
-                    value={filters.amountMin}
-                    onChange={handleFilterChange}
-                    placeholder="Min Amount"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                  <input
-                    type="number"
-                    name="amountMax"
-                    value={filters.amountMax}
-                    onChange={handleFilterChange}
-                    placeholder="Max Amount"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={clearFilters}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Clear Filters
-              </button>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="flex-1 px-4 py-2 bg-[#28C404] text-white rounded-md hover:bg-[#22A803]"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </div>
   );
 };

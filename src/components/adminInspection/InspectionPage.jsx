@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, Trash2, Edit2, Calendar, Clock, MapPin, Users, ClipboardList, Clock3, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import InspectionModal from "./InspectionModal";
 import api from "@/lib/api";
@@ -30,6 +30,13 @@ export default function InspectionPage() {
   const [upcomingInspections, setUpcomingInspections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    scheduled: 0,
+    completed: 0,
+    cancelled: 0,
+    areas: 0
+  });
 
   // API Functions
   const createInspectionAPI = async (inspectionData) => {
@@ -37,8 +44,6 @@ export default function InspectionPage() {
       const response = await api.post(`/api/adminauth/inspections`, inspectionData, {
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if you have auth tokens
-          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
       return response.data;
@@ -49,11 +54,7 @@ export default function InspectionPage() {
 
   const fetchInspectionsAPI = async () => {
     try {
-      const response = await api.get(`/api/adminauth/inspections`, {
-        headers: {
-          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
+      const response = await api.get(`/api/adminauth/inspections`);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch inspections' };
@@ -67,7 +68,6 @@ export default function InspectionPage() {
         {
           headers: {
             'Content-Type': 'application/json',
-            // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
         }
       );
@@ -79,15 +79,22 @@ export default function InspectionPage() {
 
   const deleteInspectionAPI = async (inspectionId) => {
     try {
-      const response = await api.delete(`/api/adminauth/inspections/${inspectionId}`, {
-        headers: {
-          // 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
+      const response = await api.delete(`/api/adminauth/inspections/${inspectionId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to delete inspection' };
     }
+  };
+
+  // Calculate statistics
+  const calculateStats = (inspections) => {
+    const total = inspections.length;
+    const scheduled = inspections.filter(i => i.status === 'Scheduled').length;
+    const completed = inspections.filter(i => i.status === 'Completed').length;
+    const cancelled = inspections.filter(i => i.status === 'Cancelled').length;
+    const areas = new Set(inspections.map(i => i.area).filter(Boolean)).size;
+    
+    setStats({ total, scheduled, completed, cancelled, areas });
   };
 
   // Load inspections on component mount
@@ -96,7 +103,9 @@ export default function InspectionPage() {
       try {
         setFetchLoading(true);
         const response = await fetchInspectionsAPI();
-        setUpcomingInspections(response.inspections || []);
+        const inspections = response.inspections || [];
+        setUpcomingInspections(inspections);
+        calculateStats(inspections);
       } catch (error) {
         console.error('Error loading inspections:', error);
         toast.error(error.message || 'Failed to load inspections');
@@ -117,6 +126,58 @@ export default function InspectionPage() {
     { label: "Status", key: "status" },
     { label: "Actions", key: "actions" },
   ];
+
+  // Card data for stats
+ const statCards = [
+{
+id: "total",
+label: "Total Inspections",
+value: stats.total,
+subLabel: "All inspections",
+borderColor: "border-blue-200",
+bgColor: "bg-blue-50",
+textColor: "text-blue-500",
+badgeColor: "bg-blue-50 text-blue-600",
+icon: <ClipboardList size={18} />,
+},
+
+{
+id: "scheduled",
+label: "Scheduled",
+value: stats.scheduled,
+subLabel: "Pending",
+borderColor: "border-orange-200",
+bgColor: "bg-orange-50",
+textColor: "text-orange-500",
+badgeColor: "bg-orange-50 text-orange-600",
+icon: <Clock3 size={18} />,
+},
+
+{
+id: "completed",
+label: "Completed",
+value: stats.completed,
+subLabel: "Done",
+borderColor: "border-green-200",
+bgColor: "bg-green-50",
+textColor: "text-green-500",
+badgeColor: "bg-green-50 text-green-600",
+icon: <CheckCircle size={18} />,
+},
+
+{
+id: "areas",
+label: "Areas Covered",
+value: stats.areas,
+subLabel: "Locations",
+borderColor: "border-purple-200",
+bgColor: "bg-purple-50",
+textColor: "text-purple-500",
+badgeColor: "bg-purple-50 text-purple-600",
+icon: <MapPin size={18} />,
+},
+];
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,7 +202,6 @@ export default function InspectionPage() {
 
     setLoading(true);
     try {
-      // Combine date and time into datetime
       const datetime = new Date(`${formData.date}T${formData.time}`);
       
       const inspectionData = {
@@ -154,7 +214,6 @@ export default function InspectionPage() {
 
       const response = await createInspectionAPI(inspectionData);
       
-      // Transform the response data to match frontend format
       const newInspection = {
         id: response.inspection.id,
         title: response.inspection.title,
@@ -172,10 +231,9 @@ export default function InspectionPage() {
         createdAt: response.inspection.createdAt
       };
       
-      // Add new inspection to local state
       setUpcomingInspections(prev => [newInspection, ...prev]);
+      calculateStats([newInspection, ...upcomingInspections]);
       
-      // Reset form
       setFormData({
         title: "",
         target: "",
@@ -197,7 +255,6 @@ export default function InspectionPage() {
   };
 
   const handleDownload = (inspection) => {
-    // Generate report data
     const reportData = {
       inspectionId: inspection.id,
       title: inspection.title,
@@ -209,7 +266,6 @@ export default function InspectionPage() {
       instructions: inspection.instructions || 'No specific instructions'
     };
     
-    // Create downloadable content
     const reportContent = `
 INSPECTION REPORT
 ================
@@ -228,7 +284,6 @@ ${reportData.instructions}
 Generated on: ${new Date().toLocaleString()}
     `.trim();
 
-    // Create and download file
     const blob = new Blob([reportContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -238,6 +293,8 @@ Generated on: ${new Date().toLocaleString()}
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+    
+    toast.success("Report downloaded successfully");
   };
 
   const handleViewDetails = (inspection) => {
@@ -246,17 +303,18 @@ Generated on: ${new Date().toLocaleString()}
 
   const handleStatusUpdate = async (inspectionId, newStatus) => {
     try {
-      const backendStatus = newStatus === 'Completed' ? 'completed' : 'pending';
+      const backendStatus = newStatus === 'Completed' ? 'completed' : 
+                           newStatus === 'Cancelled' ? 'cancelled' : 'pending';
       await updateInspectionStatusAPI(inspectionId, backendStatus);
       
-      // Update local state
-      setUpcomingInspections(prev => 
-        prev.map(inspection => 
-          inspection.id === inspectionId 
-            ? { ...inspection, status: newStatus }
-            : inspection
-        )
+      const updatedInspections = upcomingInspections.map(inspection => 
+        inspection.id === inspectionId 
+          ? { ...inspection, status: newStatus }
+          : inspection
       );
+      
+      setUpcomingInspections(updatedInspections);
+      calculateStats(updatedInspections);
       
       toast.info(`Inspection status updated to ${newStatus}`);
     } catch (error) {
@@ -273,12 +331,14 @@ Generated on: ${new Date().toLocaleString()}
     try {
       await deleteInspectionAPI(inspectionId);
       
-      // Remove from local state
-      setUpcomingInspections(prev => 
-        prev.filter(inspection => inspection.id !== inspectionId)
+      const updatedInspections = upcomingInspections.filter(
+        inspection => inspection.id !== inspectionId
       );
       
-    toast.success('Inspection deleted successfully');
+      setUpcomingInspections(updatedInspections);
+      calculateStats(updatedInspections);
+      
+      toast.success('Inspection deleted successfully');
     } catch (error) {
       console.error('Error deleting inspection:', error);
       toast.error(error.message || 'Failed to delete inspection');
@@ -286,351 +346,249 @@ Generated on: ${new Date().toLocaleString()}
   };
 
   return (
-    <div className="bg-white text-black w-full max-w-7xl mx-auto p-6 space-y-10 min-h-screen mt-10">
-      <h2 className="text-2xl font-bold mb-4 text-black ">
-        <span className="border-l-4 border-[#4F8CCF] pl-2 ml-2 ">
-          Hostel Inspections
-        </span>
-      </h2>
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-black">
+            <span className="border-l-4 border-[#4F8CCF] pl-3 inline-block">
+              Hostel Inspections
+            </span>
+          </h2>
+          <p className="text-gray-600 mt-2 ml-3">Schedule and manage hostel inspections</p>
+        </div>
 
-      {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-2xl p-6 bg-[#BEC5AD] shadow-md space-y-4"
+        {/* Stats Cards Section */}
+       
+
+        {/* Alternative Minimal Cards Design */}
+   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+  {statCards.map((card) => (
+    <div
+      key={card.id}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+    >
+      <div
+        className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
       >
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="title" className="block font-semibold mb-1">
-              Inspection Title
-            </label>
-            <select
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full p-2 bg-white rounded-lg shadow-xl"
-              disabled={loading}
-            >
-              <option value="">Select</option>
-              <option value="Monthly Room Check">Monthly Room Check</option>
-              <option value="Sanitation Check">Sanitation Check</option>
-              <option value="Safety Inspection">Safety Inspection</option>
-              <option value="Maintenance Check">Maintenance Check</option>
-            </select>
-            {errors.title && (
-              <p className="text-red-600 text-xs mt-1">{errors.title}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="target" className="block font-semibold mb-1">
-              Target Warden/Area
-            </label>
-            <input
-              name="target"
-              type="text"
-              value={formData.target}
-              onChange={handleChange}
-              placeholder="Enter Target"
-              className="w-full p-2 bg-white rounded-lg shadow-xl"
-              disabled={loading}
-            />
-            {errors.target && (
-              <p className="text-red-600 text-xs mt-1">{errors.target}</p>
-            )}
-          </div>
+        <div className={card.textColor}>
+          {card.icon}
         </div>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="area" className="block font-semibold mb-1">
-              Area
-            </label>
-            <select
-              name="area"
-              value={formData.area}
-              onChange={handleChange}
-              className="w-full p-2 bg-white rounded-lg shadow-xl"
-              disabled={loading}
-            >
-              <option value="">Select Area</option>
-              <option value="Dormitory">Dormitory</option>
-              <option value="Block A">Block A</option>
-              <option value="Block B">Block B</option>
-              <option value="Block C">Block C</option>
-              <option value="Common Areas">Common Areas</option>
-              <option value="Kitchen">Kitchen</option>
-              <option value="Bathrooms">Bathrooms</option>
-            </select>
-            {errors.area && (
-              <p className="text-red-600 text-xs mt-1">{errors.area}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="date" className="block font-semibold mb-1">
-              Date
-            </label>
-            <div className="flex items-center gap-2 md:max-w-[400px] w-full">
-              <input
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={handleChange}
-                id="dateInput"
-                className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
-                disabled={loading}
-              />
-              <Image
-                src="/photos/calendar.svg"
-                alt="Calendar Icon"
-                width={24}
-                height={24}
-                className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                onClick={() => !loading && (
-                  document.getElementById("dateInput")?.showPicker?.() ||
-                  document.getElementById("dateInput")?.focus()
-                )}
-              />
-            </div>
-            {errors.date && (
-              <p className="text-red-600 text-xs mt-1">{errors.date}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="time" className="block font-semibold mb-1">
-              Time
-            </label>
-            <div className="flex items-center gap-2 md:max-w-[400px] w-full">
-              <input
-                name="time"
-                type="time"
-                value={formData.time}
-                onChange={handleChange}
-                id="timeInput"
-                className="w-full p-2 text-gray-800 bg-white rounded-lg shadow-xl appearance-none"
-                disabled={loading}
-              />
-              <Image
-                src="/photos/clock.svg"
-                alt="Clock Icon"
-                width={24}
-                height={24}
-                className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                onClick={() => !loading && (
-                  document.getElementById("timeInput")?.showPicker?.() ||
-                  document.getElementById("timeInput")?.focus()
-                )}
-              />
-            </div>
-            {errors.time && (
-              <p className="text-red-600 text-xs mt-1">{errors.time}</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="instructions" className="block font-semibold mb-1">
-            Instructions (optional)
-          </label>
-          <textarea
-            name="instructions"
-            value={formData.instructions}
-            onChange={handleChange}
-            rows={3}
-            className="w-full p-2 bg-white rounded-lg shadow-xl"
-            disabled={loading}
-            placeholder="Enter specific instructions for the inspection..."
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              setFormData({
-                title: "",
-                target: "",
-                area: "",
-                date: "",
-                time: "",
-                instructions: "",
-              });
-              setErrors({});
-            }}
-            disabled={loading}
-            className={`bg-white text-black font-semibold px-6 py-2 rounded-lg shadow-xl ${
-              loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
-            }`}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className={`bg-white text-black font-semibold px-6 py-2 rounded-lg shadow-xl ${
-              loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
-            }`}
-          >
-            {loading ? 'Scheduling...' : 'Schedule'}
-          </button>
-        </div>
-      </form>
-
-{/* Inspection Table */}
-<section className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
-  <h2 className="text-black text-lg font-semibold mb-3 ml-2">
-    Upcoming Inspections
-  </h2>
-
-  {/* Desktop Table View */}
-  <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 hidden sm:block">
-    <div className="min-w-full inline-block overflow-hidden rounded-t-2xl border">
-      <table className="min-w-full text-black text-xs sm:text-sm md:text-base table-fixed">
-        <thead>
-          <tr className="bg-white border-b">
-            {tableHeaders.map((header, i) => (
-              <th key={i} className="text-center font-semibold py-3 px-2 whitespace-nowrap w-[12.5%]">
-                {header.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {fetchLoading ? (
-            <tr>
-              <td colSpan={tableHeaders.length} className="text-center py-8">
-                Loading inspections...
-              </td>
-            </tr>
-          ) : upcomingInspections.length === 0 ? (
-            <tr>
-              <td colSpan={tableHeaders.length} className="text-center py-8">
-                No inspections found. Create your first inspection above.
-              </td>
-            </tr>
-          ) : (
-            upcomingInspections.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-black/5 transition">
-                {tableHeaders.map((column, cellIndex) => {
-                  if (column.key === "actions") {
-                    return (
-                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
-                        <div className="flex justify-center items-center gap-2 sm:gap-3">
-                          <span
-                            className="w-4 h-4 cursor-pointer hover:text-blue-600"
-                            onClick={() => handleViewDetails(row)}
-                            title="View Details"
-                          >
-                            🔍
-                          </span>
-                          <span className="text-gray-400">|</span>
-                          <span
-                            className="w-4 h-4 cursor-pointer hover:text-green-600"
-                            onClick={() => handleDownload(row)}
-                            title="Download Report"
-                          >
-                            💾
-                          </span>
-                        </div>
-                      </td>
-                    );
-                  }
-
-                  if (column.key === "status") {
-                    return (
-                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
-                        <span
-                          className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg cursor-pointer transition-colors ${
-                            statusStyles[row.status] ?? "bg-gray-300 text-black"
-                          }`}
-                          onClick={() => {
-                            const newStatus = row.status === 'Scheduled' ? 'Completed' : 'Scheduled';
-                            handleStatusUpdate(row.id, newStatus);
-                          }}
-                          title="Click to toggle status"
-                        >
-                          {row.status}
-                        </span>
-                      </td>
-                    );
-                  }
-
-                  if (column.key === "id") {
-                    return (
-                      <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
-                        <span title={row[column.key]}>
-                          {row[column.key]?.substring(0, 8)}...
-                        </span>
-                      </td>
-                    );
-                  }
-
-                  return (
-                    <td key={cellIndex} className="text-center px-2 py-3 whitespace-nowrap w-[12.5%]">
-                      {row[column.key]}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+  <div className="text-4xl font-bold text-black">
+    {card.value}
   </div>
 
-  {/* Mobile Card View */}
-  <div className="space-y-4 sm:hidden">
-    {fetchLoading ? (
-      <div className="text-center py-8">Loading inspections...</div>
-    ) : upcomingInspections.length === 0 ? (
-      <div className="text-center py-8">No inspections found. Create your first inspection above.</div>
-    ) : (
-      upcomingInspections.map((row, index) => (
-        <div key={index} className="bg-white rounded-xl p-4 shadow-md">
-          {tableHeaders.map((column, i) => (
-            column.key !== "actions" && (
-              <div key={i} className="mb-2">
-                <strong>{column.label}:</strong> {column.key === "id" ? `${row[column.key]?.substring(0, 8)}...` : row[column.key]}
+  <div className="text-gray-700 text-sm font-medium mt-1">
+    {card.label}
+  </div>
+
+  <div
+    className={`inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full ${card.badgeColor}`}
+  >
+    {card.subLabel}
+  </div>
+
+</div>
+))}
+</div>
+
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl p-6 mb-10"
+          style={{
+            backgroundColor: "#BEC5AD",
+            boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
+          }}
+        >
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="title" className="block font-semibold mb-2 text-black">
+                Inspection Title
+              </label>
+              <select
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                disabled={loading}
+              >
+                <option value="">Select</option>
+                <option value="Monthly Room Check">Monthly Room Check</option>
+                <option value="Sanitation Check">Sanitation Check</option>
+                <option value="Safety Inspection">Safety Inspection</option>
+                <option value="Maintenance Check">Maintenance Check</option>
+              </select>
+              {errors.title && (
+                <p className="text-red-600 text-xs mt-1">{errors.title}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="target" className="block font-semibold mb-2 text-black">
+                Target Warden/Area
+              </label>
+              <input
+                name="target"
+                type="text"
+                value={formData.target}
+                onChange={handleChange}
+                placeholder="Enter Target"
+                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                disabled={loading}
+              />
+              {errors.target && (
+                <p className="text-red-600 text-xs mt-1">{errors.target}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+              <label htmlFor="area" className="block font-semibold mb-2 text-black">
+                Area
+              </label>
+              <select
+                name="area"
+                value={formData.area}
+                onChange={handleChange}
+                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                disabled={loading}
+              >
+                <option value="">Select Area</option>
+                <option value="Dormitory">Dormitory</option>
+                <option value="Block A">Block A</option>
+                <option value="Block B">Block B</option>
+                <option value="Block C">Block C</option>
+                <option value="Common Areas">Common Areas</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Bathrooms">Bathrooms</option>
+              </select>
+              {errors.area && (
+                <p className="text-red-600 text-xs mt-1">{errors.area}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="date" className="block font-semibold mb-2 text-black">
+                Date
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  id="dateInput"
+                  className="flex-1 p-3 text-gray-800 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  disabled={loading}
+                />
+                <Calendar 
+                  size={24}
+                  className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
+                  onClick={() => !loading && (
+                    document.getElementById("dateInput")?.showPicker?.() ||
+                    document.getElementById("dateInput")?.focus()
+                  )}
+                />
               </div>
-            )
-          ))}
-
-          <div className="flex items-center gap-5 mt-3">
-            <span
-              className="cursor-pointer hover:text-blue-600"
-              onClick={() => handleViewDetails(row)}
-              title="View Details"
-            >
-              🔍
-            </span>
-            <span
-              className="cursor-pointer hover:text-green-600"
-              onClick={() => handleDownload(row)}
-              title="Download Report"
-            >
-              💾
-            </span>
-            <span
-              className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${statusStyles[row.status] ?? "bg-gray-300 text-black"}`}
-              onClick={() => {
-                const newStatus = row.status === 'Scheduled' ? 'Completed' : 'Scheduled';
-                handleStatusUpdate(row.id, newStatus);
-              }}
-              title="Click to toggle status"
-            >
-              {row.status}
-            </span>
+              {errors.date && (
+                <p className="text-red-600 text-xs mt-1">{errors.date}</p>
+              )}
+            </div>
           </div>
-        </div>
-      ))
-    )}
-  </div>
-</section>
-  
+
+          <div className="grid md:grid-cols-2 gap-6 mt-6">
+            <div>
+              <label htmlFor="time" className="block font-semibold mb-2 text-black">
+                Time
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  name="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  id="timeInput"
+                  className="flex-1 p-3 text-gray-800 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  disabled={loading}
+                />
+                <Clock 
+                  size={24}
+                  className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
+                  onClick={() => !loading && (
+                    document.getElementById("timeInput")?.showPicker?.() ||
+                    document.getElementById("timeInput")?.focus()
+                  )}
+                />
+              </div>
+              {errors.time && (
+                <p className="text-red-600 text-xs mt-1">{errors.time}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label htmlFor="instructions" className="block font-semibold mb-2 text-black">
+              Instructions (optional)
+            </label>
+            <textarea
+              name="instructions"
+              value={formData.instructions}
+              onChange={handleChange}
+              rows={3}
+              className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              disabled={loading}
+              placeholder="Enter specific instructions for the inspection..."
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({
+                  title: "",
+                  target: "",
+                  area: "",
+                  date: "",
+                  time: "",
+                  instructions: "",
+                });
+                setErrors({});
+              }}
+              disabled={loading}
+              className={`bg-white text-black font-semibold px-8 py-2 rounded-lg shadow-md transition-all duration-300 ${
+                loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 hover:shadow-lg'
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`bg-white text-black font-semibold px-8 py-2 rounded-lg shadow-md transition-all duration-300 ${
+                loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 hover:shadow-lg'
+              }`}
+            >
+              {loading ? 'Scheduling...' : 'Schedule Inspection'}
+            </button>
+          </div>
+        </form>
+
+        {/* Inspection Table */}
+        <InspectionTable
+          upcomingInspections={upcomingInspections}
+          fetchLoading={fetchLoading}
+          handleViewDetails={handleViewDetails}
+          handleDownload={handleDownload}
+          handleStatusUpdate={handleStatusUpdate}
+          statusStyles={statusStyles}
+        />
+      </div>
 
       {selectedInspection && (
         <InspectionModal
@@ -679,14 +637,210 @@ Generated on: ${new Date().toLocaleString()}
         />
       )}
       <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  hideProgressBar={false}
-  closeOnClick
-  pauseOnHover
-  draggable
-  theme="colored"
-/>
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+// InspectionTable Component with modern design
+function InspectionTable({ 
+  upcomingInspections, 
+  fetchLoading, 
+  handleViewDetails, 
+  handleDownload, 
+  handleStatusUpdate, 
+  statusStyles 
+}) {
+  const tableHeaders = [
+    { label: "Inspection ID", key: "id" },
+    { label: "Title", key: "title" },
+    { label: "Target", key: "target" },
+    { label: "Date", key: "date" },
+    { label: "Time", key: "time" },
+    { label: "Status", key: "status" },
+    { label: "Actions", key: "actions" },
+  ];
+
+  if (fetchLoading) {
+    return (
+      <div className="bg-[#BEC5AD] rounded-2xl p-8 shadow-xl">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
+      <h2 className="text-black text-lg font-semibold mb-3 ml-2 flex items-center gap-2">
+        <ClipboardList size={20} />
+        Upcoming Inspections
+      </h2>
+
+      {/* Desktop Table View */}
+      <div className="overflow-x-auto hidden sm:block">
+        <div className="min-w-full inline-block overflow-hidden rounded-t-2xl border border-gray-200">
+          <table className="min-w-full text-black text-xs sm:text-sm md:text-base">
+            <thead>
+              <tr className="bg-white border-b">
+                {tableHeaders.map((header, i) => (
+                  <th key={i} className="text-center font-semibold py-3 px-2 whitespace-nowrap">
+                    {header.label}
+                  </th>
+                ))}
+               </tr>
+            </thead>
+            <tbody>
+              {upcomingInspections.length === 0 ? (
+                <tr>
+                  <td colSpan={tableHeaders.length} className="text-center py-8 text-gray-600">
+                    No inspections found. Create your first inspection above.
+                  </td>
+                </tr>
+              ) : (
+                upcomingInspections.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="bg-white hover:bg-gray-50 transition-colors border-b">
+                    {tableHeaders.map((column, cellIndex) => {
+                      if (column.key === "actions") {
+                        return (
+                          <td key={cellIndex} className="text-center px-2 py-3">
+                            <div className="flex justify-center items-center gap-3">
+                              <button
+                                onClick={() => handleViewDetails(row)}
+                                className="text-blue-600 hover:text-blue-800 transition-colors"
+                                title="View Details"
+                              >
+                                <Eye size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDownload(row)}
+                                className="text-green-600 hover:text-green-800 transition-colors"
+                                title="Download Report"
+                              >
+                                <Download size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        );
+                      }
+
+                      if (column.key === "status") {
+                        return (
+                          <td key={cellIndex} className="text-center px-2 py-3">
+                            <button
+                              className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg transition-colors ${
+                                statusStyles[row.status] ?? "bg-gray-300 text-black"
+                              }`}
+                              onClick={() => {
+                                const newStatus = row.status === 'Scheduled' ? 'Completed' : 
+                                                 row.status === 'Completed' ? 'Cancelled' : 'Scheduled';
+                                handleStatusUpdate(row.id, newStatus);
+                              }}
+                              title="Click to change status"
+                            >
+                              {row.status}
+                            </button>
+                          </td>
+                        );
+                      }
+
+                      if (column.key === "id") {
+                        return (
+                          <td key={cellIndex} className="text-center px-2 py-3">
+                            <span title={row[column.key]} className="font-mono text-xs">
+                              {row[column.key]?.substring(0, 8)}...
+                            </span>
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td key={cellIndex} className="text-center px-2 py-3">
+                          {row[column.key]}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="space-y-4 sm:hidden">
+        {upcomingInspections.length === 0 ? (
+          <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+            No inspections found. Create your first inspection above.
+          </div>
+        ) : (
+          upcomingInspections.map((row, index) => (
+            <div key={index} className="bg-white rounded-xl p-4 shadow-md">
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-500">ID:</span>
+                <span className="ml-2 text-sm font-mono">{row.id?.substring(0, 8)}...</span>
+              </div>
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-500">Title:</span>
+                <span className="ml-2 text-sm">{row.title}</span>
+              </div>
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-500">Target:</span>
+                <span className="ml-2 text-sm">{row.target}</span>
+              </div>
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-500">Date:</span>
+                <span className="ml-2 text-sm">{row.date}</span>
+              </div>
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-gray-500">Time:</span>
+                <span className="ml-2 text-sm">{row.time}</span>
+              </div>
+              
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleViewDetails(row)}
+                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                    title="View Details"
+                  >
+                    <Eye size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDownload(row)}
+                    className="text-green-600 hover:text-green-800 transition-colors"
+                    title="Download Report"
+                  >
+                    <Download size={18} />
+                  </button>
+                </div>
+                <button
+                  className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                    statusStyles[row.status] ?? "bg-gray-300 text-black"
+                  }`}
+                  onClick={() => {
+                    const newStatus = row.status === 'Scheduled' ? 'Completed' : 
+                                     row.status === 'Completed' ? 'Cancelled' : 'Scheduled';
+                    handleStatusUpdate(row.id, newStatus);
+                  }}
+                  title="Click to change status"
+                >
+                  {row.status}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
