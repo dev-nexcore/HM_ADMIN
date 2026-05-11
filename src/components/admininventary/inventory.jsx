@@ -3596,6 +3596,29 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [generatedItem, setGeneratedItem] = useState(null);
 
+  // ── "Others" custom options (persisted per-field in localStorage) ──────────
+  const [customLocations, setCustomLocations] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return JSON.parse(localStorage.getItem('customInventoryLocations') || '[]');
+    }
+    return [];
+  });
+  const [customCategories, setCustomCategories] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return JSON.parse(localStorage.getItem('customInventoryCategories') || '[]');
+    }
+    return [];
+  });
+  const [customStatuses, setCustomStatuses] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return JSON.parse(localStorage.getItem('customInventoryStatuses') || '[]');
+    }
+    return [];
+  });
+  const [otherLocation, setOtherLocation] = useState('');
+  const [otherCategory, setOtherCategory] = useState('');
+  const [otherStatus, setOtherStatus] = useState('');
+
   const fetchAvailableRoomsForInventory = async () => {
     try {
       const response = await api.get(
@@ -3632,9 +3655,24 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.itemName.trim()) newErrors.itemName = "Item Name is required.";
-    if (!formData.location.trim()) newErrors.location = "Location is required.";
-    if (!formData.status) newErrors.status = "Status is required.";
-    if (!formData.category) newErrors.category = "Category is required.";
+    // location
+    if (formData.location === '__others__') {
+      if (!otherLocation.trim()) newErrors.location = "Please type a custom location.";
+    } else if (!formData.location.trim()) {
+      newErrors.location = "Location is required.";
+    }
+    // status
+    if (formData.status === '__others__') {
+      if (!otherStatus.trim()) newErrors.status = "Please type a custom status.";
+    } else if (!formData.status) {
+      newErrors.status = "Status is required.";
+    }
+    // category
+    if (formData.category === '__others__') {
+      if (!otherCategory.trim()) newErrors.category = "Please type a custom category.";
+    } else if (!formData.category) {
+      newErrors.category = "Category is required.";
+    }
     if (!formData.roomNo.trim()) newErrors.roomNo = "Room No is required.";
     if (!formData.floor.trim()) newErrors.floor = "Floor is required.";
     setErrors(newErrors);
@@ -3659,19 +3697,49 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
       receipt: null,
     });
     setErrors({});
+    setOtherLocation('');
+    setOtherCategory('');
+    setOtherStatus('');
     onBackToInventory();
+  };
+
+  // Helper: save a custom value to localStorage for a field
+  const saveCustomOption = (field, value, currentList, setter) => {
+    if (value && !currentList.includes(value)) {
+      const updated = [...currentList, value];
+      setter(updated);
+      localStorage.setItem(field, JSON.stringify(updated));
+    }
   };
 
   const handleGenerateQR = async () => {
     if (!validateForm()) return;
 
+    // Resolve "Others" values and persist them to localStorage
+    let finalLocation = formData.location;
+    let finalCategory = formData.category;
+    let finalStatus   = formData.status;
+
+    if (formData.location === '__others__') {
+      finalLocation = otherLocation.trim();
+      saveCustomOption('customInventoryLocations', finalLocation, customLocations, setCustomLocations);
+    }
+    if (formData.category === '__others__') {
+      finalCategory = otherCategory.trim();
+      saveCustomOption('customInventoryCategories', finalCategory, customCategories, setCustomCategories);
+    }
+    if (formData.status === '__others__') {
+      finalStatus = otherStatus.trim();
+      saveCustomOption('customInventoryStatuses', finalStatus, customStatuses, setCustomStatuses);
+    }
+
     setIsSubmitting(true);
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("itemName", formData.itemName);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append("location", formData.location);
-      formDataToSend.append("status", formData.status);
+      formDataToSend.append("category", finalCategory);
+      formDataToSend.append("location", finalLocation);
+      formDataToSend.append("status",   finalStatus);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("purchaseDate", formData.purchaseDate);
       formDataToSend.append("purchaseCost", formData.purchaseCost);
@@ -3838,7 +3906,10 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               <select
                 name="location"
                 value={formData.location}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (e.target.value !== '__others__') setOtherLocation('');
+                }}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${formData.location === "" ? "text-[#0000008A]" : "text-black"} ${errors.location ? "border-2 border-red-500" : ""}`}
                 style={{
                   WebkitAppearance: "none",
@@ -3852,11 +3923,25 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
                 {availableLocations.map((location) => (
                   <option key={location} value={location}>{location}</option>
                 ))}
+                {customLocations.map((loc) => (
+                  <option key={`cloc-${loc}`} value={loc}>{loc}</option>
+                ))}
+                <option value="__others__">Others</option>
               </select>
               <svg className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
               </svg>
             </div>
+            {formData.location === '__others__' && (
+              <input
+                type="text"
+                value={otherLocation}
+                onChange={(e) => setOtherLocation(e.target.value)}
+                placeholder="Type custom location..."
+                className="mt-2 w-full sm:max-w-[530px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]"
+                style={{ height: '40px', boxShadow: '0px 4px 10px 0px #00000040' }}
+              />
+            )}
             {errors.location && (
               <p className="text-red-500 text-xs mt-1 ml-2">{errors.location}</p>
             )}
@@ -3871,7 +3956,10 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               <select
                 name="status"
                 value={formData.status}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (e.target.value !== '__others__') setOtherStatus('');
+                }}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${formData.status === "" ? "text-[#0000008A]" : "text-black"} ${errors.status ? "border-2 border-red-500" : ""}`}
                 style={{ WebkitAppearance: "none", MozAppearance: "none", appearance: "none", boxShadow: "0px 4px 10px 0px #00000040" }}
               >
@@ -3880,11 +3968,25 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
                 <option value="In Use">In Use</option>
                 <option value="In maintenance">In maintenance</option>
                 <option value="Damaged">Damaged</option>
+                {customStatuses.map((st) => (
+                  <option key={`cst-${st}`} value={st}>{st}</option>
+                ))}
+                <option value="__others__">Others</option>
               </select>
               <svg className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
               </svg>
             </div>
+            {formData.status === '__others__' && (
+              <input
+                type="text"
+                value={otherStatus}
+                onChange={(e) => setOtherStatus(e.target.value)}
+                placeholder="Type custom status..."
+                className="mt-2 w-full sm:max-w-[530px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]"
+                style={{ height: '40px', boxShadow: '0px 4px 10px 0px #00000040' }}
+              />
+            )}
             {errors.status && (
               <p className="text-red-500 text-xs mt-1 ml-2">{errors.status}</p>
             )}
@@ -3899,7 +4001,10 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
               <select
                 name="category"
                 value={formData.category}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (e.target.value !== '__others__') setOtherCategory('');
+                }}
                 className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${formData.category === "" ? "text-[#0000008A]" : "text-black"} ${errors.category ? "border-2 border-red-500" : ""}`}
                 style={{ WebkitAppearance: "none", MozAppearance: "none", appearance: "none", boxShadow: "0px 4px 10px 0px #00000040" }}
               >
@@ -3908,11 +4013,25 @@ function AddNewItem({ onBackToInventory, onItemAdded }) {
                 <option value="Furniture">Furniture</option>
                 <option value="Bedding">Bedding</option>
                 <option value="Applications">Applications</option>
+                {customCategories.map((cat) => (
+                  <option key={`ccat-${cat}`} value={cat}>{cat}</option>
+                ))}
+                <option value="__others__">Others</option>
               </select>
               <svg className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
               </svg>
             </div>
+            {formData.category === '__others__' && (
+              <input
+                type="text"
+                value={otherCategory}
+                onChange={(e) => setOtherCategory(e.target.value)}
+                placeholder="Type custom category..."
+                className="mt-2 w-full sm:max-w-[530px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]"
+                style={{ height: '40px', boxShadow: '0px 4px 10px 0px #00000040' }}
+              />
+            )}
             {errors.category && (
               <p className="text-red-500 text-xs mt-1 ml-2">{errors.category}</p>
             )}
