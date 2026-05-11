@@ -35,7 +35,15 @@ export default function InspectionPage() {
     scheduled: 0,
     completed: 0,
     cancelled: 0,
+    cancelled: 0,
     areas: 0
+  });
+  const [activeFilter, setActiveFilter] = useState("total");
+
+  const displayedInspections = upcomingInspections.filter(inspection => {
+    if (activeFilter === "scheduled") return inspection.status === "Scheduled";
+    if (activeFilter === "completed") return inspection.status === "Completed";
+    return true;
   });
 
   // API Functions
@@ -270,7 +278,7 @@ icon: <MapPin size={18} />,
 INSPECTION REPORT
 ================
 
-Inspection ID: ${reportData.inspectionId}
+Inspection ID: ${reportData.inspectionId ? `INSP-${reportData.inspectionId.slice(-4).toUpperCase()}` : "N/A"}
 Title: ${reportData.title}
 Target: ${reportData.target}
 Area: ${reportData.area}
@@ -288,7 +296,7 @@ Generated on: ${new Date().toLocaleString()}
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `inspection_report_${inspection.id.substring(0, 8)}.txt`;
+    a.download = `inspection_report_${inspection.id ? `INSP-${inspection.id.slice(-4).toUpperCase()}` : "unknown"}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -366,7 +374,8 @@ Generated on: ${new Date().toLocaleString()}
   {statCards.map((card) => (
     <div
       key={card.id}
-      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+      onClick={() => setActiveFilter(card.id)}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} ${activeFilter === card.id ? "ring-2 ring-offset-2 ring-" + card.borderColor.split("-")[1] + "-500" : ""} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
     >
       <div
         className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
@@ -416,11 +425,17 @@ Generated on: ${new Date().toLocaleString()}
                 className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                 disabled={loading}
               >
-                <option value="">Select</option>
+                <option value="" disabled hidden>Select Title</option>
                 <option value="Monthly Room Check">Monthly Room Check</option>
                 <option value="Sanitation Check">Sanitation Check</option>
                 <option value="Safety Inspection">Safety Inspection</option>
                 <option value="Maintenance Check">Maintenance Check</option>
+                <option value="Night Roll Call">Night Roll Call</option>
+                <option value="Mess Food Inspection">Mess Food Inspection</option>
+                <option value="Electrical Safety Check">Electrical Safety Check</option>
+                <option value="Asset Verification">Asset Verification</option>
+                <option value="Student Discipline Check">Student Discipline Check</option>
+                <option value="Furniture Condition Check">Furniture Condition Check</option>
               </select>
               {errors.title && (
                 <p className="text-red-600 text-xs mt-1">{errors.title}</p>
@@ -458,7 +473,7 @@ Generated on: ${new Date().toLocaleString()}
                 className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                 disabled={loading}
               >
-                <option value="">Select Area</option>
+                <option value="" disabled hidden>Select Area</option>
                 <option value="Dormitory">Dormitory</option>
                 <option value="Block A">Block A</option>
                 <option value="Block B">Block B</option>
@@ -581,7 +596,7 @@ Generated on: ${new Date().toLocaleString()}
 
         {/* Inspection Table */}
         <InspectionTable
-          upcomingInspections={upcomingInspections}
+          upcomingInspections={displayedInspections}
           fetchLoading={fetchLoading}
           handleViewDetails={handleViewDetails}
           handleDownload={handleDownload}
@@ -607,7 +622,7 @@ Generated on: ${new Date().toLocaleString()}
           ]}
           row={[
             <span key="id" title={selectedInspection.id}>
-              {selectedInspection.id?.substring(0, 8)}...
+              {selectedInspection.id ? `INSP-${selectedInspection.id.slice(-4).toUpperCase()}` : "N/A"}
             </span>,
             selectedInspection.title,
             selectedInspection.target,
@@ -756,7 +771,7 @@ function InspectionTable({
                         return (
                           <td key={cellIndex} className="text-center px-2 py-3">
                             <span title={row[column.key]} className="font-mono text-xs">
-                              {row[column.key]?.substring(0, 8)}...
+                              {row[column.key] ? `INSP-${row[column.key].slice(-4).toUpperCase()}` : "N/A"}
                             </span>
                           </td>
                         );
@@ -787,7 +802,7 @@ function InspectionTable({
             <div key={index} className="bg-white rounded-xl p-4 shadow-md">
               <div className="mb-2">
                 <span className="text-xs font-semibold text-gray-500">ID:</span>
-                <span className="ml-2 text-sm font-mono">{row.id?.substring(0, 8)}...</span>
+                <span className="ml-2 text-sm font-mono">{row.id ? `INSP-${row.id.slice(-4).toUpperCase()}` : "N/A"}</span>
               </div>
               <div className="mb-2">
                 <span className="text-xs font-semibold text-gray-500">Title:</span>

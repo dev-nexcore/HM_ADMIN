@@ -23,6 +23,8 @@ export default function AdminProfile() {
     contact: "+91 9876543210",
     role: "Admin",
     location: "Mumbai, India",
+    department: "Management",
+    joiningDate: "12/04/2023",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editInfo, setEditInfo] = useState(adminInfo);
@@ -123,9 +125,9 @@ export default function AdminProfile() {
         <div className="flex-grow">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* First Name */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <User className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <User className="w-3.5 h-3.5" />
                 First Name
               </label>
               {isEditing ? (
@@ -133,17 +135,17 @@ export default function AdminProfile() {
                   name="firstName"
                   value={editInfo.firstName}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.firstName}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.firstName}</p>
               )}
             </div>
 
             {/* Last Name */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <UserCheck className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <UserCheck className="w-3.5 h-3.5" />
                 Last Name
               </label>
               {isEditing ? (
@@ -151,17 +153,17 @@ export default function AdminProfile() {
                   name="lastName"
                   value={editInfo.lastName}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.lastName}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.lastName}</p>
               )}
             </div>
 
             {/* Email */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <Mail className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <Mail className="w-3.5 h-3.5" />
                 Email
               </label>
               {isEditing ? (
@@ -169,17 +171,17 @@ export default function AdminProfile() {
                   name="email"
                   value={editInfo.email}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.email}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.email}</p>
               )}
             </div>
 
             {/* Contact */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <Phone className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <Phone className="w-3.5 h-3.5" />
                 Contact
               </label>
               {isEditing ? (
@@ -187,17 +189,17 @@ export default function AdminProfile() {
                   name="contact"
                   value={editInfo.contact}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.contact}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.contact}</p>
               )}
             </div>
 
             {/* Role */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <Briefcase className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <Briefcase className="w-3.5 h-3.5" />
                 Role
               </label>
               {isEditing ? (
@@ -205,17 +207,35 @@ export default function AdminProfile() {
                   name="role"
                   value={editInfo.role}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.role}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.role}</p>
+              )}
+            </div>
+
+            {/* Department */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <Briefcase className="w-3.5 h-3.5" />
+                Department
+              </label>
+              {isEditing ? (
+                <input
+                  name="department"
+                  value={editInfo.department || ""}
+                  onChange={handleChange}
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
+                />
+              ) : (
+                <p className="text-black font-medium text-lg">{adminInfo.department}</p>
               )}
             </div>
 
             {/* Location */}
-            <div>
-              <label className="text-gray-700 text-sm flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <MapPin className="w-3.5 h-3.5" />
                 Location
               </label>
               {isEditing ? (
@@ -223,10 +243,30 @@ export default function AdminProfile() {
                   name="location"
                   value={editInfo.location}
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-lg p-2"
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium">{adminInfo.location}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.location}</p>
+              )}
+            </div>
+
+            {/* Joining Date */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
+                <MapPin className="w-3.5 h-3.5" />
+                Joining Date
+              </label>
+              {isEditing ? (
+                <input
+                  name="joiningDate"
+                  type="text"
+                  placeholder="DD/MM/YYYY"
+                  value={editInfo.joiningDate || ""}
+                  onChange={handleChange}
+                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
+                />
+              ) : (
+                <p className="text-black font-medium text-lg">{adminInfo.joiningDate}</p>
               )}
             </div>
           </div>

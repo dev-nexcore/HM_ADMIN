@@ -5029,7 +5029,7 @@ const StudentManagement = () => {
     firstName: "", lastName: "", contactNumber: "", email: "",
     roomNumber: "", bedNumber: "", emergencyContactNumber: "",
     admissionDate: getTodaysDate(), emergencyContactName: "",
-    feeStatus: "", hasCollegeId: true, studentIdCard: null, feesReceipt: null,
+    feeStatus: "", hasCollegeId: true, studentIdCard: null, feesReceipt: null, isWorking: false,
   });
 
   const [editingStudent, setEditingStudent] = useState(null);
@@ -5090,6 +5090,7 @@ const StudentManagement = () => {
       const fd = new FormData();
       ["firstName","lastName","contactNumber","roomBedNumber","email","admissionDate","feeStatus","emergencyContactName","emergencyContactNumber"].forEach(k => fd.append(k, studentData[k] || ""));
       fd.append("hasCollegeId", studentData.hasCollegeId);
+      fd.append("isWorking", studentData.isWorking);
       if (studentData.aadharCard instanceof File) fd.append("aadharCard", studentData.aadharCard);
       if (studentData.panCard instanceof File) fd.append("panCard", studentData.panCard);
       if (studentData.hasCollegeId && studentData.studentIdCard instanceof File) fd.append("studentIdCard", studentData.studentIdCard);
@@ -5254,7 +5255,7 @@ const StudentManagement = () => {
 
   const handleEdit = (studentId) => {
     const s = students.find(s => s.id === studentId); if (!s) return;
-    setFormData({ firstName:s.firstName||"", lastName:s.lastName||"", contactNumber:s.contact, email:s.email||"", roomNumber:s.roomDetails?.roomNo||"", bedNumber:s.roomObjectId||"", emergencyContactNumber:s.emergencyContactNumber||"", admissionDate:s.admissionDate?new Date(s.admissionDate).toISOString().split("T")[0]:"", emergencyContactName:s.emergencyContactName||"", feeStatus:s.feeStatus, hasCollegeId:s.hasCollegeId??true });
+    setFormData({ firstName:s.firstName||"", lastName:s.lastName||"", contactNumber:s.contact, email:s.email||"", roomNumber:s.roomDetails?.roomNo||"", bedNumber:s.roomObjectId||"", emergencyContactNumber:s.emergencyContactNumber||"", admissionDate:s.admissionDate?new Date(s.admissionDate).toISOString().split("T")[0]:"", emergencyContactName:s.emergencyContactName||"", feeStatus:s.feeStatus, hasCollegeId:s.hasCollegeId??true, isWorking:s.isWorking??false });
     setStudentDocuments({ aadharCard:s.documents?.aadharCard||null, panCard:s.documents?.panCard||null, studentIdCard:s.documents?.studentIdCard||null, feesReceipt:s.documents?.feesReceipt||null });
     setEditingStudent(studentId); setErrors({}); setShowEditModal(true);
   };
@@ -5266,6 +5267,8 @@ const StudentManagement = () => {
       const fd = new FormData();
       ["firstName","lastName","contactNumber","email","emergencyContactNumber","admissionDate","emergencyContactName","feeStatus"].forEach(k => fd.append(k, formData[k]));
       fd.append("roomBedNumber", formData.bedNumber);
+      fd.append("hasCollegeId", formData.hasCollegeId);
+      fd.append("isWorking", formData.isWorking);
       ["aadharCard","panCard","studentIdCard","feesReceipt"].forEach(k => { if (studentDocuments[k] instanceof File) fd.append(k, studentDocuments[k]); });
       await updateStudentAPI(editingStudent, fd);
       setRefreshTrigger(p => p + 1); resetForm(); toast.success("Student updated successfully!");
@@ -5447,8 +5450,23 @@ const StudentManagement = () => {
         {/* Email */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
-          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+          <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
           {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
+        </div>
+
+        {/* Is Working */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Is Working</label>
+          <div className="flex items-center gap-4 h-[40px]">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="isWorking" checked={formData.isWorking === true} onChange={() => setFormData(p => ({ ...p, isWorking: true }))} className="w-4 h-4 cursor-pointer" />
+              <span className="text-black font-semibold text-[14px]">Yes</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="isWorking" checked={formData.isWorking === false} onChange={() => setFormData(p => ({ ...p, isWorking: false }))} className="w-4 h-4 cursor-pointer" />
+              <span className="text-black font-semibold text-[14px]">No</span>
+            </label>
+          </div>
         </div>
 
         {/* Room Number */}
@@ -5533,7 +5551,7 @@ const StudentManagement = () => {
         ].map(f => (
           <div key={f.name} className="w-full px-2">
             <label className="block mb-1 text-black ml-2" style={labelStyle}>{f.label}</label>
-            <input type={f.type} name={f.name} value={parentFormData[f.name]} onChange={handleParentInputChange} placeholder={f.placeholder} className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+            <input type={f.type} name={f.name} value={parentFormData[f.name]} onChange={handleParentInputChange} placeholder={f.placeholder} className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
             {f.error && <p className="text-red-500 text-xs mt-1 ml-2">{f.error}</p>}
           </div>
         ))}
@@ -5622,14 +5640,14 @@ const StudentManagement = () => {
         {/* ── Registration Tabs ── */}
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto mb-10">
-            <div className="flex mb-0 gap-2">
+            <div className="flex mb-4 gap-3">
               {["student","parent"].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-t-[16px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black border-b-2 border-[#4F8CCF]":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
                   {tab === "student" ? "Register Student" : "Register Parent"}
                 </button>
               ))}
             </div>
-            <div className="bg-[#BEC5AD] rounded-b-[20px] rounded-tr-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
+            <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
               {activeTab === "student" ? formContent(false) : parentFormContent()}
             </div>
           </div>

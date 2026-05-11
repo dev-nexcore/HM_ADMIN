@@ -5,10 +5,10 @@ import { FiEye, FiDownload } from "react-icons/fi";
 import api from "@/lib/api";
 import InvoiceModal from "./invoiceModal";
 import {
-DollarSign,
-Clock3,
-FileText,
-CheckCircle,
+  DollarSign,
+  Clock3,
+  FileText,
+  CheckCircle,
 } from "lucide-react";
 
 export default function InvoicePage() {
@@ -35,6 +35,21 @@ export default function InvoicePage() {
     totalInvoices: 0,
     paidInvoices: 0,
   });
+  const [activeFilter, setActiveFilter] = useState("total");
+
+  const filterData = (data) => {
+    if (activeFilter === "pending") {
+      return data.filter(row => row[4] === "Pending" || row[4] === "Overdue");
+    }
+    if (activeFilter === "paid") {
+      return data.filter(row => row[4] === "Paid" || row[4] === "Approved");
+    }
+    return data; // For "total" and "revenue"
+  };
+
+  const displayedStudentFees = filterData(studentFees);
+  const displayedManagementInvoices = filterData(managementInvoices);
+  const displayedPurchaseReceipts = filterData(purchaseReceipts);
 
   useEffect(() => {
     // Simulated API data — replace with axios requests
@@ -123,9 +138,9 @@ export default function InvoicePage() {
 
     // Total invoices
     const totalInvoices = studentData.length + managementData.length + purchaseData.length;
-    
+
     // Paid invoices
-    const paidInvoices = 
+    const paidInvoices =
       studentData.filter((row) => row[4] === "Paid").length +
       managementData.filter((row) => row[4] === "Paid").length +
       purchaseData.filter((row) => row[4] === "Approved").length;
@@ -167,40 +182,40 @@ export default function InvoicePage() {
 
   // Card data for stats
   const statCards = [
-    { 
-      id: "revenue", 
-      label: "Total Revenue", 
-      value: formatCurrency(stats.totalRevenue), 
+    {
+      id: "revenue",
+      label: "Total Revenue",
+      value: formatCurrency(stats.totalRevenue),
       subLabel: "From all sources",
       color: "from-green-500 to-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
       icon: "💰"
     },
-    { 
-      id: "pending", 
-      label: "Pending Payments", 
-      value: formatCurrency(stats.pendingPayments), 
+    {
+      id: "pending",
+      label: "Pending Payments",
+      value: formatCurrency(stats.pendingPayments),
       subLabel: "Awaiting clearance",
       color: "from-orange-500 to-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200",
       icon: "⏳"
     },
-    { 
-      id: "total", 
-      label: "Total Invoices", 
-      value: stats.totalInvoices, 
+    {
+      id: "total",
+      label: "Total Invoices",
+      value: stats.totalInvoices,
       subLabel: "All invoices",
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200",
       icon: "📄"
     },
-    { 
-      id: "paid", 
-      label: "Paid Invoices", 
-      value: stats.paidInvoices, 
+    {
+      id: "paid",
+      label: "Paid Invoices",
+      value: stats.paidInvoices,
       subLabel: "Successfully paid",
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
@@ -223,108 +238,120 @@ export default function InvoicePage() {
         </div>
 
         {/* Stats Cards Section */}
-       
+
 
         {/* Alternative Minimal Cards Design */}
-     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
 
-{/* Total Revenue */}
+          {/* Total Revenue */}
 
-  <div className="bg-white rounded-2xl p-5 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-
-
-<div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-4">
-  <DollarSign size={18} className="text-green-500" />
-</div>
-
-<div className="text-4xl font-bold text-black">
-  {formatCurrency(stats.totalRevenue)}
-</div>
-
-<div className="text-gray-700 text-sm font-medium mt-1">
-  Total Revenue
-</div>
-
-<div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600">
-  Collected
-</div>
+          <div 
+            onClick={() => setActiveFilter("revenue")}
+            className={`bg-white rounded-2xl p-5 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "revenue" ? "ring-2 ring-offset-2 ring-green-500" : ""}`}
+          >
 
 
-  </div>
+            <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-4">
+              <DollarSign size={18} className="text-green-500" />
+            </div>
 
-{/* Pending Payments */}
+            <div className="text-4xl font-bold text-black">
+              {formatCurrency(stats.totalRevenue)}
+            </div>
 
-  <div className="bg-white rounded-2xl p-5 border border-orange-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="text-gray-700 text-sm font-medium mt-1">
+              Total Revenue
+            </div>
 
-
-<div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center mb-4">
-  <Clock3 size={18} className="text-orange-500" />
-</div>
-
-<div className="text-4xl font-bold text-black">
-  {formatCurrency(stats.pendingPayments)}
-</div>
-
-<div className="text-gray-700 text-sm font-medium mt-1">
-  Pending Payments
-</div>
-
-<div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-orange-50 text-orange-600">
-  Due Amount
-</div>
+            <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600">
+              Collected
+            </div>
 
 
-  </div>
+          </div>
 
-{/* Total Invoices */}
+          {/* Pending Payments */}
 
-  <div className="bg-white rounded-2xl p-5 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-
-
-<div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-  <FileText size={18} className="text-blue-500" />
-</div>
-
-<div className="text-4xl font-bold text-black">
-  {stats.totalInvoices}
-</div>
-
-<div className="text-gray-700 text-sm font-medium mt-1">
-  Total Invoices
-</div>
-
-<div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
-  Transactions
-</div>
+          <div 
+            onClick={() => setActiveFilter("pending")}
+            className={`bg-white rounded-2xl p-5 border border-orange-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "pending" ? "ring-2 ring-offset-2 ring-orange-500" : ""}`}
+          >
 
 
-  </div>
+            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center mb-4">
+              <Clock3 size={18} className="text-orange-500" />
+            </div>
 
-{/* Paid Invoices */}
+            <div className="text-4xl font-bold text-black">
+              {formatCurrency(stats.pendingPayments)}
+            </div>
 
-  <div className="bg-white rounded-2xl p-5 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="text-gray-700 text-sm font-medium mt-1">
+              Pending Payments
+            </div>
 
-
-<div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-  <CheckCircle size={18} className="text-purple-500" />
-</div>
-
-<div className="text-4xl font-bold text-black">
-  {stats.paidInvoices}
-</div>
-
-<div className="text-gray-700 text-sm font-medium mt-1">
-  Paid Invoices
-</div>
-
-<div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-600">
-  Completed
-</div>
+            <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-orange-50 text-orange-600">
+              Due Amount
+            </div>
 
 
-  </div>
+          </div>
 
-</div>
+          {/* Total Invoices */}
+
+          <div 
+            onClick={() => setActiveFilter("total")}
+            className={`bg-white rounded-2xl p-5 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "total" ? "ring-2 ring-offset-2 ring-blue-500" : ""}`}
+          >
+
+
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+              <FileText size={18} className="text-blue-500" />
+            </div>
+
+            <div className="text-4xl font-bold text-black">
+              {stats.totalInvoices}
+            </div>
+
+            <div className="text-gray-700 text-sm font-medium mt-1">
+              Total Invoices
+            </div>
+
+            <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
+              Transactions
+            </div>
+
+
+          </div>
+
+          {/* Paid Invoices */}
+
+          <div 
+            onClick={() => setActiveFilter("paid")}
+            className={`bg-white rounded-2xl p-5 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "paid" ? "ring-2 ring-offset-2 ring-purple-500" : ""}`}
+          >
+
+
+            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+              <CheckCircle size={18} className="text-purple-500" />
+            </div>
+
+            <div className="text-4xl font-bold text-black">
+              {stats.paidInvoices}
+            </div>
+
+            <div className="text-gray-700 text-sm font-medium mt-1">
+              Paid Invoices
+            </div>
+
+            <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-600">
+              Completed
+            </div>
+
+
+          </div>
+
+        </div>
 
 
         {/* Invoice Sections */}
@@ -340,7 +367,7 @@ export default function InvoicePage() {
               "Status",
               "Actions",
             ]}
-            data={studentFees}
+            data={displayedStudentFees}
             loading={loading.student}
             onView={handleView}
             onDownload={handleDownload}
@@ -357,7 +384,7 @@ export default function InvoicePage() {
               "Status",
               "Actions",
             ]}
-            data={managementInvoices}
+            data={displayedManagementInvoices}
             loading={loading.management}
             onView={handleView}
             onDownload={handleDownload}
@@ -374,7 +401,7 @@ export default function InvoicePage() {
               "Status",
               "Actions",
             ]}
-            data={purchaseReceipts}
+            data={displayedPurchaseReceipts}
             loading={loading.purchase}
             onView={handleView}
             onDownload={handleDownload}
@@ -400,7 +427,7 @@ export default function InvoicePage() {
 function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
   // Function to get status color
   const getStatusColor = (status) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'paid':
       case 'approved':
         return 'bg-green-100 text-green-800';

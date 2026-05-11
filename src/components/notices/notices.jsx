@@ -371,10 +371,15 @@ const HostelNotices = () => {
                     }
                   }}
                 >
-                  <option value=""></option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="announcement">Announcement</option>
-                  <option value="event">Event</option>
+                  <option value="" disabled hidden>Select Template</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Announcement">Announcement</option>
+                  <option value="Event">Event</option>
+                  <option value="Fee Reminder">Fee Reminder</option>
+                  <option value="Rule Change">Rule Change</option>
+                  <option value="Emergency Alert">Emergency Alert</option>
+                  <option value="Lost and Found">Lost and Found</option>
+                  <option value="Exam Schedule">Exam Schedule</option>
                 </select>
                 <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
                   <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -652,10 +657,15 @@ const HostelNotices = () => {
                         })
                       }
                     >
-                      <option value=""></option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="announcement">Announcement</option>
-                      <option value="event">Event</option>
+                      <option value="" disabled hidden>Select Template</option>
+                      <option value="Maintenance">Maintenance</option>
+                      <option value="Announcement">Announcement</option>
+                      <option value="Event">Event</option>
+                      <option value="Fee Reminder">Fee Reminder</option>
+                      <option value="Rule Change">Rule Change</option>
+                      <option value="Emergency Alert">Emergency Alert</option>
+                      <option value="Lost and Found">Lost and Found</option>
+                      <option value="Exam Schedule">Exam Schedule</option>
                     </select>
                     <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
                       <svg

@@ -29,29 +29,36 @@ export default function TicketsSection() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [attachmentModal, setAttachmentModal] = useState({ show: false, url: '', type: '', filename: '' });
-  const [stats, setStats] = useState({
-    total: 0,
-    open: 0,
-    resolved: 0,
-    highPriority: 0
+  const [activeFilter, setActiveFilter] = useState("total");
+
+  // Calculate statistics dynamically
+  const totalOpen = openTickets.length;
+  const totalResolved = resolvedTickets.length;
+  const highPriority = openTickets.filter(ticket => 
+    ticket.complaintType?.toLowerCase().includes('urgent') || 
+    ticket.complaintType?.toLowerCase().includes('emergency')
+  ).length;
+
+  const stats = {
+    total: totalOpen + totalResolved,
+    open: totalOpen,
+    resolved: totalResolved,
+    highPriority: highPriority
+  };
+
+  const displayedOpenTickets = openTickets.filter(ticket => {
+    if (activeFilter === "priority") {
+      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
+    }
+    return true;
   });
 
-  // Calculate statistics
-  const calculateStats = (open, resolved) => {
-    const totalOpen = open.length;
-    const totalResolved = resolved.length;
-    const highPriority = open.filter(ticket => 
-      ticket.complaintType?.toLowerCase().includes('urgent') || 
-      ticket.complaintType?.toLowerCase().includes('emergency')
-    ).length;
-    
-    setStats({
-      total: totalOpen + totalResolved,
-      open: totalOpen,
-      resolved: totalResolved,
-      highPriority: highPriority
-    });
-  };
+  const displayedResolvedTickets = resolvedTickets.filter(ticket => {
+    if (activeFilter === "priority") {
+      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
+    }
+    return true;
+  });
 
   // Fetch open complaints/tickets
   const fetchOpenTickets = async () => {
@@ -82,7 +89,6 @@ export default function TicketsSection() {
       }));
       
       setOpenTickets(formattedTickets);
-      calculateStats(formattedTickets, resolvedTickets);
     } catch (error) {
       console.error("Failed to fetch open tickets:", error);
       toast.error("Failed to fetch open tickets. Please try again.");
@@ -119,7 +125,6 @@ export default function TicketsSection() {
       }));
       
       setResolvedTickets(formattedTickets);
-      calculateStats(openTickets, formattedTickets);
     } catch (error) {
       console.error("Failed to fetch resolved tickets:", error);
       toast.error("Failed to fetch resolved tickets. Please try again.");
@@ -222,7 +227,6 @@ export default function TicketsSection() {
 
       setResolvedTickets(prev => [resolvedTicket, ...prev]);
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
-      calculateStats(openTickets.filter((_, i) => i !== index), [resolvedTicket, ...resolvedTickets]);
 
       toast.success("✅ Complaint has been approved and resolved successfully!");
 
@@ -247,7 +251,6 @@ export default function TicketsSection() {
 
     try {
       setOpenTickets(prev => prev.filter((_, i) => i !== index));
-      calculateStats(openTickets.filter((_, i) => i !== index), resolvedTickets);
       toast.error("❌ Complaint has been rejected and removed from the list.");
     } catch (error) {
       console.error("Failed to reject complaint:", error);
@@ -352,7 +355,8 @@ icon: <AlertCircle size={18} />,
   {statCards.map((card) => (
     <div
       key={card.id}
-      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+      onClick={() => setActiveFilter(card.id)}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} ${activeFilter === card.id ? "ring-2 ring-offset-2 ring-" + card.borderColor.split("-")[1] + "-500" : ""} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
     >
       <div
         className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}
@@ -387,10 +391,11 @@ icon: <AlertCircle size={18} />,
       
 
         {/* Open Tickets */}
+        {(activeFilter === "total" || activeFilter === "open" || activeFilter === "priority") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner mb-8">
           <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
             <MessageSquare size={20} />
-            Open Tickets ({openTickets.length})
+            Open Tickets ({displayedOpenTickets.length})
           </h2>
 
           {/* Desktop Table View */}
@@ -408,8 +413,8 @@ icon: <AlertCircle size={18} />,
                 </tr>
               </thead>
               <tbody>
-                {openTickets.length > 0 ? (
-                  openTickets.map((ticket, index) => (
+                {displayedOpenTickets.length > 0 ? (
+                  displayedOpenTickets.map((ticket, index) => (
                     <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="p-3 font-semibold text-sm">{ticket.id}</td>
                       <td className="p-3">
@@ -483,8 +488,8 @@ icon: <AlertCircle size={18} />,
 
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {openTickets.length > 0 ? (
-              openTickets.map((ticket, index) => (
+            {displayedOpenTickets.length > 0 ? (
+              displayedOpenTickets.map((ticket, index) => (
                 <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -556,12 +561,14 @@ icon: <AlertCircle size={18} />,
             )}
           </div>
         </div>
+        )}
 
         {/* Resolved Tickets */}
+        {(activeFilter === "total" || activeFilter === "resolved" || activeFilter === "priority") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
           <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
             <CheckCircle size={20} />
-            Resolved Tickets ({resolvedTickets.length})
+            Resolved Tickets ({displayedResolvedTickets.length})
           </h3>
 
           {/* Desktop Table View */}
@@ -579,8 +586,8 @@ icon: <AlertCircle size={18} />,
                 </tr>
               </thead>
               <tbody>
-                {resolvedTickets.length > 0 ? (
-                  resolvedTickets.map((ticket) => (
+                {displayedResolvedTickets.length > 0 ? (
+                  displayedResolvedTickets.map((ticket) => (
                     <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="p-3 font-semibold text-sm">{ticket.id}</td>
                       <td className="p-3">
@@ -625,8 +632,8 @@ icon: <AlertCircle size={18} />,
 
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {resolvedTickets.length > 0 ? (
-              resolvedTickets.map((ticket) => (
+            {displayedResolvedTickets.length > 0 ? (
+              displayedResolvedTickets.map((ticket) => (
                 <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -684,6 +691,7 @@ icon: <AlertCircle size={18} />,
             )}
           </div>
         </div>
+        )}
 
         {/* Ticket Details Modal */}
         {showModal && selectedTicket && (

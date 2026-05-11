@@ -314,6 +314,22 @@ icon: <XCircle size={18} />,
     );
   });
 
+  const getActiveCardId = () => {
+    if (filters.status === "Completed") return "completed";
+    if (filters.status === "Pending") return "pending";
+    if (filters.status === "Rejected") return "rejected";
+    return "total";
+  };
+
+  const handleCardClick = (cardId) => {
+    let newStatus = "";
+    if (cardId === "completed") newStatus = "Completed";
+    else if (cardId === "pending") newStatus = "Pending";
+    else if (cardId === "rejected") newStatus = "Rejected";
+    
+    setFilters(prev => ({ ...prev, status: newStatus }));
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -331,7 +347,8 @@ icon: <XCircle size={18} />,
   {statCards.map((card) => (
     <div
       key={card.id}
-      className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+      onClick={() => handleCardClick(card.id)}
+      className={`bg-white rounded-2xl p-5 border ${card.borderColor} ${getActiveCardId() === card.id ? "ring-2 ring-offset-2 ring-" + card.borderColor.split("-")[1] + "-500" : ""} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
     >
       <div
         className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}

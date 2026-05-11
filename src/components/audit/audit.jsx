@@ -48,6 +48,7 @@ export default function AuditLogsSection() {
   const [statistics, setStatistics] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [activeCard, setActiveCard] = useState("total");
 
   // Fetch audit logs
   const fetchAuditLogs = async (page = 1, search = '', filtersObj = activeFilters) => {
@@ -258,6 +259,32 @@ icon: <FileText size={18} />,
 
 : [];
 
+  const handleCardClick = (cardId) => {
+    setActiveCard(cardId);
+    let newFilters = { ...activeFilters };
+    const today = new Date();
+    
+    if (cardId === "today") {
+      newFilters.startDate = today.toISOString().split('T')[0];
+      newFilters.endDate = today.toISOString().split('T')[0];
+    } else if (cardId === "week") {
+      const lastWeek = new Date(today);
+      lastWeek.setDate(today.getDate() - 7);
+      newFilters.startDate = lastWeek.toISOString().split('T')[0];
+      newFilters.endDate = today.toISOString().split('T')[0];
+    } else if (cardId === "month") {
+      const lastMonth = new Date(today);
+      lastMonth.setDate(today.getDate() - 30);
+      newFilters.startDate = lastMonth.toISOString().split('T')[0];
+      newFilters.endDate = today.toISOString().split('T')[0];
+    } else {
+      newFilters.startDate = '';
+      newFilters.endDate = '';
+    }
+    
+    setActiveFilters(newFilters);
+    fetchAuditLogs(1, searchTerm, newFilters);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -279,7 +306,8 @@ icon: <FileText size={18} />,
     {statCards.map((card) => (
       <div
         key={card.id}
-        className={`bg-white rounded-2xl p-5 border ${card.borderColor} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+        onClick={() => handleCardClick(card.id)}
+        className={`bg-white rounded-2xl p-5 border ${card.borderColor} ${activeCard === card.id ? "ring-2 ring-offset-2 ring-" + card.borderColor.split("-")[1] + "-500" : ""} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
       >
         <div
           className={`w-10 h-10 rounded-full ${card.bgColor} flex items-center justify-center mb-4`}

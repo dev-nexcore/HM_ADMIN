@@ -1361,8 +1361,8 @@ const StaffAllotment = () => {
     emailId: "",
     designation: "",
     otherDesignation: "",
-    shiftStart: "",
     shiftEnd: "",
+    salary: "",
   });
 
   const [wardens, setWardens] = useState([]);
@@ -1397,6 +1397,7 @@ const StaffAllotment = () => {
         email: warden.email,
         contactNumber: warden.contactNumber,
         wardenId: warden.wardenId,
+        salary: warden.salary || 0,
       }));
       setWardens(formattedData);
     } catch (error) {
@@ -1417,6 +1418,7 @@ const StaffAllotment = () => {
         designation: staff.designation,
         shiftStart: staff.shiftStart,
         shiftEnd: staff.shiftEnd,
+        salary: staff.salary || 0,
       }));
       setStaffs(formattedData);
     } catch (error) {
@@ -1573,7 +1575,7 @@ const staffStats = [
         lastName: formData.lastName,
         email: formData.emailId,
         contactNumber: formData.contactNumber,
-        wardenId: formData.wardenId,
+        salary: Number(formData.salary),
       };
       const response = await axios.post(
         `${BASE_URL}/api/adminauth/register-warden`,
@@ -1583,7 +1585,7 @@ const staffStats = [
       setRefresh((prev) => prev + 1);
       setFormData({
         firstName: "", lastName: "", wardenId: "", contactNumber: "",
-        emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "",
+        emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
       });
     } catch (error) {
       console.error(error);
@@ -1605,6 +1607,7 @@ const staffStats = [
             : formData.designation,
         shiftStart: formData.shiftStart,
         shiftEnd: formData.shiftEnd,
+        salary: Number(formData.salary),
       };
       const response = await axios.post(
         `${BASE_URL}/api/staffauth/register-staff`,
@@ -1614,7 +1617,7 @@ const staffStats = [
       setRefresh((prev) => prev + 1);
       setFormData({
         firstName: "", lastName: "", wardenId: "", contactNumber: "",
-        emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "",
+        emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
       });
     } catch (error) {
       console.error(error);
@@ -1632,7 +1635,7 @@ const staffStats = [
     setSelectedId(warden.id);
     setFormData({
       firstName: warden.firstName, lastName: warden.lastName,
-      wardenId: warden.wardenId, contactNumber: warden.contactNumber, emailId: warden.email,
+      wardenId: warden.wardenId, contactNumber: warden.contactNumber, emailId: warden.email, salary: warden.salary,
     });
     setShowEditModal(true);
   };
@@ -1642,7 +1645,7 @@ const staffStats = [
     setFormData({
       firstName: staff.firstName, lastName: staff.lastName,
       contactNumber: staff.contactNumber, emailId: staff.email,
-      designation: staff.designation, shiftStart: staff.shiftStart, shiftEnd: staff.shiftEnd,
+      designation: staff.designation, shiftStart: staff.shiftStart, shiftEnd: staff.shiftEnd, salary: staff.salary,
     });
     setShowEditModal(true);
   };
@@ -1651,7 +1654,7 @@ const staffStats = [
     try {
       await axios.put(`${BASE_URL}/api/wardenauth/update/${selectedId}`, {
         firstName: formData.firstName, lastName: formData.lastName,
-        email: formData.emailId, contactNumber: formData.contactNumber, wardenId: formData.wardenId,
+        email: formData.emailId, contactNumber: formData.contactNumber, wardenId: formData.wardenId, salary: Number(formData.salary),
       });
       setSuccessMsg("Warden updated successfully");
       setRefresh((prev) => prev + 1);
@@ -1665,7 +1668,7 @@ const staffStats = [
         firstName: formData.firstName, lastName: formData.lastName,
         email: formData.emailId, contactNumber: formData.contactNumber,
         designation: formData.designation === "Other" ? formData.otherDesignation : formData.designation,
-        shiftStart: formData.shiftStart, shiftEnd: formData.shiftEnd,
+        shiftStart: formData.shiftStart, shiftEnd: formData.shiftEnd, salary: Number(formData.salary),
       });
       setSuccessMsg("Staff updated successfully");
       setRefresh((prev) => prev + 1);
@@ -1811,17 +1814,17 @@ const staffStats = [
         <>
           <div className="bg-[#BEC5AD] rounded-xl p-6 mb-6">
             <h2 className="text-2xl font-semibold mb-6">Register New Warden</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
-                placeholder="First Name" className="p-3 border rounded-md bg-white" />
+                placeholder="First Name" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
-                placeholder="Last Name" className="p-3 border rounded-md bg-white" />
+                placeholder="Last Name" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange}
-                placeholder="Contact Number" className="p-3 border rounded-md bg-white" />
-              <input type="text" name="wardenId" value={formData.wardenId} onChange={handleInputChange}
-                placeholder="Warden ID" className="p-3 border rounded-md bg-white" />
+                placeholder="Contact Number" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="email" name="emailId" value={formData.emailId} onChange={handleInputChange}
-                placeholder="Email" className="p-3 border rounded-md bg-white" />
+                placeholder="Email" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
+              <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
+                placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
             </div>
             <div className="mt-6 text-center">
               <button onClick={handleRegisterWarden} className="bg-white px-8 py-3 rounded-xl font-bold">
@@ -1835,20 +1838,20 @@ const staffStats = [
             <h2 className="text-2xl font-bold mb-6">Manage Warden</h2>
             <div className="space-y-4">
               {wardens.map((warden) => (
-                <div key={warden.id} className="bg-white rounded-lg p-4 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-lg">{warden.name}</h3>
-                    <p className="text-sm text-gray-500">{warden.email}</p>
-                    <p className="text-sm text-gray-500">Warden ID: {warden.wardenId}</p>
+                <div key={warden.id} className="bg-white rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-1 min-w-0 w-full">
+                    <h3 className="font-bold text-lg truncate">{warden.name}</h3>
+                    <p className="text-sm text-gray-500 truncate">{warden.email}</p>
+                    <p className="text-sm text-gray-500 truncate">Warden ID: {warden.wardenId} | Salary: ₹{warden.salary}</p>
                   </div>
-                  <div className="flex gap-4">
-                    <button onClick={() => handleViewWarden(warden)} className="text-gray-500 hover:text-gray-800">
+                  <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center">
+                    <button onClick={() => handleViewWarden(warden)} className="text-gray-500 hover:text-gray-800 transition-colors">
                       <Eye size={18} />
                     </button>
-                    <button onClick={() => handleEditWarden(warden)} className="text-gray-500 hover:text-gray-800">
+                    <button onClick={() => handleEditWarden(warden)} className="text-gray-500 hover:text-gray-800 transition-colors">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDeleteWarden(warden.id)} className="text-gray-500 hover:text-red-600">
+                    <button onClick={() => handleDeleteWarden(warden.id)} className="text-gray-500 hover:text-red-600 transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -1867,17 +1870,17 @@ const staffStats = [
         <>
           <div className="bg-[#BEC5AD] rounded-xl p-6 mb-6">
             <h2 className="text-2xl font-semibold mb-6">Register New Staff</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
-                placeholder="First Name" className="p-3 border rounded-md bg-white" />
+                placeholder="First Name" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
-                placeholder="Last Name" className="p-3 border rounded-md bg-white" />
+                placeholder="Last Name" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange}
-                placeholder="Contact Number" className="p-3 border rounded-md bg-white" />
+                placeholder="Contact Number" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="email" name="emailId" value={formData.emailId} onChange={handleInputChange}
-                placeholder="Email" className="p-3 border rounded-md bg-white" />
+                placeholder="Email" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <select name="designation" value={formData.designation} onChange={handleInputChange}
-                className="p-3 border rounded-md bg-white">
+                className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500 appearance-none">
                 <option value="">Select Designation</option>
                 <option value="Watchman">Watchman</option>
                 <option value="Cleaner">Cleaner</option>
@@ -1886,14 +1889,16 @@ const staffStats = [
               {formData.designation === "Other" && (
                 <input type="text" name="otherDesignation" value={formData.otherDesignation}
                   onChange={handleInputChange} placeholder="Specify Designation"
-                  className="p-3 border rounded-md bg-white" />
+                  className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               )}
+              <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
+                placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <div className="flex items-center gap-2">
                 <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange}
-                  className="p-3 border rounded-md bg-white" />
+                  className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
                 <Clock size={18} />
                 <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange}
-                  className="p-3 border rounded-md bg-white" />
+                  className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               </div>
             </div>
             <div className="mt-6 text-center">
@@ -1919,20 +1924,20 @@ const staffStats = [
 
             <div className="space-y-4">
               {filteredStaffs.map((staff) => (
-                <div key={staff.id} className="bg-white rounded-lg p-4 flex justify-between items-center">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-base">{staff.name}</h3>
+                <div key={staff.id} className="bg-white rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="space-y-1 flex-1 min-w-0 w-full">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-base truncate max-w-full">{staff.name}</h3>
                       <DesignationBadge designation={staff.designation} />
                     </div>
-                    <p className="text-sm text-gray-500">{staff.email}</p>
+                    <p className="text-sm text-gray-500 truncate">{staff.email} | Salary: ₹{staff.salary}</p>
                     <ShiftPill shiftStart={staff.shiftStart} shiftEnd={staff.shiftEnd} />
                   </div>
-                  <div className="flex gap-4">
-                    <button onClick={() => handleEditStaff(staff)} className="text-gray-500 hover:text-gray-800">
+                  <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center">
+                    <button onClick={() => handleEditStaff(staff)} className="text-gray-500 hover:text-gray-800 transition-colors">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDeleteStaff(staff.id)} className="text-gray-500 hover:text-red-600">
+                    <button onClick={() => handleDeleteStaff(staff.id)} className="text-gray-500 hover:text-red-600 transition-colors">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -1965,21 +1970,23 @@ const staffStats = [
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
-                placeholder="First Name" className="p-3 border rounded-md" />
+                placeholder="First Name" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
-                placeholder="Last Name" className="p-3 border rounded-md" />
+                placeholder="Last Name" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               {activeTab === "warden" && (
-                <input type="text" name="wardenId" value={formData.wardenId} onChange={handleInputChange}
-                  placeholder="Warden ID" className="p-3 border rounded-md" />
+                <input type="text" name="wardenId" value={formData.wardenId} readOnly disabled
+                  placeholder="Warden ID (Auto)" className="w-full h-[45px] px-4 bg-gray-200 rounded-[10px] border border-gray-200 outline-none text-gray-500 font-medium text-[14px] cursor-not-allowed" />
               )}
               <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange}
-                placeholder="Contact Number" className="p-3 border rounded-md" />
+                placeholder="Contact Number" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               <input type="email" name="emailId" value={formData.emailId} onChange={handleInputChange}
-                placeholder="Email" className="p-3 border rounded-md" />
+                placeholder="Email" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
+              <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
+                placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               {activeTab === "staff" && (
                 <>
                   <select name="designation" value={formData.designation} onChange={handleInputChange}
-                    className="p-3 border rounded-md">
+                    className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] appearance-none">
                     <option value="">Select</option>
                     <option value="Watchman">Watchman</option>
                     <option value="Cleaner">Cleaner</option>
@@ -1988,13 +1995,13 @@ const staffStats = [
                   {formData.designation === "Other" && (
                     <input type="text" name="otherDesignation" value={formData.otherDesignation}
                       onChange={handleInputChange} placeholder="Specify Designation"
-                      className="p-3 border rounded-md" />
+                      className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
                   )}
                   <div className="flex gap-2">
                     <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange}
-                      className="p-3 border rounded-md w-full" />
+                      className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
                     <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange}
-                      className="p-3 border rounded-md w-full" />
+                      className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
                   </div>
                 </>
               )}
@@ -2048,6 +2055,7 @@ const staffStats = [
               <p><strong>Email:</strong> {selectedWarden.email}</p>
               <p><strong>Contact:</strong> {selectedWarden.contactNumber}</p>
               <p><strong>Warden ID:</strong> {selectedWarden.wardenId}</p>
+              <p><strong>Salary:</strong> ₹{selectedWarden.salary}</p>
             </div>
           </div>
         </div>
