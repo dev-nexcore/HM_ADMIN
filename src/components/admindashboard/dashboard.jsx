@@ -16,6 +16,13 @@ const Dashboard = () => {
     availableBeds: 0,
   });
 
+  const [financialData, setFinancialData] = useState({
+    revenue: {
+      totalRevenue: 0,
+      pendingPayments: 0
+    }
+  });
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [activities, setActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
@@ -43,6 +50,19 @@ const Dashboard = () => {
       }
     };
 
+    const fetchFinancialSummary = async () => {
+      try {
+        const { data } = await api.get(
+          `/api/adminauth/dashboard/financial-summary`
+        );
+        if (data && data.revenue) {
+          setFinancialData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch financial summary:", error);
+      }
+    };
+
     const fetchActivities = async () => {
       setLoadingActivities(true);
       try {
@@ -61,6 +81,7 @@ const Dashboard = () => {
 
     fetchCheckInOutStatus();
     fetchBedOccupancyStatus();
+    fetchFinancialSummary();
     fetchActivities();
   }, []);
 
@@ -87,13 +108,13 @@ const Dashboard = () => {
         {[
           {
             title: "Total Revenue",
-            value: "1,25,000",
+            value: financialData.revenue.totalRevenue.toLocaleString('en-IN'),
             color: "text-green-600",
             isCurrency: true,
           },
           {
             title: "Pending Payments",
-            value: "15,000",
+            value: financialData.revenue.pendingPayments.toLocaleString('en-IN'),
             color: "text-orange-500",
             isCurrency: true,
           },

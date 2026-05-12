@@ -50,6 +50,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       icon: "react-icon",
       children: [
         { label: "Student Management", icon: "/photos/student.png", href: "/management" },
+        { label: "Student Fees", icon: "/photos/invoice.png", href: "/student-fees" },
+        { label: "Warden Requisitions", icon: "/photos/audit.png", href: "/warden-requisitions" },
+        { label: "Attendance Monitoring", icon: "/photos/inspection.png", href: "/attendance" },
         { label: "Leave Requests", icon: "/photos/leave.png", href: "/leave-requests" },
         { label: "Staff Allotment", icon: "/photos/staff.png", href: "/staffallotment" },
         { label: "Staff Salary & Deductions", icon: "/photos/salary.png", href: "/staffsalary" },
