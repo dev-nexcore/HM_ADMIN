@@ -802,7 +802,10 @@ const StudentManagement = () => {
                     <div key={key} className="bg-white/50 rounded-lg p-3">
                       <p className="font-semibold text-black text-sm mb-2">{label}</p>
                       {hasDocument(studentDetailsData.documents?.[key]) ? (
-                        <button onClick={() => window.open(getDocumentUrl(studentDetailsData.id,key),"_blank")} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-semibold">View Document</button>
+                        <button onClick={() => {
+                          const token = localStorage.getItem('adminToken');
+                          window.open(`${getDocumentUrl(studentDetailsData.id, key)}?token=${token}`, '_blank');
+                        }} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-semibold">View Document</button>
                       ) : (
                         <p className="text-xs text-gray-500">Not uploaded</p>
                       )}
