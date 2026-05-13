@@ -50,6 +50,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       icon: "react-icon",
       children: [
         { label: "Student Management", icon: "/photos/student.png", href: "/management" },
+        { label: "Student Inquiries", icon: "/photos/audit.png", href: "/inquiries" },
         { label: "Student Fees", icon: "/photos/invoice.png", href: "/student-fees" },
         { label: "Warden Requisitions", icon: "/photos/audit.png", href: "/warden-requisitions" },
         { label: "Attendance Monitoring", icon: "/photos/inspection.png", href: "/attendance" },
