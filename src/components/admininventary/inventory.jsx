@@ -70,7 +70,29 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const [otherEditRoomNo, setOtherEditRoomNo] = useState('');
   const [otherEditFloor, setOtherEditFloor] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   const fileInputRef = useRef(null);
+
+  // ── Pagination Logic ──────────────────────────────────────────────────
+  const filteredInventory = inventory.filter(
+    (item) =>
+      (statusFilter === "All Status" || item.status === statusFilter) &&
+      (categoryFilter === "All Categories" || item.category === categoryFilter) &&
+      (item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.barcodeId.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+  const paginatedInventory = filteredInventory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, categoryFilter, searchQuery, inventory]);
 
   // ── Stats for filter cards ──────────────────────────────────────────────
   const stats = [
@@ -775,149 +797,137 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                 </tr>
               </thead>
               <tbody className="bg-white text-sm">
-                {inventory
-                  .filter(
-                    (item) =>
-                      (statusFilter === "All Status" ||
-                        item.status === statusFilter) &&
-                      (categoryFilter === "All Categories" ||
-                        item.category === categoryFilter) &&
-                      (item.itemName
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()) ||
-                        item.barcodeId
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()))
-                  )
-                  .map((item, index) => (
-                    <tr key={item.barcodeId} className="hover:bg-gray-100">
-                      <td className="px-2 py-2">
-                        {!item.qrCodeUrl && (
-                          <input
-                            type="checkbox"
-                            checked={selectedItemsForQR.includes(item._id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedItemsForQR((prev) => [
-                                  ...prev,
-                                  item._id,
-                                ]);
-                              } else {
-                                setSelectedItemsForQR((prev) =>
-                                  prev.filter((id) => id !== item._id)
-                                );
-                              }
-                            }}
-                          />
-                        )}
-                      </td>
-
-                      <td className="font-semibold">{index + 1}</td>
-                      <td className="px-4 py-2">{item.itemName}</td>
-                      <td className="px-4 py-2">{item.barcodeId}</td>
-                      <td className="px-4 py-2">{item.category}</td>
-                      <td className="px-4 py-2">{item.location}</td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]}`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex justify-center gap-2">
-                          {item.qrCodeUrl ? (
-                            <button
-                              onClick={() => handleDownloadQR(item)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Download QR Code"
-                            >
-                              <Download size={16} />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleGenerateQR(item)}
-                              className="text-green-600 hover:text-green-800"
-                              title="Generate QR Code"
-                            >
-                              <QrCode size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 flex justify-center gap-3">
-                        {/* View Icon */}
-                        <div
-                          className="cursor-pointer text-gray-600 hover:text-blue-600"
-                          onClick={() => handleViewDetails(item)}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </div>
-
-                        <div className="w-[1px] h-5 bg-gray-400" />
-
-                        {/* Edit Icon */}
-                        <div
-                          className="cursor-pointer text-gray-600 hover:text-green-600"
-                          onClick={() => handleEditClick(item)}
-                        >
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 26 28"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z"
-                              fill="currentColor"
-                            />
-                          </svg>
-                        </div>
-
-                        <div className="w-[1px] h-5 bg-gray-400" />
-
-                        {/* Delete Icon */}
-                        <div
-                          className="cursor-pointer text-gray-600 hover:text-red-600"
-                          onClick={() => {
-                            setItemToDelete(item);
-                            setShowDeleteConfirm(true);
+                {paginatedInventory.map((item, index) => (
+                  <tr key={item.barcodeId} className="hover:bg-gray-100">
+                    <td className="px-2 py-2">
+                      {!item.qrCodeUrl && (
+                        <input
+                          type="checkbox"
+                          checked={selectedItemsForQR.includes(item._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedItemsForQR((prev) => [
+                                ...prev,
+                                item._id,
+                              ]);
+                            } else {
+                              setSelectedItemsForQR((prev) =>
+                                prev.filter((id) => id !== item._id)
+                              );
+                            }
                           }}
-                        >
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        />
+                      )}
+                    </td>
+
+                    <td className="font-semibold">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="px-4 py-2">{item.itemName}</td>
+                    <td className="px-4 py-2">{item.barcodeId}</td>
+                    <td className="px-4 py-2">{item.category}</td>
+                    <td className="px-4 py-2">{item.location}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`inline-block w-[100px] text-xs font-semibold text-center py-[6px] rounded-lg shadow-sm ${statusColor[item.status]}`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex justify-center gap-2">
+                        {item.qrCodeUrl ? (
+                          <button
+                            onClick={() => handleDownloadQR(item)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Download QR Code"
                           >
-                            <path d="M3 6h18" />
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            <line x1="10" y1="11" x2="10" y2="17" />
-                            <line x1="14" y1="11" x2="14" y2="17" />
-                          </svg>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            <Download size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleGenerateQR(item)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Generate QR Code"
+                          >
+                            <QrCode size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 flex justify-center gap-3">
+                      {/* View Icon */}
+                      <div
+                        className="cursor-pointer text-gray-600 hover:text-blue-600"
+                        onClick={() => handleViewDetails(item)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </div>
+
+                      <div className="w-[1px] h-5 bg-gray-400" />
+
+                      {/* Edit Icon */}
+                      <div
+                        className="cursor-pointer text-gray-600 hover:text-green-600"
+                        onClick={() => handleEditClick(item)}
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 26 28"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0.5 28V23H25.5V28H0.5ZM5.5 18H7.25L17 8.28125L15.2188 6.5L5.5 16.25V18ZM3 20.5V15.1875L17 1.21875C17.2292 0.989583 17.4948 0.8125 17.7969 0.6875C18.099 0.5625 18.4167 0.5 18.75 0.5C19.0833 0.5 19.4062 0.5625 19.7188 0.6875C20.0312 0.8125 20.3125 1 20.5625 1.25L22.2813 3C22.5313 3.22917 22.7135 3.5 22.8281 3.8125C22.9427 4.125 23 4.44792 23 4.78125C23 5.09375 22.9427 5.40104 22.8281 5.70312C22.7135 6.00521 22.5313 6.28125 22.2813 6.53125L8.3125 20.5H3Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </div>
+
+                      <div className="w-[1px] h-5 bg-gray-400" />
+
+                      {/* Delete Icon */}
+                      <div
+                        className="cursor-pointer text-gray-600 hover:text-red-600"
+                        onClick={() => {
+                          setItemToDelete(item);
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -925,94 +935,140 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
 
         {/* Mobile Card View */}
         <div className="sm:hidden rounded-2xl bg-[#BEC5AD] p-4 shadow-xl space-y-4">
-          {inventory
-            .filter(
-              (item) =>
-                (statusFilter === "All Status" ||
-                  item.status === statusFilter) &&
-                (categoryFilter === "All Categories" ||
-                  item.category === categoryFilter) &&
-                (item.itemName
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                  item.barcodeId
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()))
-            )
-            .map((item) => (
-              <div
-                key={item.barcodeId}
-                className="bg-white rounded-xl shadow-md p-4"
-              >
-                <div className="mb-2">
-                  <strong>Item Name:</strong> {item.itemName}
-                </div>
-                <div className="mb-2">
-                  <strong>Barcode ID:</strong> {item.barcodeId}
-                </div>
-                <div className="mb-2">
-                  <strong>Category:</strong> {item.category}
-                </div>
-                <div className="mb-2">
-                  <strong>Location:</strong> {item.location}
-                </div>
-                <div className="mb-2">
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]}`}
+          {paginatedInventory.map((item) => (
+            <div
+              key={item.barcodeId}
+              className="bg-white rounded-xl shadow-md p-4"
+            >
+              <div className="mb-2">
+                <strong>Item Name:</strong> {item.itemName}
+              </div>
+              <div className="mb-2">
+                <strong>Barcode ID:</strong> {item.barcodeId}
+              </div>
+              <div className="mb-2">
+                <strong>Category:</strong> {item.category}
+              </div>
+              <div className="mb-2">
+                <strong>Location:</strong> {item.location}
+              </div>
+              <div className="mb-2">
+                <strong>Status:</strong>{" "}
+                <span
+                  className={`inline-block px-2 py-1 text-xs rounded-lg shadow-sm ${statusColor[item.status]}`}
+                >
+                  {item.status}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mt-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleViewDetails(item)}
+                    className="text-blue-600 text-xs hover:underline"
                   >
-                    {item.status}
-                  </span>
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleEditClick(item)}
+                    className="text-green-600 text-xs hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setItemToDelete(item);
+                      setShowDeleteConfirm(true);
+                    }}
+                    className="text-red-600 text-xs hover:underline"
+                  >
+                    Delete
+                  </button>
                 </div>
-                <div className="flex justify-between items-center mt-3">
-                  <div className="flex gap-3">
+                <div className="flex gap-2">
+                  {item.qrCodeUrl ? (
                     <button
-                      onClick={() => handleViewDetails(item)}
-                      className="text-blue-600 text-xs hover:underline"
+                      onClick={() => handleDownloadQR(item)}
+                      className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
+                      title="Download QR Code"
                     >
-                      View
+                      <Download size={14} />
+                      QR
                     </button>
+                  ) : (
                     <button
-                      onClick={() => handleEditClick(item)}
-                      className="text-green-600 text-xs hover:underline"
+                      onClick={() => handleGenerateQR(item)}
+                      className="text-green-600 hover:text-green-800 text-xs flex items-center gap-1"
+                      title="Generate QR Code"
                     >
-                      Edit
+                      <QrCode size={14} />
+                      Generate
                     </button>
-                    <button
-                      onClick={() => {
-                        setItemToDelete(item);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="text-red-600 text-xs hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    {item.qrCodeUrl ? (
-                      <button
-                        onClick={() => handleDownloadQR(item)}
-                        className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
-                        title="Download QR Code"
-                      >
-                        <Download size={14} />
-                        QR
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleGenerateQR(item)}
-                        className="text-green-600 hover:text-green-800 text-xs flex items-center gap-1"
-                        title="Generate QR Code"
-                      >
-                        <QrCode size={14} />
-                        Generate
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div className="text-sm text-gray-600 font-medium">
+              Showing <span className="text-black font-bold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="text-black font-bold">{Math.min(currentPage * itemsPerPage, filteredInventory.length)}</span> of{" "}
+              <span className="text-black font-bold">{filteredInventory.length}</span> items
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm font-semibold"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg border text-sm font-bold transition-all shadow-sm ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 border-blue-600 text-white"
+                            : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm font-semibold"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ItemDetailsModal
@@ -2555,7 +2611,8 @@ export default function InventoryManagement() {
 
   const fetchInventory = async () => {
     try {
-      const { data } = await api.get(`/api/adminauth/inventory`);
+      // Request a high limit to fetch all items for client-side pagination/filtering
+      const { data } = await api.get(`/api/adminauth/inventory?limit=10000`);
       setInventory(data.items);
     } catch (error) {
       console.error("Failed to fetch inventory:", error);
