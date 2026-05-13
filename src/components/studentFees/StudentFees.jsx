@@ -258,15 +258,84 @@ const StudentFees = () => {
     }
   };
 
-  const handleUpdateStatus = async (invoiceId, status) => {
+  const handleUpdateStatus = async (invoiceId, status, method = "cash") => {
     try {
       setSubmitting(true);
-      await api.put(`/api/adminauth/invoices/student/${invoiceId}/status`, { status, paymentMethod: "cash" });
-      toast.success(`Marked as ${status}`);
+      await api.put(`/api/adminauth/invoices/student/${invoiceId}/status`, { status, paymentMethod: method });
+      toast.success(`Marked as ${status} (${method})`);
       await fetchData();
     } catch (err) {
       console.error("Update status error:", err);
       toast.error("Failed to update status");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRazorpayPayment = async (invoice) => {
+    try {
+      setSubmitting(true);
+      
+      // 1. Create order on backend
+      const orderRes = await api.post('/api/adminauth/razorpay/create-order', {
+        amount: invoice.amount,
+        receiptId: invoice.invoiceNumber,
+        type: 'student_invoice'
+      });
+
+      if (!orderRes.data.success) throw new Error("Order creation failed");
+
+      const { order } = orderRes.data;
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "KGF Hostel Management",
+        description: `Payment for ${invoice.invoiceType?.replace(/_/g, ' ')}`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            setSubmitting(true);
+            const verifyRes = await api.post('/api/adminauth/razorpay/verify-payment', {
+              ...response,
+              id: invoice._id,
+              type: 'student_invoice'
+            });
+
+            if (verifyRes.data.success) {
+              toast.success("Payment successful!");
+              fetchData();
+              if (showLedgerModal) {
+                // Refresh local active student data if needed
+              }
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error("Payment verification error");
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        prefill: {
+          name: activeStudent?.studentName,
+          email: activeStudent?.email || "",
+          contact: activeStudent?.contactNumber || ""
+        },
+        theme: {
+          color: "#3E4B28"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      console.error("Razorpay error:", err);
+      toast.error(err.response?.data?.message || "Razorpay initialization failed");
     } finally {
       setSubmitting(false);
     }
@@ -1064,13 +1133,22 @@ const StudentFees = () => {
                         <HiOutlineEye size={16} />
                       </button>
                       {inv.status !== "paid" && (
-                        <button
-                          disabled={submitting}
-                          style={{ ...css.btnPrimary, padding: "8px 16px", fontSize: 11, opacity: submitting ? 0.7 : 1 }}
-                          onClick={() => handleUpdateStatus(inv._id, "paid")}
-                        >
-                          {submitting ? "..." : "Pay Now"}
-                        </button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            disabled={submitting}
+                            style={{ ...css.btnSecondary, padding: "8px 16px", fontSize: 11, opacity: submitting ? 0.7 : 1, borderColor: T.green, color: T.green }}
+                            onClick={() => handleUpdateStatus(inv._id, "paid", "cash")}
+                          >
+                            Cash
+                          </button>
+                          <button
+                            disabled={submitting}
+                            style={{ ...css.btnPrimary, padding: "8px 16px", fontSize: 11, opacity: submitting ? 0.7 : 1 }}
+                            onClick={() => handleRazorpayPayment(inv)}
+                          >
+                            Online (Razorpay)
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -364,13 +364,79 @@ export default function StaffSalaryContent() {
     } finally { setProcessing(false) }
   }
 
-  const handleUpdateStatus = async (salaryId, status) => {
+  const handleUpdateStatus = async (salaryId, status, method = 'bank_transfer') => {
     try {
-      await api.put(`/api/adminauth/salary/${salaryId}/status`, { status, paymentMethod: 'bank_transfer' })
-      toast.success(`Salary marked as ${status}`)
+      await api.put(`/api/adminauth/salary/${salaryId}/status`, { status, paymentMethod: method })
+      toast.success(`Salary marked as ${status} (${method})`)
       fetchSalaries()
     } catch { toast.error("Failed to update status") }
   }
+
+  const handleRazorpayPayment = async (salary) => {
+    try {
+      setProcessing(true);
+      
+      // 1. Create order on backend
+      const orderRes = await api.post('/api/adminauth/razorpay/create-order', {
+        amount: salary.netSalary,
+        receiptId: `SAL-${salary._id.slice(-6)}`,
+        type: 'staff_salary'
+      });
+
+      if (!orderRes.data.success) throw new Error("Order creation failed");
+
+      const { order } = orderRes.data;
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "KGF Hostel Management",
+        description: `Salary Payout - ${salary.staffName}`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            setProcessing(true);
+            const verifyRes = await api.post('/api/adminauth/razorpay/verify-payment', {
+              ...response,
+              id: salary._id,
+              type: 'staff_salary'
+            });
+
+            if (verifyRes.data.success) {
+              toast.success("Salary Payment Successful!");
+              fetchSalaries();
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error("Payment verification error");
+          } finally {
+            setProcessing(false);
+          }
+        },
+        prefill: {
+          name: salary.staffName,
+          email: "",
+          contact: ""
+        },
+        theme: {
+          color: "#2563eb"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      console.error("Razorpay error:", err);
+      toast.error(err.response?.data?.message || "Razorpay initialization failed");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const filteredSalaries = useMemo(() =>
     !searchTerm ? salaries : salaries.filter(s => s.staffName.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -480,10 +546,16 @@ export default function StaffSalaryContent() {
               </div>
               <div className="flex gap-2">
                 {salary.status==='pending' && (
-                  <button onClick={() => handleUpdateStatus(salary._id,'paid')}
-                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Mark as Paid">
-                    <HiOutlineCheckCircle size={16}/>
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleUpdateStatus(salary._id,'paid', 'cash')}
+                      className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Cash Payment">
+                      <HiOutlineCheckCircle size={16}/>
+                    </button>
+                    <button onClick={() => handleRazorpayPayment(salary)}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Online Payment">
+                      <HiOutlineCurrencyRupee size={16}/>
+                    </button>
+                  </div>
                 )}
                 <button onClick={() => { setSelectedSalary(salary); setShowPayslipModal(true); }}
                   className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold transition-all">
@@ -542,10 +614,16 @@ export default function StaffSalaryContent() {
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     {salary.status==='pending' && (
-                      <button onClick={() => handleUpdateStatus(salary._id,'paid')}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Mark as Paid">
-                        <HiOutlineCheckCircle size={18}/>
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleUpdateStatus(salary._id,'paid', 'cash')}
+                          className="flex items-center gap-1 px-3 py-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all text-xs font-semibold" title="Mark as Paid (Cash)">
+                          <HiOutlineCheckCircle size={16}/> Cash
+                        </button>
+                        <button onClick={() => handleRazorpayPayment(salary)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-xs font-semibold shadow-sm" title="Pay Online">
+                          <HiOutlineCurrencyRupee size={16}/> Online
+                        </button>
+                      </div>
                     )}
                     <button onClick={() => { setSelectedSalary(salary); setShowPayslipModal(true); }}
                       className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-semibold transition-all">

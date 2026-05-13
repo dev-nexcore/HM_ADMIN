@@ -3,6 +3,7 @@ import "@fontsource/inter"; // This loads default weights
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import Script from "next/script";
 
 // Fonts setup
 const geistSans = Geist({
@@ -35,7 +36,12 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <LayoutWrapper>
-          {children}</LayoutWrapper>
+          {children}
+        </LayoutWrapper>
+        <Script 
+          src="https://checkout.razorpay.com/v1/checkout.js" 
+          strategy="beforeInteractive" 
+        />
       </body>
     </html>
   );
