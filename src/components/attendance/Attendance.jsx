@@ -247,7 +247,9 @@ const Attendance = () => {
                         </div>
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.text }}>
-                        {log.studentId?.roomBedNumber || "N/A"}
+                        {log.studentId?.roomBedNumber && typeof log.studentId.roomBedNumber === 'object'
+                          ? `${log.studentId.roomBedNumber.barcodeId} - ${log.studentId.roomBedNumber.roomNo}`
+                          : (log.studentId?.roomBedNumber || "N/A")}
                       </td>
                       <td style={{ padding: "16px" }}>
                         <span style={{ 

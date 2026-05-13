@@ -125,6 +125,7 @@ const StudentManagement = () => {
     roomNumber: "", bedNumber: "", emergencyContactNumber: "",
     admissionDate: getTodaysDate(), emergencyContactName: "",
     feeStatus: "", hasCollegeId: true, studentIdCard: null, feesReceipt: null, isWorking: false,
+    roomType: "",
   });
 
   const [editingStudent, setEditingStudent] = useState(null);
@@ -148,6 +149,8 @@ const StudentManagement = () => {
   const [parentErrors, setParentErrors] = useState({});
   const [parentLoading, setParentLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [studentInvoices, setStudentInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -233,7 +236,8 @@ const StudentManagement = () => {
         } else if (s.roomBedNumber) {
           roomDisplay = s.roomBedNumber;
         }
-        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: "₹ 0/-", roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {} };
+        const monthlyFee = s.roomType === "5" ? "₹ 4,500" : s.roomType === "4" ? "₹ 5,000" : s.roomType === "3" ? "₹ 5,500" : "-";
+        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {} };
       }));
       setStudents(transformed);
     } catch (e) { console.error(e); }
@@ -250,6 +254,21 @@ const StudentManagement = () => {
     })();
   }, [refreshTrigger]);
 
+  useEffect(() => {
+    if (studentDetailsData?._id) {
+      (async () => {
+        setInvoicesLoading(true);
+        try {
+          const res = await api.get(`/api/adminauth/invoices/student?studentId=${studentDetailsData._id}&limit=50`);
+          setStudentInvoices(res.data.invoices || []);
+        } catch (e) { console.error("Error fetching invoices:", e); }
+        finally { setInvoicesLoading(false); }
+      })();
+    } else {
+      setStudentInvoices([]);
+    }
+  }, [studentDetailsData]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -264,6 +283,7 @@ const StudentManagement = () => {
     if (!data.contactNumber.trim()) e.contactNumber = "Contact Number is required.";
     if (!isEdit && !data.email.trim()) e.email = "Email is required.";
     else if (data.email.trim() && !/\S+@\S+\.\S+/.test(data.email)) e.email = "Email is invalid.";
+    if (!data.roomType) e.roomType = "Room Type is required.";
     return e;
   };
 
@@ -332,7 +352,7 @@ const StudentManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ firstName:"",lastName:"",contactNumber:"",email:"",roomNumber:"",bedNumber:"",emergencyContactNumber:"",admissionDate:getTodaysDate(),emergencyContactName:"",feeStatus:"",hasCollegeId:true });
+    setFormData({ firstName:"",lastName:"",contactNumber:"",email:"",roomNumber:"",bedNumber:"",emergencyContactNumber:"",admissionDate:getTodaysDate(),emergencyContactName:"",feeStatus:"",hasCollegeId:true, isWorking: false, roomType: "" });
     setStudentDocuments({ aadharCard:null,panCard:null,studentIdCard:null,feesReceipt:null });
     setEditingStudent(null); setErrors({}); setShowEditModal(false);
   };
@@ -549,20 +569,30 @@ const StudentManagement = () => {
           {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
         </div>
 
-        {/* Is Working */}
+        {/* Room Type */}
         <div className="w-full px-2">
-          <label className="block mb-1 text-black ml-2" style={labelStyle}>Is Working</label>
-          <div className="flex items-center gap-4 h-[40px]">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="isWorking" checked={formData.isWorking === true} onChange={() => setFormData(p => ({ ...p, isWorking: true }))} className="w-4 h-4 cursor-pointer" />
-              <span className="text-black font-semibold text-[14px]">Yes</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="isWorking" checked={formData.isWorking === false} onChange={() => setFormData(p => ({ ...p, isWorking: false }))} className="w-4 h-4 cursor-pointer" />
-              <span className="text-black font-semibold text-[14px]">No</span>
-            </label>
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Type</label>
+          <div className="relative h-[40px]">
+            <select name="roomType" value={formData.roomType} onChange={e => { setFormData(p => ({ ...p, roomType: e.target.value, roomNumber: "", bedNumber: "" })); }} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomType === "" ? "#0000008A" : "#000" }}>
+              <option value="" disabled hidden>Select Room Type</option>
+              <option value="5">5 Bed (4.5k)</option>
+              <option value="4">4 Bed (5k)</option>
+              <option value="3">3 Bed (5.5k)</option>
+            </select>
+            <ChevronDown />
           </div>
+          {errors.roomType && <p className="text-red-500 text-xs mt-1 ml-2">{errors.roomType}</p>}
         </div>
+
+        {/* Fee Information (Dynamic) */}
+        {formData.roomType && (
+          <div className="w-full px-2 col-span-1">
+             <div className="bg-blue-50 p-2 h-[40px] rounded-[10px] border border-blue-100 flex justify-between items-center px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
+                <span className="text-[11px] font-bold text-blue-800">Fee: ₹{formData.roomType === "5" ? "4,500" : formData.roomType === "4" ? "5,000" : "5,500"}</span>
+                <span className="text-[10px] text-blue-500 line-through">₹{formData.roomType === "5" ? "6,000" : formData.roomType === "4" ? "6,500" : "7,000"}</span>
+             </div>
+          </div>
+        )}
 
         {/* Room Number */}
         <div className="w-full px-2">
@@ -570,7 +600,9 @@ const StudentManagement = () => {
           <div className="relative h-[40px]">
             <select name="roomNumber" value={formData.roomNumber} onChange={e => { handleInputChange(e); setFormData(p=>({...p,bedNumber:""})); }} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: formData.roomNumber===""?"#0000008A":"#000" }}>
               <option value="" disabled hidden>Select Room</option>
-              {availableRoomNumbers.map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor}</option>)}
+              {availableRoomNumbers
+                .filter(r => !formData.roomType || String(r.totalBeds) === formData.roomType)
+                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.totalBeds} Beds)</option>)}
             </select>
             <ChevronDown />
           </div>
@@ -775,6 +807,7 @@ const StudentManagement = () => {
                   ["Contact Number", studentDetailsData.contact],
                   ["Email", studentDetailsData.email || "N/A"],
                   ["Room/Bed", studentDetailsData.room],
+                  ["Room Type", studentDetailsData.roomType ? `${studentDetailsData.roomType} Bed` : "N/A"],
                   ["Emergency Contact", studentDetailsData.emergencyContactNumber || "N/A"],
                   ["Admission Date", studentDetailsData.admissionDate || "N/A"],
                   ["Emergency Contact Name", studentDetailsData.emergencyContactName || "N/A"],
@@ -792,6 +825,33 @@ const StudentManagement = () => {
                   <p className="font-semibold text-sm text-gray-600 mb-0.5">Dues</p>
                   <p className="font-medium text-black">{studentDetailsData.dues}</p>
                 </div>
+              </div>
+
+              {/* Invoice History */}
+              <div className="mt-6 border-t border-black/20 pt-5">
+                <h3 className="text-base font-bold text-black mb-3" style={{ fontFamily:"Inter" }}>Invoice History</h3>
+                {invoicesLoading ? (
+                  <p className="text-sm text-gray-600 italic">Loading invoices...</p>
+                ) : studentInvoices.length > 0 ? (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    {studentInvoices.map(inv => (
+                      <div key={inv._id} className="flex justify-between items-center bg-white/40 p-2.5 rounded-lg border border-black/5 hover:bg-white/60 transition-colors">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-black">{inv.invoiceType} - {inv.invoiceNumber}</span>
+                          <span className="text-[10px] text-gray-600">Due: {new Date(inv.dueDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-bold text-black">₹{inv.amount.toLocaleString()}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${inv.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {inv.status.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No invoices found for this student.</p>
+                )}
               </div>
 
               {/* Documents */}
@@ -835,11 +895,11 @@ const StudentManagement = () => {
             {/* Desktop Table */}
             <div className="hidden lg:block">
               <div className="border border-black rounded-[19.6px] overflow-hidden">
-                <div className="bg-white text-black grid grid-cols-7 text-center">
-                  {["Student ID","Name","Room/Bed","Contact","Fees Status","Dues","Action"].map((h,i) => (
-                    <div key={h} className="px-2 py-3 relative flex justify-center items-center" style={{ fontFamily:"Poppins", fontWeight:"600", fontSize:"14px" }}>
+                <div className="bg-white text-black grid grid-cols-9 text-center">
+                  {["Student ID","Name","Room/Bed","Type","Fee","Contact","Fees Status","Dues","Action"].map((h,i) => (
+                    <div key={h} className="px-2 py-3 relative flex justify-center items-center" style={{ fontFamily:"Poppins", fontWeight:"600", fontSize:"13px" }}>
                       <span className="w-full break-words">{h}</span>
-                      {i < 6 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
+                      {i < 8 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
                     </div>
                   ))}
                 </div>
@@ -848,11 +908,13 @@ const StudentManagement = () => {
                     <div className="py-8 text-center text-gray-600 font-medium">No students found for this filter.</div>
                   )}
                   {currentStudents.map((s, i) => (
-                    <div key={s.id} className="text-black grid grid-cols-7 items-center border-b border-black/10 last:border-0 pb-2">
+                    <div key={s.id} className="text-black grid grid-cols-9 items-center border-b border-black/10 last:border-0 pb-2">
                       <div className="px-2 py-2 break-words text-xs">{s.id}</div>
-                      <div className="px-2 py-2 break-words">{s.name}</div>
-                      <div className="px-2 py-2 break-words leading-tight text-xs">{s.room}</div>
-                      <div className="px-2 py-2 text-xs break-words">{s.contact}</div>
+                      <div className="px-2 py-2 break-words text-xs font-bold">{s.name}</div>
+                      <div className="px-2 py-2 break-words leading-tight text-[10px]">{s.room}</div>
+                      <div className="px-2 py-2 text-[10px] break-words">{s.roomType ? `${s.roomType} Bed` : "-"}</div>
+                      <div className="px-2 py-2 text-[10px] font-bold text-blue-700">{s.monthlyFee}</div>
+                      <div className="px-2 py-2 text-[10px] break-words">{s.contact}</div>
                       <div className="px-2 py-2 flex justify-center"><span style={getFeeStatusStyle(s.feeStatus)}>{s.feeStatus}</span></div>
                       <div className="px-2 py-2">{s.dues}</div>
                       <div className="px-2 py-2 flex justify-center gap-3">
