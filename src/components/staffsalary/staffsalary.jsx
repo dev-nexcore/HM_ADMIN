@@ -908,7 +908,9 @@ export default function StaffSalaryContent() {
                     required>
                     <option value="">Choose member...</option>
                     {staffs.map(s => (
-                      <option key={s._id} value={s._id}>{s.firstName} {s.lastName} ({s.wardenId})</option>
+                      <option key={s._id} value={s._id}>
+                        {s.firstName} {s.lastName} — {s.role || (s.wardenId ? 'Warden' : 'Staff')} ({s.wardenId})
+                      </option>
                     ))}
                   </select>
                 </div>

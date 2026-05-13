@@ -57,8 +57,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkUploadProgress, setBulkUploadProgress] = useState(0);
   const [bulkUploadStatus, setBulkUploadStatus] = useState("");
-  const [selectedItemsForQR, setSelectedItemsForQR] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [showBulkQRModal, setShowBulkQRModal] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -224,6 +225,30 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
       setItemToDelete(null);
     } catch (error) {
       console.error("Failed to delete inventory item:", error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      const deletePromise = api.post('/api/adminauth/inventory/bulk-delete', {
+        itemIds: selectedItems
+      });
+
+      toast.promise(deletePromise, {
+        loading: `Deleting ${selectedItems.length} items...`,
+        success: 'Items deleted successfully!',
+        error: 'Failed to delete items.',
+      });
+
+      await deletePromise;
+      
+      setInventory((prev) => prev.filter((item) => !selectedItems.includes(item._id)));
+      setSelectedItems([]);
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      console.error('Failed to bulk delete inventory:', error);
     }
   };
 
@@ -519,7 +544,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
       setLoading(true);
       const { data } = await api.post(
         "/api/adminauth/inventory/bulk-qr-generate",
-        { itemIds: selectedItemsForQR }
+        { itemIds: selectedItems }
       );
 
       if (data.success) {
@@ -529,7 +554,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
             return updated || item;
           })
         );
-        setSelectedItemsForQR([]);
+        setSelectedItems([]);
         setShowBulkQRModal(false);
         alert(`Successfully generated ${data.count} QR codes!`);
       }
@@ -567,14 +592,23 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
           </div>
 
           <div className="flex gap-4 flex-wrap justify-end sm:ml-auto w-full sm:w-auto">
-            {selectedItemsForQR.length > 0 && (
-              <button
-                onClick={() => setShowBulkQRModal(true)}
-                className="flex items-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow-md"
-              >
-                <QrCode size={17} />
-                Generate QR for {selectedItemsForQR.length} Items
-              </button>
+            {selectedItems.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowBulkQRModal(true)}
+                  className="flex items-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow-md text-sm font-medium"
+                >
+                  <QrCode size={16} />
+                  QR ({selectedItems.length})
+                </button>
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  className="flex items-center gap-2 cursor-pointer bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded shadow-md text-sm font-medium"
+                >
+                  <Trash2 size={16} />
+                  Delete ({selectedItems.length})
+                </button>
+              </div>
             )}
 
             <button
@@ -756,19 +790,14 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                       type="checkbox"
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedItemsForQR(
-                            inventory
-                              .filter((item) => !item.qrCodeUrl)
-                              .map((item) => item._id)
-                          );
+                          setSelectedItems(paginatedInventory.map((item) => item._id));
                         } else {
-                          setSelectedItemsForQR([]);
+                          setSelectedItems([]);
                         }
                       }}
                       checked={
-                        selectedItemsForQR.length > 0 &&
-                        selectedItemsForQR.length ===
-                          inventory.filter((item) => !item.qrCodeUrl).length
+                        selectedItems.length > 0 &&
+                        paginatedInventory.every(item => selectedItems.includes(item._id))
                       }
                     />
                   </th>
@@ -800,24 +829,19 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                 {paginatedInventory.map((item, index) => (
                   <tr key={item.barcodeId} className="hover:bg-gray-100">
                     <td className="px-2 py-2">
-                      {!item.qrCodeUrl && (
-                        <input
-                          type="checkbox"
-                          checked={selectedItemsForQR.includes(item._id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedItemsForQR((prev) => [
-                                ...prev,
-                                item._id,
-                              ]);
-                            } else {
-                              setSelectedItemsForQR((prev) =>
-                                prev.filter((id) => id !== item._id)
-                              );
-                            }
-                          }}
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedItems((prev) => [...prev, item._id]);
+                          } else {
+                            setSelectedItems((prev) =>
+                              prev.filter((id) => id !== item._id)
+                            );
+                          }
+                        }}
+                      />
                     </td>
 
                     <td className="font-semibold">

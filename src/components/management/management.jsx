@@ -139,6 +139,12 @@ const StudentManagement = () => {
   const [studentDetailsData, setStudentDetailsData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("student");
+  const [parents, setParents] = useState([]);
+  const [parentDetailsData, setParentDetailsData] = useState(null);
+  const [showParentDetailsModal, setShowParentDetailsModal] = useState(false);
+  const [editingParent, setEditingParent] = useState(null);
+  const [showParentEditModal, setShowParentEditModal] = useState(false);
+
   const [parentFormData, setParentFormData] = useState({
     firstName: "", lastName: "", email: "", relation: "", contactNumber: "", studentId: "",
   });
@@ -148,6 +154,15 @@ const StudentManagement = () => {
   const [ocrProgress, setOcrProgress] = useState(0);
   const [parentErrors, setParentErrors] = useState({});
   const [parentLoading, setParentLoading] = useState(false);
+  const [workerFormData, setWorkerFormData] = useState({
+    firstName: "", lastName: "", contactNumber: "", email: "",
+    roomNumber: "", bedNumber: "", emergencyContactNumber: "",
+    admissionDate: getTodaysDate(), emergencyContactName: "",
+    feeStatus: "", hasCollegeId: true, studentIdCard: null, feesReceipt: null, isWorking: true,
+    roomType: "",
+  });
+  const [workerDocuments, setWorkerDocuments] = useState({ aadharCard: null, panCard: null });
+  const [workerLoading, setWorkerLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [studentInvoices, setStudentInvoices] = useState([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
@@ -209,6 +224,21 @@ const StudentManagement = () => {
     } catch (e) { throw e.response?.data || { message: "Failed to register parent" }; }
   };
 
+  const registerWorkerAPI = async (workerData) => {
+    try {
+      const fd = new FormData();
+      ["firstName","lastName","contactNumber","roomBedNumber","email","admissionDate","feeStatus","emergencyContactName","emergencyContactNumber"].forEach(k => fd.append(k, workerData[k] || ""));
+      fd.append("hasCollegeId", workerData.hasCollegeId);
+      fd.append("isWorking", true);
+      if (workerDocuments.aadharCard) fd.append("aadharCard", workerDocuments.aadharCard);
+      if (workerDocuments.panCard) fd.append("panCard", workerDocuments.panCard);
+      if (workerData.hasCollegeId && workerDocuments.studentIdCard) fd.append("studentIdCard", workerDocuments.studentIdCard);
+      if (!workerData.hasCollegeId && workerDocuments.feesReceipt) fd.append("feesReceipt", workerDocuments.feesReceipt);
+      const res = await api.post(`/api/adminauth/register-student`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      return res.data;
+    } catch (e) { throw e.response?.data || { message: "Failed to register worker student" }; }
+  };
+
   const updateStudentAPI = async (studentId, data) => {
     try {
       const res = await api.put(`/api/adminauth/update-student/${studentId}`, data);
@@ -221,6 +251,9 @@ const StudentManagement = () => {
   const fetchAvailableRoomsAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-beds`)).data; } catch(e) { throw e.response?.data; } };
   const fetchAvailableRoomsNumbersAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-rooms`)).data; } catch(e) { throw e.response?.data; } };
   const fetchRoomDetailsAPI = async (id) => { try { return (await api.get(`/api/adminauth/inventory/${id}`)).data; } catch(e) { return null; } };
+  const fetchParentsAPI = async () => { try { return (await api.get(`/api/adminauth/parents`)).data; } catch(e) { throw e.response?.data; } };
+  const deleteParentAPI = async (id) => { try { return (await api.delete(`/api/adminauth/delete-parent/${id}`)).data; } catch(e) { throw e.response?.data; } };
+  const updateParentAPI = async (id, data) => { try { return (await api.put(`/api/adminauth/update-parent/${id}`, data)).data; } catch(e) { throw e.response?.data; } };
 
   const loadStudents = async () => {
     try {
@@ -229,17 +262,31 @@ const StudentManagement = () => {
         let roomDisplay = "Not Assigned", roomDetails = null;
         if (s.roomBedNumber && typeof s.roomBedNumber === "string" && s.roomBedNumber.length === 24) {
           roomDetails = await fetchRoomDetailsAPI(s.roomBedNumber);
-          if (roomDetails?.inventory) roomDisplay = `${roomDetails.inventory.barcodeId} - Floor ${roomDetails.inventory.floor}, Room ${roomDetails.inventory.roomNo}`;
+          if (roomDetails?.inventory) {
+            const shortBarcode = (roomDetails.inventory.barcodeId || "").split("-").slice(0, 2).join("-");
+            roomDisplay = `${roomDetails.inventory.roomNo}/${shortBarcode}`;
+          }
         } else if (s.roomBedNumber && typeof s.roomBedNumber === "object") {
-          roomDisplay = `${s.roomBedNumber.barcodeId} - Floor ${s.roomBedNumber.floor}, Room ${s.roomBedNumber.roomNo}`;
+          const shortBarcode = (s.roomBedNumber.barcodeId || "").split("-").slice(0, 2).join("-");
+          roomDisplay = `${s.roomBedNumber.roomNo}/${shortBarcode}`;
           roomDetails = s.roomBedNumber;
         } else if (s.roomBedNumber) {
           roomDisplay = s.roomBedNumber;
         }
-        const monthlyFee = s.roomType === "5" ? "₹ 4,500" : s.roomType === "4" ? "₹ 5,000" : s.roomType === "3" ? "₹ 5,500" : "-";
-        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {} };
+        const isWorking = s.isWorking === true;
+        const monthlyFee = isWorking
+          ? (s.roomType === "5" ? "₹ 6,000" : s.roomType === "4" ? "₹ 6,500" : s.roomType === "3" ? "₹ 7,000" : "-")
+          : (s.roomType === "5" ? "₹ 4,500" : s.roomType === "4" ? "₹ 5,000" : s.roomType === "3" ? "₹ 5,500" : "-");
+        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking };
       }));
       setStudents(transformed);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadParents = async () => {
+    try {
+      const { parents: raw = [] } = await fetchParentsAPI();
+      setParents(raw);
     } catch (e) { console.error(e); }
   };
 
@@ -247,12 +294,13 @@ const StudentManagement = () => {
     (async () => {
       try {
         await loadStudents();
+        await loadParents();
         setAvailableRooms((await fetchAvailableRoomsAPI()).availableBeds || []);
         setAvailableRoomNumbers((await fetchAvailableRoomsNumbersAPI()).availableRooms || []);
         setStudentsWithoutParents((await fetchStudentsWithoutParentsAPI()).students || []);
       } catch (e) { console.error(e); }
     })();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, activeTab]);
 
   useEffect(() => {
     if (studentDetailsData?._id) {
@@ -333,6 +381,7 @@ const StudentManagement = () => {
       const result = await Tesseract.recognize(file, "eng", { logger: (m) => { if (m.status === "recognizing text") setOcrProgress(Math.round(m.progress * 100)); } });
       const info = documentType === "aadhar" ? extractAadharInfo(result.data.text) : extractPanInfo(result.data.text);
       if (formType === "student") setFormData(p => ({ ...p, firstName: info.firstName || p.firstName, lastName: info.lastName || p.lastName, contactNumber: info.mobileNumber || p.contactNumber }));
+      else if (formType === "worker") setWorkerFormData(p => ({ ...p, firstName: info.firstName || p.firstName, lastName: info.lastName || p.lastName, contactNumber: info.mobileNumber || p.contactNumber }));
       else setParentFormData(p => ({ ...p, firstName: info.firstName || p.firstName, lastName: info.lastName || p.lastName, contactNumber: info.mobileNumber || p.contactNumber }));
       if (info.firstName || info.lastName) toast.success(`Extracted: ${info.firstName} ${info.lastName}\nDOB: ${info.dob || "—"}\nMobile: ${info.mobileNumber || "—"}`);
       else toast.error("Could not extract name. Please fill manually.");
@@ -347,6 +396,7 @@ const StudentManagement = () => {
     const fieldMap = { aadhar: "aadharCard", pan: "panCard", studentId: "studentIdCard", feesReceipt: "feesReceipt" };
     const fieldName = fieldMap[documentType] || documentType;
     if (formType === "student") setStudentDocuments(p => ({ ...p, [fieldName]: file }));
+    else if (formType === "worker") setWorkerDocuments(p => ({ ...p, [fieldName]: file }));
     else setParentDocuments(p => ({ ...p, [fieldName]: file }));
     if (file.type.includes("image") && (documentType === "aadhar" || documentType === "pan")) await processDocument(file, documentType, formType);
   };
@@ -410,19 +460,70 @@ const StudentManagement = () => {
   };
 
   const resetParentForm = () => {
-    setParentFormData({ firstName:"",lastName:"",email:"",relation:"",contactNumber:"",studentId:"" });
-    setParentDocuments({ aadharCard:null,panCard:null }); setParentErrors({});
+    setParentFormData({ firstName: "", lastName: "", email: "", relation: "", contactNumber: "", studentId: "" });
+    setParentDocuments({ aadharCard: null, panCard: null });
+    setParentErrors({});
   };
 
   const handleParentSubmit = async () => {
-    const errs = validateParentForm(parentFormData); if (Object.keys(errs).length) { setParentErrors(errs); return; }
+    const errs = validateParentForm(parentFormData);
+    if (Object.keys(errs).length) {
+      setParentErrors(errs);
+      return;
+    }
     setParentLoading(true);
     try {
       await registerParentAPI(parentFormData);
-      setRefreshTrigger(p => p + 1); resetParentForm();
+      setRefreshTrigger(p => p + 1);
+      resetParentForm();
       toast.success(`Parent registered! Instructions sent to ${parentFormData.email}`);
-    } catch (e) { toast.error(e.message || "Error registering parent."); }
-    finally { setParentLoading(false); }
+    } catch (e) {
+      toast.error(e.message || "Error registering parent.");
+    } finally {
+      setParentLoading(false);
+    }
+  };
+
+  const handleWorkerInputChange = (e) => {
+    const { name, value } = e.target;
+    setWorkerFormData(p => ({ ...p, [name]: value }));
+  };
+
+  const validateWorkerForm = (data) => {
+    const e = {};
+    if (!data.firstName.trim()) e.firstName = "First Name is required.";
+    if (!data.lastName.trim()) e.lastName = "Last Name is required.";
+    if (!data.contactNumber.trim()) e.contactNumber = "Contact Number is required.";
+    if (!data.email.trim()) e.email = "Email is required.";
+    if (!data.roomType) e.roomType = "Room Type is required.";
+    return e;
+  };
+
+  const resetWorkerForm = () => {
+    setWorkerFormData({
+      firstName: "", lastName: "", contactNumber: "", email: "",
+      roomNumber: "", bedNumber: "", emergencyContactNumber: "",
+      admissionDate: getTodaysDate(), emergencyContactName: "",
+      feeStatus: "", hasCollegeId: false, studentIdCard: null, feesReceipt: null, isWorking: true,
+      roomType: "",
+    });
+    setWorkerDocuments({ aadharCard: null, panCard: null });
+  };
+
+  const handleWorkerSubmit = async () => {
+    const errs = validateWorkerForm(workerFormData);
+    if (Object.keys(errs).length) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    setWorkerLoading(true);
+    try {
+      const res = await registerWorkerAPI({ ...workerFormData, roomBedNumber: workerFormData.bedNumber || "Not Assigned" });
+      setRefreshTrigger(p => p + 1);
+      resetWorkerForm();
+      toast.success(`Worker student registered! Password: ${res.student?.password}`, { autoClose: 6000 });
+    } catch (e) { toast.error(e.message || "Error registering worker."); }
+    finally { setWorkerLoading(false); }
   };
 
   const handleViewDetails = (studentId) => {
@@ -445,6 +546,9 @@ const StudentManagement = () => {
 
   // ── Filtered + Paginated ───────────────────────────────────────────────────
   const filteredStudents = students.filter(s => {
+    if (activeTab === "worker") { if (!s.isWorking) return false; }
+    else if (activeTab === "student") { if (s.isWorking) return false; }
+
     if (activeFilter === "All") return true;
     if (activeFilter === "Paid Fees") return s.feeStatus === "Paid";
     if (activeFilter === "Pending Fees") return ["Pending","Unpaid","Partial"].includes(s.feeStatus);
@@ -614,7 +718,10 @@ const StudentManagement = () => {
           <div className="relative h-[40px]">
             <select name="bedNumber" value={formData.bedNumber} onChange={handleInputChange} disabled={!formData.roomNumber} className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${!formData.roomNumber?"cursor-not-allowed opacity-60":""}`} style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: formData.bedNumber===""?"#0000008A":"#000" }}>
               <option value="" disabled hidden>{!formData.roomNumber?"Select Room First":"Select Bed"}</option>
-              {getBedsForRoom(formData.roomNumber).map(b => <option key={b._id} value={b._id}>{b.itemName}</option>)}
+              {getBedsForRoom(formData.roomNumber).map(b => {
+                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
+                return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
+              })}
             </select>
             <ChevronDown />
           </div>
@@ -722,6 +829,238 @@ const StudentManagement = () => {
     </>
   );
 
+  const workerFormContent = () => (
+    <>
+      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6" style={{ fontFamily:"Inter", fontWeight:"700" }}>
+        Register New Working Student
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+
+        {/* First Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>First Name</label>
+          <input type="text" name="firstName" value={workerFormData.firstName} onChange={handleWorkerInputChange} placeholder="Enter First Name" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Last Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Last Name</label>
+          <input type="text" name="lastName" value={workerFormData.lastName} onChange={handleWorkerInputChange} placeholder="Enter Last Name" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Documents */}
+        <div className="w-full px-2 md:col-span-2">
+          <div className="bg-white/50 rounded-lg p-4 space-y-4">
+            <h3 className="font-semibold text-black mb-2">Upload Documents (Required: Aadhar & PAN)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>Aadhar Card</label>
+                <input type="file" accept="image/*" onChange={e => handleDocumentUpload(e, "aadhar", "worker")} className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300" disabled={ocrLoading} />
+                {workerDocuments.aadharCard && <p className="text-xs text-green-600 mt-1">✓ {workerDocuments.aadharCard.name}</p>}
+              </div>
+              <div>
+                <label className="block mb-1 text-black ml-2 text-sm" style={labelStyle}>PAN Card</label>
+                <input type="file" accept="image/*" onChange={e => handleDocumentUpload(e, "pan", "worker")} className="w-full px-4 py-2 bg-white rounded-lg border border-gray-300" disabled={ocrLoading} />
+                {workerDocuments.panCard && <p className="text-xs text-green-600 mt-1">✓ {workerDocuments.panCard.name}</p>}
+              </div>
+            </div>
+            {ocrLoading && (
+              <div><div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full" style={{width:`${ocrProgress}%`}}/></div><p className="text-xs text-center mt-1">Processing... {ocrProgress}%</p></div>
+            )}
+          </div>
+        </div>
+
+        {/* Contact Number */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Contact Number</label>
+          <input type="tel" name="contactNumber" value={workerFormData.contactNumber} onChange={handleWorkerInputChange} placeholder="Enter Phone Number" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Email */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
+          <input type="email" name="email" value={workerFormData.email} onChange={handleWorkerInputChange} placeholder="Enter E-Mail" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Room Type */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Type</label>
+          <div className="relative h-[40px]">
+            <select name="roomType" value={workerFormData.roomType} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: workerFormData.roomType===""?"#0000008A":"#000" }}>
+              <option value="" disabled hidden>Select Room Type</option>
+              <option value="3">3 Bed Sharing</option>
+              <option value="4">4 Bed Sharing</option>
+              <option value="5">5 Bed Sharing</option>
+            </select>
+            <ChevronDown />
+          </div>
+        </div>
+
+        {/* Fee Information (Full Price - No Discount) */}
+        {workerFormData.roomType && (
+          <div className="w-full px-2 col-span-1">
+             <div className="bg-orange-50 p-2 h-[40px] rounded-[10px] border border-orange-100 flex justify-between items-center px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
+                <span className="text-[11px] font-bold text-orange-800">Monthly Fee: ₹{workerFormData.roomType === "5" ? "6,000" : workerFormData.roomType === "4" ? "6,500" : "7,000"}</span>
+                <span className="text-[10px] text-orange-600 font-semibold">(No Student Discount Applied)</span>
+             </div>
+          </div>
+        )}
+
+        {/* Room Number */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Number</label>
+          <div className="relative h-[40px]">
+            <select name="roomNumber" value={workerFormData.roomNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: workerFormData.roomNumber===""?"#0000008A":"#000" }}>
+              <option value="" disabled hidden>Select Room</option>
+              {availableRoomNumbers
+                .filter(r => !workerFormData.roomType || String(r.totalBeds) === workerFormData.roomType)
+                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.totalBeds} Beds)</option>)}
+            </select>
+            <ChevronDown />
+          </div>
+        </div>
+
+        {/* Bed Number */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Bed Number</label>
+          <div className="relative h-[40px]">
+            <select name="bedNumber" value={workerFormData.bedNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: workerFormData.bedNumber===""?"#0000008A":"#000" }}>
+              <option value="" disabled hidden>{workerFormData.roomNumber ? "Select Bed" : "Select Room First"}</option>
+              {getBedsForRoom(workerFormData.roomNumber).map(b => {
+                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
+                return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
+              })}
+            </select>
+            <ChevronDown />
+          </div>
+        </div>
+
+        {/* Emergency Contact Number */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Emergency Contact Number</label>
+          <input type="tel" name="emergencyContactNumber" value={workerFormData.emergencyContactNumber} onChange={handleWorkerInputChange} placeholder="Enter Contact Number" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Emergency Contact Name */}
+        <div className="w-full px-2">
+          <label className="block mb-1 text-black ml-2" style={labelStyle}>Emergency Contact Name</label>
+          <input type="text" name="emergencyContactName" value={workerFormData.emergencyContactName} onChange={handleWorkerInputChange} placeholder="Enter Name" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Admission Date */}
+        <div className="w-full px-2">
+          <label className="block mb-2 text-black ml-2" style={labelStyle}>Admission Date</label>
+          <div className="bg-gray-100 rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 shadow-[0px_4px_10px_0px_#00000040] cursor-not-allowed w-fit min-w-[200px]">
+            {workerFormData.admissionDate}
+          </div>
+          <p className="text-xs text-gray-600 mt-1 ml-2">Automatically set to today's date</p>
+        </div>
+
+        {/* Fee Status */}
+        <div className="w-full px-2">
+          <label className="block mb-2 text-black ml-2" style={labelStyle}>Fee Status</label>
+          <div className="relative w-[300px] max-w-full h-[40px]">
+            <select name="feeStatus" value={workerFormData.feeStatus} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: workerFormData.feeStatus===""?"#0000008A":"#000" }}>
+              <option value="" disabled hidden>Select Fee Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+              <option value="Partial">Partial</option>
+            </select>
+            <ChevronDown />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <button onClick={handleWorkerSubmit} disabled={workerLoading} className={`mt-6 px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] font-semibold text-[15px] cursor-pointer ${workerLoading?"opacity-50 cursor-not-allowed":""}`}>
+          {workerLoading ? "Registering..." : "Register Working Student"}
+        </button>
+      </div>
+    </>
+  );
+
+  const handleDeleteParent = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this parent account?")) return;
+    try {
+      await api.delete(`/api/adminauth/delete-parent/${id}`);
+      toast.success("Parent deleted successfully");
+      setRefreshTrigger(p => p + 1);
+    } catch (e) { toast.error(e.message || "Failed to delete parent"); }
+  };
+
+  const handleParentView = (parent) => {
+    setParentDetailsData(parent);
+    setShowParentDetailsModal(true);
+  };
+
+  const handleParentEdit = (parent) => {
+    setEditingParent(parent);
+    setParentFormData({
+      firstName: parent.firstName,
+      lastName: parent.lastName,
+      email: parent.email,
+      relation: parent.relation,
+      contactNumber: parent.contactNumber,
+      studentId: parent.studentId
+    });
+    setShowParentEditModal(true);
+  };
+
+  const handleParentUpdate = async () => {
+    try {
+      setLoading(true);
+      await updateParentAPI(editingParent._id, parentFormData);
+      toast.success("Parent details updated!");
+      setShowParentEditModal(false);
+      setEditingParent(null);
+      setRefreshTrigger(p => p + 1);
+    } catch (e) { toast.error(e.message || "Update failed"); }
+    finally { setLoading(false); }
+  };
+
+  const parentTable = () => (
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-black" style={{ fontFamily:"Inter" }}>Parent List</h2>
+      </div>
+
+      <div className="border border-black rounded-[19.6px] overflow-hidden">
+        <div className="bg-white text-black grid grid-cols-5 text-center font-bold text-[13px] py-3 border-b border-black">
+          <div className="relative border-r border-black/10 last:border-0">Parent Name</div>
+          <div className="relative border-r border-black/10 last:border-0">Contact</div>
+          <div className="relative border-r border-black/10 last:border-0">Relation</div>
+          <div className="relative border-r border-black/10 last:border-0">Student ID</div>
+          <div>Action</div>
+        </div>
+        <div className="bg-[#BEC5AD] flex flex-col gap-y-2 p-2 min-h-[100px]">
+          {parents.length === 0 ? (
+            <div className="py-12 text-center text-gray-600 font-medium italic">No parents registered yet.</div>
+          ) : (
+            parents.map((p, i) => (
+              <div key={p._id} className="bg-white/40 rounded-xl grid grid-cols-5 text-center text-xs py-3 items-center border border-black/5 hover:bg-white/60 transition-colors">
+                <div className="font-bold text-black">{p.firstName} {p.lastName}</div>
+                <div className="text-black font-medium">{p.contactNumber}</div>
+                <div className="text-black">{p.relation}</div>
+                <div className="font-semibold text-blue-800">{p.studentId}</div>
+                <div className="flex justify-center items-center gap-3">
+                  <button onClick={() => handleParentView(p)} className="hover:scale-110 transition-transform text-black" title="View Details"><Eye size={18}/></button>
+                  <div className="w-px h-4 bg-black/20"/>
+                  <button onClick={() => handleParentEdit(p)} className="hover:scale-110 transition-transform text-black" title="Edit Parent">
+                    <svg width="18" height="18" viewBox="0 0 27 26" fill="none"><mask id={`mp${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#mp${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="currentColor"/></g></svg>
+                  </button>
+                  <div className="w-px h-4 bg-black/20"/>
+                  <button onClick={() => handleDeleteParent(p._id)} className="hover:scale-110 transition-transform text-red-600" title="Delete Parent">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div className="bg-white min-h-screen" style={{ fontFamily:"Poppins", fontWeight:"500" }}>
@@ -768,18 +1107,17 @@ const StudentManagement = () => {
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto mb-10">
             <div className="flex mb-4 gap-3">
-              {["student","parent"].map(tab => (
+              {["student","parent","worker"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
-                  {tab === "student" ? "Register Student" : "Register Parent"}
+                  {tab === "student" ? "Register Student" : tab === "parent" ? "Register Parent" : "Register Worker"}
                 </button>
               ))}
             </div>
             <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
-              {activeTab === "student" ? formContent(false) : parentFormContent()}
+              {activeTab === "student" ? formContent(false) : activeTab === "parent" ? parentFormContent() : workerFormContent()}
             </div>
           </div>
         )}
-
         {/* ── Edit Modal ── */}
         {showEditModal && editingStudent && (
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
@@ -881,18 +1219,110 @@ const StudentManagement = () => {
           </div>
         )}
 
+        {/* ── Parent Details Modal ── */}
+        {showParentDetailsModal && parentDetailsData && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
+              <button onClick={() => { setShowParentDetailsModal(false); setParentDetailsData(null); }} className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <h2 className="text-xl font-bold text-black mb-6" style={{ fontFamily:"Inter" }}>Parent Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
+                {[
+                  ["First Name", parentDetailsData.firstName],
+                  ["Last Name", parentDetailsData.lastName],
+                  ["Contact Number", parentDetailsData.contactNumber],
+                  ["Email", parentDetailsData.email || "N/A"],
+                  ["Relation", parentDetailsData.relation],
+                  ["Student ID", parentDetailsData.studentId],
+                ].map(([k,v]) => (
+                  <div key={k}>
+                    <p className="font-semibold text-sm text-gray-600 mb-0.5">{k}</p>
+                    <p className="font-medium text-black">{v}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 border-t border-black/20 pt-5">
+                <h3 className="text-base font-bold text-black mb-3" style={{ fontFamily:"Inter" }}>Uploaded Documents</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[["Aadhar Card","aadharCard"],["PAN Card","panCard"]].map(([label,key]) => (
+                    <div key={key} className="bg-white/50 rounded-lg p-3">
+                      <p className="font-semibold text-black text-sm mb-2">{label}</p>
+                      {hasDocument(parentDetailsData.documents?.[key]) ? (
+                        <button onClick={() => {
+                          const token = localStorage.getItem('adminToken');
+                          window.open(`${getDocumentUrl(parentDetailsData.studentId, key, true)}?token=${token}`, '_blank');
+                        }} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-semibold">View Document</button>
+                      ) : (
+                        <p className="text-xs text-gray-500">Not uploaded</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-center mt-6">
+                <button onClick={() => { setShowParentDetailsModal(false); handleParentEdit(parentDetailsData); }} className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] font-semibold text-[15px] cursor-pointer">Edit Parent</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Parent Edit Modal ── */}
+        {showParentEditModal && editingParent && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
+              <button onClick={() => { setShowParentEditModal(false); setEditingParent(null); }} className="absolute top-4 right-4 text-black hover:text-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <h2 className="text-xl font-bold text-black mb-6" style={{ fontFamily:"Inter" }}>Edit Parent Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="w-full px-2">
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>First Name</label>
+                  <input type="text" name="firstName" value={parentFormData.firstName} onChange={(e) => setParentFormData({...parentFormData, firstName: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                </div>
+                <div className="w-full px-2">
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>Last Name</label>
+                  <input type="text" name="lastName" value={parentFormData.lastName} onChange={(e) => setParentFormData({...parentFormData, lastName: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                </div>
+                <div className="w-full px-2">
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>Email</label>
+                  <input type="email" name="email" value={parentFormData.email} onChange={(e) => setParentFormData({...parentFormData, email: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                </div>
+                <div className="w-full px-2">
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>Contact Number</label>
+                  <input type="text" name="contactNumber" value={parentFormData.contactNumber} onChange={(e) => setParentFormData({...parentFormData, contactNumber: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                </div>
+                <div className="w-full px-2">
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>Relation</label>
+                  <input type="text" name="relation" value={parentFormData.relation} onChange={(e) => setParentFormData({...parentFormData, relation: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                </div>
+              </div>
+              <div className="flex justify-center mt-6">
+                <button onClick={handleParentUpdate} disabled={loading} className="px-6 py-2 bg-white text-black rounded-[10px] shadow hover:bg-gray-200 transition-colors font-[Poppins] font-semibold text-[15px] cursor-pointer">
+                  {loading ? "Updating..." : "Update Details"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Student List ── */}
         <div id="student-list-section" className="w-full max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 px-4 sm:px-0">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black" style={{ fontFamily:"Inter" }}>
-              Student List
-              {activeFilter !== "All" && <span className="text-[#4F8CCF] text-lg ml-2 font-semibold">— {activeFilter}</span>}
-            </h2>
-          </div>
-
           <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 px-4 sm:px-0" style={{ boxShadow:"0px 4px 4px 0px #00000040 inset" }}>
+            {activeTab === "parent" ? (
+              parentTable()
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 px-4 sm:px-0">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black" style={{ fontFamily:"Inter" }}>
+                    {activeTab === "worker" ? "Worker List" : "Student List"}
+                    {activeFilter !== "All" && <span className="text-[#4F8CCF] text-lg ml-2 font-semibold">— {activeFilter}</span>}
+                  </h2>
+                </div>
 
-            {/* Desktop Table */}
+                {/* Desktop Table */}
             <div className="hidden lg:block">
               <div className="border border-black rounded-[19.6px] overflow-hidden">
                 <div className="bg-white text-black grid grid-cols-9 text-center">
@@ -905,7 +1335,7 @@ const StudentManagement = () => {
                 </div>
                 <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
                   {currentStudents.length === 0 && (
-                    <div className="py-8 text-center text-gray-600 font-medium">No students found for this filter.</div>
+                    <div className="py-8 text-center text-gray-600 font-medium">No {activeTab === "worker" ? "workers" : "students"} found for this filter.</div>
                   )}
                   {currentStudents.map((s, i) => (
                     <div key={s.id} className="text-black grid grid-cols-9 items-center border-b border-black/10 last:border-0 pb-2">
@@ -932,7 +1362,7 @@ const StudentManagement = () => {
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-3">
-              {currentStudents.length === 0 && <p className="text-center text-gray-600 py-8">No students found for this filter.</p>}
+              {currentStudents.length === 0 && <p className="text-center text-gray-600 py-8">No {activeTab === "worker" ? "workers" : "students"} found.</p>}
               {currentStudents.map((s, i) => (
                 <div key={s.id} className="bg-white rounded-xl p-4 border border-black/10 shadow-sm">
                   <div className="flex justify-between items-start mb-3">
@@ -984,8 +1414,10 @@ const StudentManagement = () => {
                 <span className="text-sm text-black font-medium ml-2">{currentPage}/{totalPages || 1} · {filteredStudents.length} students</span>
               </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
+      </div>
+    </div>
       </div>
       <ToastContainer />
     </div>
