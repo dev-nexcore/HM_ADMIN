@@ -18,13 +18,14 @@
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.1.0",
     "lucide-react": "^0.526.0",
-    "next": "15.4.10",
+    "next": "^15.5.18",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-toastify": "^11.0.5",
-    "tesseract.js": "^6.0.1"
+    "tesseract.js": "^6.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
