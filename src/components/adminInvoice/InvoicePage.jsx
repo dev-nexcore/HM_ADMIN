@@ -173,9 +173,186 @@ export default function InvoicePage() {
   };
 
   const handleDownload = (row, section) => {
-    console.log("Download clicked for:", row);
-    alert(`Downloading invoice for: ${row[0]} from ${section}`);
-    // In production, trigger file download here
+    const isStudent = section === "Student Fees Invoices";
+    const isSalary = section === "Management Invoices (Salaries)";
+    const isPurchase = section === "Staff Purchase Receipts";
+
+    // Create a stylized print template
+    const printWindow = window.open('', '_blank');
+    const invoiceHTML = `
+      <html>
+        <head>
+          <title>Invoice - ${row[0]}</title>
+          <style>
+            * { box-sizing: border-box; }
+            
+            @page {
+              size: A4;
+              margin: 0;
+            }
+            
+            html, body {
+              height: 297mm; /* Standard A4 height */
+              width: 210mm;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
+            
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 15mm; 
+              color: #1A1F16; 
+              background: white;
+              -webkit-print-color-adjust: exact;
+              display: flex;
+              flex-direction: column;
+            }
+            
+            @media print {
+              body { height: 100vh; }
+              .no-print { display: none; }
+            }
+            
+            .header-main { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              padding-bottom: 20px; 
+              border-bottom: 2px solid #E5E7EB;
+              margin-bottom: 40px;
+            }
+            
+            .header-left { display: flex; align-items: center; gap: 20px; }
+            .header-logo { width: 80px; height: 80px; object-fit: contain; }
+            
+            .brand-name { font-size: 26px; font-weight: 800; color: #1A1F16; margin: 0; line-height: 1.2; text-transform: uppercase; }
+            .trust-info { font-size: 13px; font-weight: 700; color: #4A5D23; margin: 4px 0; text-transform: uppercase; }
+            .division-info { font-size: 13px; font-weight: 600; color: #64748B; margin: 0; text-transform: uppercase; }
+            
+            .header-right { text-align: right; font-size: 12px; color: #64748B; line-height: 1.6; }
+            .contact-item { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 4px; }
+            
+            .invoice-type-banner { 
+              background: #F8FAF5; 
+              padding: 15px 25px; 
+              border-radius: 12px; 
+              margin-bottom: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border: 1px solid #7A8B5E20;
+            }
+            .invoice-title { font-size: 18px; font-weight: 800; color: #7A8B5E; text-transform: uppercase; letter-spacing: 1px; }
+
+            .info-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 40px; margin-bottom: 50px; }
+            .section-label { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+            .value { font-size: 16px; font-weight: 600; color: #1A1F16; }
+            
+            .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .table th { background: #F1F5F9; text-align: left; padding: 15px; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+            .table td { padding: 15px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #1E293B; }
+            
+            .totals-section { margin-top: 40px; display: flex; justify-content: flex-end; }
+            .totals-box { width: 300px; }
+            .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #E2E8F0; }
+            .grand-total { border-top: 2px solid #1A1F16; margin-top: 10px; padding-top: 15px; font-size: 20px; font-weight: 800; }
+
+            .status-badge { display: inline-block; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+            .paid { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+            .pending { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+            .footer { margin-top: 80px; text-align: center; border-top: 1px solid #E2E8F0; padding-top: 30px; color: #94A3B8; font-size: 11px; }
+          </style>
+        </head>
+        <body>
+          <div class="header-main">
+            <div class="header-left">
+              <img src="/photos/logo1.svg" class="header-logo" alt="KGF Logo">
+              <div>
+                <h1 class="brand-name">KOKAN GLOBAL FOUNDATION</h1>
+                <p class="trust-info">EDUCATIONAL & WELFARE TRUST | REG NO: E-3342/R</p>
+                <p class="division-info">HOSTEL MANAGEMENT DIVISION</p>
+              </div>
+            </div>
+            <div class="header-right">
+              <div class="contact-item">📍 Maharashtra, India</div>
+              <div class="contact-item">📞 +91-XXXXXXXXXX</div>
+              <div style="margin-top: 10px; font-weight: 600; color: #1E293B;">Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+            </div>
+          </div>
+
+          <div class="invoice-type-banner">
+            <div class="invoice-title">Official Receipt</div>
+            <div class="status-badge ${row[4].toLowerCase() === 'paid' || row[4].toLowerCase() === 'approved' ? 'paid' : 'pending'}">${row[4]}</div>
+          </div>
+
+          <div class="info-grid">
+            <div>
+              <div class="section-label">Billed To</div>
+              <div class="value">${row[0]}</div>
+              <div style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                ${isStudent ? `Room No: ${row[1]}` : isSalary ? `Staff Designation: ${row[1]}` : `Vendor Name: ${row[1]}`}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div class="section-label">Invoice Details</div>
+              <div class="value">REF: ${Date.now().toString().slice(-6)}</div>
+              <div style="font-size: 13px; color: #64748B; margin-top: 4px;">Due Date: ${row[3]}</div>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 70%">Item Description</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="font-weight: 600;">${isStudent ? "Hostel Fees & Accommodation Charges" : isSalary ? "Monthly Salary Remuneration" : "Inventory/Service Purchase"}</div>
+                  <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Period: ${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}</div>
+                </td>
+                <td style="text-align: right; font-weight: 700;">${row[2]}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="totals-section">
+            <div class="totals-box">
+              <div class="total-row">
+                <span style="color: #64748B;">Subtotal</span>
+                <span style="font-weight: 600;">${row[2]}</span>
+              </div>
+              <div class="total-row">
+                <span style="color: #64748B;">Taxes / Fees</span>
+                <span style="font-weight: 600;">₹0</span>
+              </div>
+              <div class="total-row grand-total">
+                <span>Total Amount</span>
+                <span>${row[2]}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>This is an electronically generated receipt. No physical signature is required.</p>
+            <p>&copy; ${new Date().getFullYear()} Kokan Global Foundation. All rights reserved.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(invoiceHTML);
+    printWindow.document.close();
   };
 
 

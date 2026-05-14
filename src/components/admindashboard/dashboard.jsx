@@ -1,6 +1,21 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaRupeeSign } from "react-icons/fa";
+import { 
+  TrendingUp, 
+  Clock, 
+  Bed, 
+  CheckCircle, 
+  LogIn, 
+  LogOut, 
+  UserPlus, 
+  Megaphone, 
+  CreditCard, 
+  Calendar,
+  AlertCircle,
+  Wrench,
+  ArrowRight
+} from "lucide-react";
 import api from "@/lib/api";
 
 
@@ -22,6 +37,23 @@ const Dashboard = () => {
       pendingPayments: 0
     }
   });
+
+  const [quickStats, setQuickStats] = useState({
+    pendingLeaves: 0,
+    pendingComplaints: 0
+  });
+
+  useEffect(() => {
+    const fetchQuickStats = async () => {
+      try {
+        const { data } = await api.get('/api/adminauth/dashboard/quick-stats');
+        setQuickStats(data);
+      } catch (error) {
+        console.error("Failed to fetch quick stats:", error);
+      }
+    };
+    fetchQuickStats();
+  }, []);
 
   const [activeFilter, setActiveFilter] = useState("All");
   const [activities, setActivities] = useState([]);
@@ -111,36 +143,42 @@ const Dashboard = () => {
             value: financialData.revenue.totalRevenue.toLocaleString('en-IN'),
             color: "text-green-600",
             isCurrency: true,
+            icon: <TrendingUp size={20} />,
           },
           {
             title: "Pending Payments",
             value: financialData.revenue.pendingPayments.toLocaleString('en-IN'),
             color: "text-orange-500",
             isCurrency: true,
+            icon: <Clock size={20} />,
           },
           {
             title: "Occupied Beds",
             value: `${bedData.occupiedBeds} / ${bedData.totalBeds}`,
-            color: "text-black",
+            color: "text-blue-600",
             isCurrency: false,
+            icon: <Bed size={20} />,
           },
           {
             title: "Available Beds",
-            value: `${bedData.availableBeds} / ${bedData.totalBeds}`,
-            color: "text-black",
+            value: `${Math.max(0, bedData.totalBeds - bedData.occupiedBeds)} / ${bedData.totalBeds}`,
+            color: "text-purple-600",
             isCurrency: false,
+            icon: <CheckCircle size={20} />,
           },
           {
             title: "Today's Check-In",
             value: checkInOutData.checkIns,
-            color: "text-black",
+            color: "text-indigo-600",
             isCurrency: false,
+            icon: <LogIn size={20} />,
           },
           {
             title: "Today's Check-Outs",
             value: checkInOutData.checkOuts,
-            color: "text-black",
+            color: "text-rose-600",
             isCurrency: false,
+            icon: <LogOut size={20} />,
           },
         ].map((card, i) => (
           <button
@@ -152,10 +190,13 @@ const Dashboard = () => {
                 : "border-transparent hover:border-gray-200"
             }`}
           >
-            <div className={`relative w-full px-1 pl-4 py-2 rounded-3xl text-start transition-colors ${
+            <div className={`relative w-full px-4 py-3 rounded-t-2xl flex justify-between items-center transition-colors ${
               activeFilter === card.title ? "bg-[#4F8CCF] text-white" : "bg-[#c2c9b0] text-black"
             }`}>
-              <span className="font-semibold text-lg">{card.title}</span>
+              <span className="font-bold text-sm tracking-tight uppercase">{card.title}</span>
+              <div className={activeFilter === card.title ? "text-white/80" : "text-black/40"}>
+                {card.icon}
+              </div>
             </div>
             <div
               className={`py-6 font-bold text-3xl flex justify-center items-center gap-2 ${card.color}`}
@@ -171,6 +212,64 @@ const Dashboard = () => {
             </div>
           </button>
         ))}
+      </div>
+
+      {/* Quick Actions & System Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Quick Actions */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+            Quick Commands
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: "New Student", icon: <UserPlus />, path: "/management", color: "bg-blue-50 text-blue-600" },
+              { label: "Post Notice", icon: <Megaphone />, path: "/notices", color: "bg-purple-50 text-purple-600" },
+              { label: "Check Dues", icon: <CreditCard />, path: "/student-fees", color: "bg-orange-50 text-orange-600" },
+              { label: "Attendance", icon: <Calendar />, path: "/attendance", color: "bg-green-50 text-green-600" },
+            ].map((action, i) => (
+              <a key={i} href={action.path} className="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-50 hover:border-blue-100 hover:bg-gray-50 transition-all group">
+                <span className={`w-12 h-12 ${action.color} rounded-full flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform`}>{action.icon}</span>
+                <span className="text-xs font-bold text-gray-700 text-center">{action.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* System Overview / Alerts */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
+            System Alerts
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-rose-50 rounded-xl border border-rose-100">
+              <div className="flex items-center gap-3">
+                <AlertCircle size={24} className="text-rose-500" />
+                <div>
+                  <p className="text-xs font-bold text-rose-800 uppercase">Pending Approvals</p>
+                  <p className="text-sm font-medium text-rose-600">{quickStats.pendingLeaves} Leave Requests</p>
+                </div>
+              </div>
+              <a href="/leave-requests" className="p-1.5 hover:bg-rose-200 rounded-lg transition-colors text-rose-600">
+                <ArrowRight size={16} />
+              </a>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
+              <div className="flex items-center gap-3">
+                <Wrench size={24} className="text-amber-500" />
+                <div>
+                  <p className="text-xs font-bold text-amber-800 uppercase">Maintenance</p>
+                  <p className="text-sm font-medium text-amber-600">{quickStats.pendingComplaints} Open Complaints</p>
+                </div>
+              </div>
+              <a href="/ticket" className="p-1.5 hover:bg-amber-200 rounded-lg transition-colors text-amber-600">
+                <ArrowRight size={16} />
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Recent Activities */}

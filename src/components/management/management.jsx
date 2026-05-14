@@ -879,7 +879,8 @@ const StudentManagement = () => {
         {/* Email */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
-          <input type="email" name="email" value={workerFormData.email} onChange={handleWorkerInputChange} placeholder="Enter E-Mail" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+          <input type="email" name="email" value={workerFormData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+          {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
         </div>
 
         {/* Room Type */}
@@ -1287,8 +1288,9 @@ const StudentManagement = () => {
                   <input type="text" name="lastName" value={parentFormData.lastName} onChange={(e) => setParentFormData({...parentFormData, lastName: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
                 </div>
                 <div className="w-full px-2">
-                  <label className="block mb-1 text-black ml-2" style={labelStyle}>Email</label>
-                  <input type="email" name="email" value={parentFormData.email} onChange={(e) => setParentFormData({...parentFormData, email: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                  <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
+                  <input type="email" name="email" value={parentFormData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+                  {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>Contact Number</label>
