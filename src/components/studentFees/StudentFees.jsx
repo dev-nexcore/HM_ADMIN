@@ -209,6 +209,17 @@ const StudentFees = () => {
       inv.studentId?.toString() === student._id?.toString()
     );
 
+    let roomDisplay = "Unassigned";
+    const rb = student.roomBedNumber;
+    if (rb) {
+      if (typeof rb === "object") {
+        const shortBed = rb.barcodeId ? rb.barcodeId.split("-").slice(0, 2).join("-") : "";
+        roomDisplay = `${rb.roomNo || ""}${shortBed ? " / " + shortBed : ""}`;
+      } else {
+        roomDisplay = rb;
+      }
+    }
+
     const studentName =
       student.studentName ||
       `${student.firstName || ""} ${student.lastName || ""}`.trim() ||
@@ -219,6 +230,7 @@ const StudentFees = () => {
       student.roomType === "5" ? 4500 :
       student.roomType === "4" ? 5000 :
       student.roomType === "3" ? 5500 : 0;
+    const depositAmount = monthlyFee * 3;
 
     // ── totalFees = monthlyFee (standard charge per student) ─────────────────
     // If invoices exist, use the max(monthlyFee, invoiced sum) so extra charges
@@ -245,11 +257,6 @@ const StudentFees = () => {
       i => i.status !== "paid" && new Date(i.dueDate) < new Date()
     );
 
-    const roomDisplay =
-      student.roomBedNumber && typeof student.roomBedNumber === "object"
-        ? `${student.roomBedNumber.barcodeId} - Floor ${student.roomBedNumber.floor}, Room ${student.roomBedNumber.roomNo}`
-        : student.roomBedNumber || "Unassigned";
-
     // ── Status: PAID only when full monthly fee is cleared ──────────────────
     let status;
     if (monthlyFee === 0 && studentInvoices.length === 0) {
@@ -268,6 +275,7 @@ const StudentFees = () => {
       roomBedNumber: roomDisplay,
       studentName,
       monthlyFee,
+      depositAmount,
       totalFees,
       paidFees,
       pendingFees,
@@ -299,6 +307,16 @@ const StudentFees = () => {
   const handleGenerateInvoice = async (e) => {
     e.preventDefault();
     if (!activeStudent) return;
+    
+    // ── Prevent duplicate security deposit billing ──
+    if (invoiceForm.invoiceType === "security_deposit") {
+      const existingDeposit = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit");
+      if (existingDeposit && existingDeposit.status === "paid") {
+        toast.error("Security Deposit has already been paid for this student.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       await api.post("/api/adminauth/invoices/student", {
@@ -601,7 +619,7 @@ const StudentFees = () => {
   ];
 
   return (
-    <div style={css.page}>
+    <div style={css.page} className="sf-page-container">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -611,12 +629,41 @@ const StudentFees = () => {
         .inv-row:hover { background: #F9FAFB !important; }
         .inv-number-link { color: #3E4B28; font-weight: 800; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
         .inv-number-link:hover { color: #5A6E3A; }
-        @media (max-width: 640px) {
+        @media (max-width: 1100px) {
           .sf-hide-mobile { display: none !important; }
           .sf-show-mobile { display: flex !important; }
+          .sf-stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .sf-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+          .sf-filter-tabs { width: 100% !important; overflow-x: auto !important; padding-bottom: 8px !important; }
+          .sf-ledger-stats { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .sf-modal-content { padding: 16px !important; max-height: 90vh !important; overflow-y: auto !important; }
+          .sf-transaction-row { flex-direction: column !important; align-items: flex-start !important; }
+          .sf-transaction-amounts { width: 100% !important; justify-content: space-between !important; margin-top: 12px !important; }
+          .sf-mobile-amount-box { grid-template-columns: 1fr !important; }
+          .sf-modal-header-summary { gap: 10px !important; flex-wrap: wrap !important; }
+          .sf-modal-summary-item { padding: 8px 12px !important; flex: 1 1 120px !important; }
+          .sf-search-row { flex-direction: column !important; align-items: stretch !important; }
+          .sf-search-box { min-width: 100% !important; }
         }
-        @media (min-width: 641px) {
+        @media (max-width: 640px) {
+          .sf-stat-grid { grid-template-columns: 1fr !important; }
+          .sf-modal-overlay { padding: 8px !important; }
+          .sf-modal-header-main { padding: 24px 16px !important; }
+          .sf-page-container { padding: 12px !important; }
+          .sf-transaction-amounts { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+          .sf-modal-header-top { padding: 20px 16px !important; }
+        }
+        @media (min-width: 1101px) {
           .sf-show-mobile { display: none !important; }
+        }
+        .sf-desktop-table-container {
+          width: 100%;
+          overflow-x: auto;
+          scrollbar-width: thin;
+          padding-bottom: 10px;
+        }
+        .sf-table-min {
+          min-width: 1000px;
         }
       `}</style>
 
@@ -626,7 +673,7 @@ const StudentFees = () => {
         <header style={{
           display: "flex", justifyContent: "space-between", alignItems: "flex-end",
           marginBottom: 40, flexWrap: "wrap", gap: 20
-        }} className="sf-fade-up">
+        }} className="sf-fade-up sf-header-flex">
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
               <div style={{
@@ -648,14 +695,15 @@ const StudentFees = () => {
           <div style={{
             display: "flex", background: "#fff", padding: 4, borderRadius: 18,
             boxShadow: `0 4px 12px ${T.shadow}`, border: `1px solid ${T.border}`
-          }}>
+          }} className="sf-filter-tabs">
             {["all", "pending", "overdue", "paid"].map((s) => (
               <button key={s} onClick={() => setStatusFilter(s)} style={{
                 padding: "10px 20px", borderRadius: 14, fontSize: 12, fontWeight: 800,
                 textTransform: "uppercase", letterSpacing: "0.05em", border: "none", cursor: "pointer",
                 transition: "all 0.2s ease", background: statusFilter === s ? T.accent : "transparent",
                 color: statusFilter === s ? "#fff" : T.textMuted,
-                boxShadow: statusFilter === s ? `0 4px 12px ${T.accent}30` : "none"
+                boxShadow: statusFilter === s ? `0 4px 12px ${T.accent}30` : "none",
+                whiteSpace: "nowrap"
               }}>
                 {s}
               </button>
@@ -667,7 +715,7 @@ const StudentFees = () => {
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: 24, marginBottom: 40
-        }} className="sf-fade-up">
+        }} className="sf-fade-up sf-stat-grid">
           {statsData.map((stat, i) => (
             <div key={i} className="sf-stat-card" style={css.statCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -695,8 +743,8 @@ const StudentFees = () => {
 
         {/* ── Student Table ── */}
         <div style={css.glassCard} className="sf-fade-up">
-          <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ position: "relative", flex: 1, minWidth: 300 }}>
+          <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }} className="sf-search-row">
+            <div style={{ position: "relative", flex: 1, minWidth: 300 }} className="sf-search-box">
               <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
               <input
                 placeholder="Search students by name, ID or room..."
@@ -705,7 +753,7 @@ const StudentFees = () => {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <button style={css.btnSecondary} onClick={() => setShowAdvancedFilters(true)}>
+            <button style={{ ...css.btnSecondary, width: "auto" }} onClick={() => setShowAdvancedFilters(true)} className="sf-search-box">
               <HiOutlineFilter size={18} />
               Advanced Filters
               {isAdvFiltered && <div style={{ width: 6, height: 6, background: T.accent, borderRadius: "50%" }} />}
@@ -713,8 +761,8 @@ const StudentFees = () => {
           </div>
 
           {/* Desktop Table */}
-          <div className="sf-hide-mobile">
-            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }}>
+          <div className="sf-hide-mobile sf-desktop-table-container">
+            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }} className="sf-table-min">
               <thead>
                 <tr>
                   {["Student Identity", "Room/Bed", "Monthly Fee", "Total Billed", "Paid", "Outstanding", "Status", ""].map(h => (
@@ -752,7 +800,8 @@ const StudentFees = () => {
                     </td>
                     <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
                       <p style={{ fontWeight: 800, color: T.accent, fontSize: 13, margin: 0 }}>{formatCurrency(s.monthlyFee)}</p>
-                      <p style={{ fontSize: 10, color: T.textMuted, margin: 0 }}>Standard</p>
+                      <p style={{ fontSize: 10, color: T.textMuted, margin: 0 }}>Standard Monthly</p>
+                      <p style={{ fontSize: 9, color: T.orange, fontWeight: 700, margin: 0, marginTop: 2 }}>Deposit: {formatCurrency(s.depositAmount)}</p>
                     </td>
                     <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
                       <p style={{ fontWeight: 800, color: T.text, fontSize: 13, margin: 0 }}>{formatCurrency(s.totalFees)}</p>
@@ -887,28 +936,48 @@ const StudentFees = () => {
       {/* ── Generate Invoice Modal ── */}
       {showGenerateModal && activeStudent && (
         <ModalOverlay onClose={() => setShowGenerateModal(false)}>
-          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 500, padding: 0, overflow: "hidden" }}>
-            <div style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, padding: "40px 32px", color: "#fff", position: "relative" }}>
-              <button onClick={() => setShowGenerateModal(false)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 12, padding: 8, cursor: "pointer" }}>
+          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 500, padding: 0, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, padding: "40px 32px", color: "#fff", position: "relative", flexShrink: 0 }} className="sf-modal-header-top">
+              <button onClick={() => setShowGenerateModal(false)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 12, padding: 8, cursor: "pointer" }}>
                 <HiOutlineX size={20} color="#fff" />
               </button>
-              <h3 style={{ fontSize: 24, fontWeight: 900, margin: "0 0 8px" }}>Create Demand</h3>
-              <p style={{ opacity: 0.8, fontSize: 14, margin: 0 }}>Generating invoice for {activeStudent.studentName}</p>
+              <h3 style={{ fontSize: 24, fontWeight: 900, margin: "0 0 4px" }}>Create Demand</h3>
+              <p style={{ opacity: 0.8, fontSize: 13, margin: 0 }}>Generating invoice for {activeStudent.studentName}</p>
               {/* ── Show fee summary in header ── */}
-              <div style={{ display: "flex", gap: 20, marginTop: 20 }}>
+              <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }} className="sf-modal-header-summary">
                 {[
                   { label: "Monthly Fee", val: activeStudent.monthlyFee },
+                  { label: "Security Deposit", val: activeStudent.depositAmount, isDeposit: true },
                   { label: "Already Paid", val: activeStudent.paidFees },
                   { label: "Outstanding", val: activeStudent.pendingFees },
                 ].map((item, i) => (
-                  <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "10px 16px" }}>
-                    <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.7, margin: "0 0 4px" }}>{item.label}</p>
-                    <p style={{ fontSize: 16, fontWeight: 900, margin: 0 }}>{formatCurrency(item.val)}</p>
+                  <div key={i} style={{ background: item.isDeposit ? "rgba(197,160,89,0.2)" : "rgba(255,255,255,0.12)", borderRadius: 12, padding: "8px 14px", border: item.isDeposit ? `1px solid ${T.gold}40` : "none" }} className="sf-modal-summary-item">
+                    <p style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.7, margin: "0 0 2px" }}>{item.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 900, margin: 0, color: item.isDeposit ? T.goldLight : "#fff" }}>{formatCurrency(item.val)}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1 }} className="sf-modal-content">
+              {/* ── Security Deposit Status ── */}
+              {(() => {
+                const depositInv = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit");
+                if (!depositInv) return null;
+                const isPaid = depositInv.status === "paid";
+                return (
+                  <div style={{
+                    background: isPaid ? "#ECFDF5" : "#FEF2F2", 
+                    border: `1.5px solid ${isPaid ? "#10B98130" : "#EF444430"}`, 
+                    borderRadius: 14, padding: "12px 16px", display: "flex", gap: 10, alignItems: "center"
+                  }}>
+                    {isPaid ? <HiOutlineCheckCircle size={18} color={T.green} /> : <HiOutlineExclamationCircle size={18} color={T.red} />}
+                    <p style={{ fontSize: 12, color: isPaid ? "#065F46" : "#991B1B", fontWeight: 700, margin: 0 }}>
+                      {isPaid ? "Security Deposit already fully paid." : `Unpaid Security Deposit exists: ${formatCurrency(depositInv.amount)}`}
+                    </p>
+                  </div>
+                );
+              })()}
+
               {/* ── Info banner if partial payment already made ── */}
               {activeStudent.paidFees > 0 && activeStudent.pendingFees > 0 && (
                 <div style={{
@@ -924,10 +993,27 @@ const StudentFees = () => {
               )}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                 <ModalField label="Fee Category">
-                  <select style={css.input} value={invoiceForm.invoiceType} onChange={e => setInvoiceForm({ ...invoiceForm, invoiceType: e.target.value })}>
+                  <select 
+                    style={css.input} 
+                    value={invoiceForm.invoiceType} 
+                    onChange={e => {
+                      const type = e.target.value;
+                      let amt = invoiceForm.amount;
+                      if (type === "security_deposit") amt = String(activeStudent.depositAmount);
+                      else if (type === "hostel_fee") amt = String(activeStudent.monthlyFee);
+                      setInvoiceForm({ ...invoiceForm, invoiceType: type, amount: amt });
+                    }}
+                  >
                     <option value="hostel_fee">Hostel Fee</option>
                     <option value="mess_fee">Mess Fee</option>
-                    <option value="security_deposit">Security Deposit</option>
+                    {(() => {
+                      const isPaid = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit")?.status === "paid";
+                      return (
+                        <option value="security_deposit" disabled={isPaid}>
+                          Security Deposit {isPaid ? "(Paid)" : ""}
+                        </option>
+                      );
+                    })()}
                     <option value="maintenance_fee">Maintenance</option>
                     <option value="other">Other</option>
                   </select>
@@ -990,9 +1076,9 @@ const StudentFees = () => {
             </div>
 
             {/* Ledger Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#F9FAFB" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#F9FAFB" }} className="sf-modal-content">
               {/* Summary Cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 40 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 40 }} className="sf-ledger-stats">
                 {[
                   { label: "Total Billed", val: activeStudent.totalFees, color: T.accent },
                   { label: "Total Paid", val: activeStudent.paidFees, color: T.green },
@@ -1029,7 +1115,7 @@ const StudentFees = () => {
                       transition: "background 0.15s"
                     }}>
                       {/* Row top: invoice info + amount + status */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }} className="sf-transaction-row">
                         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                           <div style={{
                             width: 40, height: 40, borderRadius: 12,
@@ -1054,7 +1140,7 @@ const StudentFees = () => {
                         </div>
 
                         {/* ── FIX: show billed / paid / remaining inline ── */}
-                        <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }} className="sf-transaction-amounts">
                           <div style={{ textAlign: "right" }}>
                             <p style={{ fontSize: 10, color: T.textMuted, fontWeight: 700, margin: 0 }}>BILLED</p>
                             <p style={{ fontWeight: 800, color: T.text, fontSize: 14, margin: 0 }}>{formatCurrency(inv.amount)}</p>
@@ -1125,7 +1211,7 @@ const StudentFees = () => {
             <div style={{
               background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
               padding: "32px 32px 28px", color: "#fff", position: "relative"
-            }}>
+            }} className="sf-modal-header-main">
               <button
                 onClick={() => setSelectedInvoice(null)}
                 style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer" }}
@@ -1182,7 +1268,7 @@ const StudentFees = () => {
                       display: "grid", gridTemplateColumns: "1fr 1fr",
                       border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
                       marginBottom: 24
-                    }}>
+                    }} className="sf-mobile-amount-box">
                       {[
                         { label: "Fee Type", value: selectedInvoice.invoiceType?.replace(/_/g, " ") || "—" },
                         { label: "Paid So Far", value: formatCurrency(invPaid) },
@@ -1292,6 +1378,7 @@ const ModalOverlay = ({ children, onClose }) => (
       padding: "20px", background: "rgba(30,40,20,0.4)", backdropFilter: "blur(8px)"
     }}
     onClick={onClose}
+    className="sf-modal-overlay"
   >
     <div onClick={e => e.stopPropagation()} style={{ width: "100%", display: "flex", justifyContent: "center" }}>
       {children}

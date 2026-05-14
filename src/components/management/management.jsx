@@ -691,9 +691,18 @@ const StudentManagement = () => {
         {/* Fee Information (Dynamic) */}
         {formData.roomType && (
           <div className="w-full px-2 col-span-1">
-             <div className="bg-blue-50 p-2 h-[40px] rounded-[10px] border border-blue-100 flex justify-between items-center px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
-                <span className="text-[11px] font-bold text-blue-800">Fee: ₹{formData.roomType === "5" ? "4,500" : formData.roomType === "4" ? "5,000" : "5,500"}</span>
-                <span className="text-[10px] text-blue-500 line-through">₹{formData.roomType === "5" ? "6,000" : formData.roomType === "4" ? "6,500" : "7,000"}</span>
+             <div className="bg-blue-50 p-2 rounded-[10px] border border-blue-100 flex flex-col gap-1 px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold text-blue-800">Fee: ₹{formData.roomType === "5" ? "4,500" : formData.roomType === "4" ? "5,000" : "5,500"}</span>
+                  <span className="text-[10px] text-blue-500 line-through">₹{formData.roomType === "5" ? "6,000" : formData.roomType === "4" ? "6,500" : "7,000"}</span>
+                </div>
+                <div className="border-t border-blue-200 pt-1 flex flex-col gap-0.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-blue-800">Refundable Deposit (One-time):</span>
+                    <span className="text-[11px] font-extrabold text-blue-900">₹{formData.roomType === "5" ? "13,500" : formData.roomType === "4" ? "15,000" : "16,500"}</span>
+                  </div>
+                  <p className="text-[9px] text-blue-600 italic leading-tight">* Deposit is held by hostel and refunded when leaving. Fees are payable monthly.</p>
+                </div>
              </div>
           </div>
         )}
@@ -879,10 +888,8 @@ const StudentManagement = () => {
         {/* Email */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
-          <input type="email" name="email" value={workerFormData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
-          {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
+          <input type="email" name="email" value={workerFormData.email} onChange={handleWorkerInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
         </div>
-
         {/* Room Type */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Type</label>
@@ -900,9 +907,18 @@ const StudentManagement = () => {
         {/* Fee Information (Full Price - No Discount) */}
         {workerFormData.roomType && (
           <div className="w-full px-2 col-span-1">
-             <div className="bg-orange-50 p-2 h-[40px] rounded-[10px] border border-orange-100 flex justify-between items-center px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
-                <span className="text-[11px] font-bold text-orange-800">Monthly Fee: ₹{workerFormData.roomType === "5" ? "6,000" : workerFormData.roomType === "4" ? "6,500" : "7,000"}</span>
-                <span className="text-[10px] text-orange-600 font-semibold">(No Student Discount Applied)</span>
+             <div className="bg-orange-50 p-2 rounded-[10px] border border-orange-100 flex flex-col gap-1 px-4 shadow-[0px_2px_6px_0px_rgba(0,0,0,0.1)]">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold text-orange-800">Monthly Fee: ₹{workerFormData.roomType === "5" ? "6,000" : workerFormData.roomType === "4" ? "6,500" : "7,000"}</span>
+                  <span className="text-[10px] text-orange-600 font-semibold">(No Student Discount)</span>
+                </div>
+                <div className="border-t border-orange-200 pt-1 flex flex-col gap-0.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-orange-800">Refundable Deposit (One-time):</span>
+                    <span className="text-[11px] font-extrabold text-orange-900">₹{workerFormData.roomType === "5" ? "18,000" : workerFormData.roomType === "4" ? "19,500" : "21,000"}</span>
+                  </div>
+                  <p className="text-[9px] text-orange-600 italic leading-tight">* Deposit is held by hostel and refunded when leaving. Fees are payable monthly.</p>
+                </div>
              </div>
           </div>
         )}
@@ -1025,40 +1041,76 @@ const StudentManagement = () => {
         <h2 className="text-2xl font-bold text-black" style={{ fontFamily:"Inter" }}>Parent List</h2>
       </div>
 
-      <div className="border border-black rounded-[19.6px] overflow-hidden">
-        <div className="bg-white text-black grid grid-cols-5 text-center font-bold text-[13px] py-3 border-b border-black">
-          <div className="relative border-r border-black/10 last:border-0">Parent Name</div>
-          <div className="relative border-r border-black/10 last:border-0">Contact</div>
-          <div className="relative border-r border-black/10 last:border-0">Relation</div>
-          <div className="relative border-r border-black/10 last:border-0">Student ID</div>
-          <div>Action</div>
+        {/* Desktop Table */}
+        <div className="hidden md:block border border-black rounded-[19.6px] overflow-hidden">
+          <div className="bg-white text-black grid grid-cols-5 text-center font-bold text-[13px] py-3 border-b border-black">
+            <div className="relative border-r border-black/10 last:border-0">Parent Name</div>
+            <div className="relative border-r border-black/10 last:border-0">Contact</div>
+            <div className="relative border-r border-black/10 last:border-0">Relation</div>
+            <div className="relative border-r border-black/10 last:border-0">Student ID</div>
+            <div>Action</div>
+          </div>
+          <div className="bg-[#BEC5AD] flex flex-col gap-y-2 p-2 min-h-[100px]">
+            {parents.length === 0 ? (
+              <div className="py-12 text-center text-gray-600 font-medium italic">No parents registered yet.</div>
+            ) : (
+              parents.map((p, i) => (
+                <div key={p._id} className="bg-white/40 rounded-xl grid grid-cols-5 text-center text-xs py-3 items-center border border-black/5 hover:bg-white/60 transition-colors">
+                  <div className="font-bold text-black">{p.firstName} {p.lastName}</div>
+                  <div className="text-black font-medium">{p.contactNumber}</div>
+                  <div className="text-black">{p.relation}</div>
+                  <div className="font-semibold text-blue-800">{p.studentId}</div>
+                  <div className="flex justify-center items-center gap-3">
+                    <button onClick={() => handleParentView(p)} className="hover:scale-110 transition-transform text-black" title="View Details"><Eye size={18}/></button>
+                    <div className="w-px h-4 bg-black/20"/>
+                    <button onClick={() => handleParentEdit(p)} className="hover:scale-110 transition-transform text-black" title="Edit Parent">
+                      <svg width="18" height="18" viewBox="0 0 27 26" fill="none"><mask id={`mp${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#mp${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="currentColor"/></g></svg>
+                    </button>
+                    <div className="w-px h-4 bg-black/20"/>
+                    <button onClick={() => handleDeleteParent(p._id)} className="hover:scale-110 transition-transform text-red-600" title="Delete Parent">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <div className="bg-[#BEC5AD] flex flex-col gap-y-2 p-2 min-h-[100px]">
+
+        {/* Mobile Cards for Parents */}
+        <div className="md:hidden space-y-3">
           {parents.length === 0 ? (
-            <div className="py-12 text-center text-gray-600 font-medium italic">No parents registered yet.</div>
+            <div className="py-8 text-center text-gray-600 font-medium italic">No parents registered yet.</div>
           ) : (
             parents.map((p, i) => (
-              <div key={p._id} className="bg-white/40 rounded-xl grid grid-cols-5 text-center text-xs py-3 items-center border border-black/5 hover:bg-white/60 transition-colors">
-                <div className="font-bold text-black">{p.firstName} {p.lastName}</div>
-                <div className="text-black font-medium">{p.contactNumber}</div>
-                <div className="text-black">{p.relation}</div>
-                <div className="font-semibold text-blue-800">{p.studentId}</div>
-                <div className="flex justify-center items-center gap-3">
-                  <button onClick={() => handleParentView(p)} className="hover:scale-110 transition-transform text-black" title="View Details"><Eye size={18}/></button>
-                  <div className="w-px h-4 bg-black/20"/>
-                  <button onClick={() => handleParentEdit(p)} className="hover:scale-110 transition-transform text-black" title="Edit Parent">
-                    <svg width="18" height="18" viewBox="0 0 27 26" fill="none"><mask id={`mp${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#mp${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="currentColor"/></g></svg>
-                  </button>
-                  <div className="w-px h-4 bg-black/20"/>
-                  <button onClick={() => handleDeleteParent(p._id)} className="hover:scale-110 transition-transform text-red-600" title="Delete Parent">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                  </button>
+              <div key={p._id} className="bg-white rounded-xl p-4 border border-black/10 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-bold text-black">{p.firstName} {p.lastName}</h3>
+                    <p className="text-xs text-blue-800 font-semibold mt-0.5">ID: {p.studentId}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleParentView(p)} className="p-2 bg-gray-100 rounded-lg"><Eye size={16}/></button>
+                    <button onClick={() => handleParentEdit(p)} className="p-2 bg-gray-100 rounded-lg text-black">
+                      <svg width="16" height="16" viewBox="0 0 27 26" fill="none"><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="currentColor"/></svg>
+                    </button>
+                    <button onClick={() => handleDeleteParent(p._id)} className="p-2 bg-red-50 rounded-lg text-red-600"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-gray-500">Contact</p>
+                    <p className="font-medium">{p.contactNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Relation</p>
+                    <p className="font-medium">{p.relation}</p>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
-      </div>
     </div>
   );
 
@@ -1107,7 +1159,7 @@ const StudentManagement = () => {
         {/* ── Registration Tabs ── */}
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto mb-10">
-            <div className="flex mb-4 gap-3">
+            <div className="flex mb-4 gap-3 overflow-x-auto pb-2 custom-scrollbar whitespace-nowrap">
               {["student","parent","worker"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
                   {tab === "student" ? "Register Student" : tab === "parent" ? "Register Parent" : "Register Worker"}

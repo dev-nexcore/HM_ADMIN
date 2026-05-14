@@ -13,6 +13,10 @@ const Refunds = () => {
     refundAmount: "",
     reason: "",
     paymentMethod: "",
+    fees: "",
+    securityDeposit: "",
+    deduction: "",
+    deductionReason: "",
   });
 
   // Form errors state
@@ -53,6 +57,10 @@ const Refunds = () => {
           status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
           processedBy: r.processedBy,
           processedDate: r.processedDate ? new Date(r.processedDate).toLocaleDateString("en-IN").replace(/\//g, '-') : "-",
+          fees: r.fees || 0,
+          securityDeposit: r.securityDeposit || 0,
+          deduction: r.deduction || 0,
+          deductionReason: r.deductionReason || "",
         }));
         setRefundHistory(mapped);
       }
@@ -203,6 +211,10 @@ icon: <XCircle size={18} />,
       refundAmount: "",
       reason: "",
       paymentMethod: "",
+      fees: "",
+      securityDeposit: "",
+      deduction: "",
+      deductionReason: "",
     });
     setFormErrors({
       studentId: "",
@@ -220,7 +232,11 @@ icon: <XCircle size={18} />,
           studentId: formData.studentId,
           amount: parseFloat(formData.refundAmount),
           reason: formData.reason,
-          paymentMethod: formData.paymentMethod
+          paymentMethod: formData.paymentMethod,
+          fees: parseFloat(formData.fees) || 0,
+          securityDeposit: parseFloat(formData.securityDeposit) || 0,
+          deduction: parseFloat(formData.deduction) || 0,
+          deductionReason: formData.deductionReason
         });
         toast.success("Refund request submitted successfully!");
         handleCancel();
@@ -481,6 +497,54 @@ icon: <XCircle size={18} />,
                 <p className="text-red-500 text-xs mt-1">{formErrors.paymentMethod}</p>
               )}
             </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">Fees</label>
+              <input
+                type="text"
+                name="fees"
+                value={formData.fees}
+                onChange={handleInputChange}
+                placeholder="Enter Fees"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">Security Deposit</label>
+              <input
+                type="text"
+                name="securityDeposit"
+                value={formData.securityDeposit}
+                onChange={handleInputChange}
+                placeholder="Enter Security Deposit"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">Deduction</label>
+              <input
+                type="text"
+                name="deduction"
+                value={formData.deduction}
+                onChange={handleInputChange}
+                placeholder="Enter Deduction"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-black mb-2 block">Deduction Reason</label>
+              <input
+                type="text"
+                name="deductionReason"
+                value={formData.deductionReason}
+                onChange={handleInputChange}
+                placeholder="Enter Deduction Reason"
+                className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
@@ -588,8 +652,10 @@ icon: <XCircle size={18} />,
                     <th className="px-4 py-3 rounded-tl-lg text-sm font-semibold text-gray-700">Refund ID</th>
                     <th className="px-4 py-3 text-sm font-semibold text-gray-700">Date</th>
                     <th className="px-4 py-3 text-sm font-semibold text-gray-700">Student Name</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Student ID</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Amount</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Fees</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Security Deposit</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Deduction</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Refund Amount</th>
                     <th className="px-4 py-3 text-sm font-semibold text-gray-700">Reason</th>
                     <th className="px-4 py-3 text-sm font-semibold text-gray-700">Status</th>
                     <th className="px-4 py-3 rounded-tr-lg text-sm font-semibold text-gray-700">Processed By</th>
@@ -601,9 +667,19 @@ icon: <XCircle size={18} />,
                       <tr key={idx} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 text-sm font-mono text-gray-600">{refund.id}</td>
                         <td className="px-4 py-3 text-sm text-gray-600">{refund.date}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-800">{refund.recipientName}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{refund.studentId}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-800">{refund.amount}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800">
+                          {refund.recipientName}
+                          <div className="text-xs text-gray-500 font-normal">{refund.studentId}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">₹{refund.fees}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">₹{refund.securityDeposit}</td>
+                        <td className="px-4 py-3 text-sm text-red-600">
+                          ₹{refund.deduction}
+                          {refund.deductionReason && (
+                            <div className="text-[10px] text-gray-500 italic leading-tight">{refund.deductionReason}</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-gray-800">{refund.amount}</td>
                         <td className="px-4 py-3 text-sm text-gray-600">{refund.reason}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(refund.status)}`}>
@@ -616,7 +692,7 @@ icon: <XCircle size={18} />,
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-600 bg-white">
+                      <td colSpan={10} className="text-center py-8 text-gray-600 bg-white">
                         No refunds found matching your search criteria.
                       </td>
                     </tr>
@@ -663,8 +739,27 @@ icon: <XCircle size={18} />,
                     <p className="text-xs text-gray-500">ID: {refund.studentId}</p>
                   </div>
                   
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Fees</span>
+                      <p className="text-sm">₹{refund.fees}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Security Deposit</span>
+                      <p className="text-sm text-gray-800">₹{refund.securityDeposit}</p>
+                    </div>
+                  </div>
+
                   <div className="mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Reason</span>
+                    <span className="text-xs font-semibold text-gray-500">Deduction</span>
+                    <p className="text-sm text-red-600 font-medium">₹{refund.deduction}</p>
+                    {refund.deductionReason && (
+                      <p className="text-[10px] text-gray-500 italic mt-0.5">{refund.deductionReason}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Refund Reason</span>
                     <p className="text-sm">{refund.reason}</p>
                   </div>
                   
