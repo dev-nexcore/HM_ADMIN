@@ -23,6 +23,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function TicketsSection() {
   const [openTickets, setOpenTickets] = useState([]);
+  const [inProcessTickets, setInProcessTickets] = useState([]);
   const [resolvedTickets, setResolvedTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
@@ -30,23 +31,33 @@ export default function TicketsSection() {
   const [showModal, setShowModal] = useState(false);
   const [attachmentModal, setAttachmentModal] = useState({ show: false, url: '', type: '', filename: '' });
   const [activeFilter, setActiveFilter] = useState("total");
+  const [rejectionModal, setRejectionModal] = useState({ show: false, ticket: null, reason: '' });
 
   // Calculate statistics dynamically
   const totalOpen = openTickets.length;
+  const totalInProcess = inProcessTickets.length;
   const totalResolved = resolvedTickets.length;
-  const highPriority = openTickets.filter(ticket => 
+  const highPriority = [...openTickets, ...inProcessTickets].filter(ticket => 
     ticket.complaintType?.toLowerCase().includes('urgent') || 
     ticket.complaintType?.toLowerCase().includes('emergency')
   ).length;
 
   const stats = {
-    total: totalOpen + totalResolved,
+    total: totalOpen + totalInProcess + totalResolved,
     open: totalOpen,
+    inProcess: totalInProcess,
     resolved: totalResolved,
     highPriority: highPriority
   };
 
   const displayedOpenTickets = openTickets.filter(ticket => {
+    if (activeFilter === "priority") {
+      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
+    }
+    return true;
+  });
+
+  const displayedInProcessTickets = inProcessTickets.filter(ticket => {
     if (activeFilter === "priority") {
       return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
     }
@@ -60,11 +71,11 @@ export default function TicketsSection() {
     return true;
   });
 
-  // Fetch open complaints/tickets
+  // Fetch open complaints/tickets (pending status)
   const fetchOpenTickets = async () => {
     try {
       const response = await api.get(
-        `/api/adminauth/complaints/open`,
+        `/api/adminauth/complaints/pending`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -81,7 +92,7 @@ export default function TicketsSection() {
         raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
         studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
         studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
-        status: "Pending",
+        status: "Open Ticket",
         dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
         hasAttachments: complaint.hasAttachments,
         attachmentCount: complaint.attachmentCount,
@@ -92,6 +103,41 @@ export default function TicketsSection() {
     } catch (error) {
       console.error("Failed to fetch open tickets:", error);
       toast.error("Failed to fetch open tickets. Please try again.");
+    }
+  };
+
+  // Fetch in-process complaints/tickets
+  const fetchInProcessTickets = async () => {
+    try {
+      const response = await api.get(
+        `/api/adminauth/complaints/inprogress`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+      
+      const formattedTickets = response.data.complaints.map(complaint => ({
+        id: complaint.ticketId,
+        _id: complaint._id,
+        subject: complaint.subject,
+        description: complaint.description,
+        complaintType: complaint.displayType || complaint.complaintType,
+        raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
+        studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
+        studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
+        status: "Inprocess Ticket",
+        dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
+        hasAttachments: complaint.hasAttachments,
+        attachmentCount: complaint.attachmentCount,
+        attachments: complaint.attachments || []
+      }));
+      
+      setInProcessTickets(formattedTickets);
+    } catch (error) {
+      console.error("Failed to fetch in-process tickets:", error);
+      toast.error("Failed to fetch in-process tickets. Please try again.");
     }
   };
 
@@ -116,7 +162,7 @@ export default function TicketsSection() {
         raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
         studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
         studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
-        status: "Resolved",
+        status: "Resolved Section",
         dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
         resolvedDate: new Date(complaint.resolvedDate).toLocaleDateString('en-GB'),
         hasAttachments: complaint.hasAttachments,
@@ -187,7 +233,7 @@ export default function TicketsSection() {
     const loadTickets = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchOpenTickets(), fetchResolvedTickets()]);
+        await Promise.all([fetchOpenTickets(), fetchInProcessTickets(), fetchResolvedTickets()]);
       } catch (error) {
         console.error("Failed to load tickets:", error);
       } finally {
@@ -198,7 +244,7 @@ export default function TicketsSection() {
     loadTickets();
   }, []);
 
-  // Handle approve (resolve complaint)
+  // Handle approve from Open Tickets (move to In-Process)
   const handleApprove = async (index) => {
     const ticket = openTickets[index];
     const complaintId = ticket._id;
@@ -209,8 +255,47 @@ export default function TicketsSection() {
       await api.put(
         `/api/adminauth/complaints/${complaintId}/status`,
         {
+          status: "in progress",
+          adminNotes: "Complaint has been approved and moved to in-process."
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+
+      const inProcessTicket = {
+        ...ticket,
+        status: "In Progress"
+      };
+
+      setInProcessTickets(prev => [inProcessTicket, ...prev]);
+      setOpenTickets(prev => prev.filter((_, i) => i !== index));
+
+      toast.success("✅ Ticket has been approved and moved to In-Process!");
+
+    } catch (error) {
+      console.error("Failed to approve ticket:", error);
+      toast.error("❌ Failed to approve ticket. Please try again.");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`approve_${index}`]: false }));
+    }
+  };
+
+  // Handle approve from In-Process Tickets (move to Resolved)
+  const handleResolve = async (index) => {
+    const ticket = inProcessTickets[index];
+    const complaintId = ticket._id;
+
+    setActionLoading(prev => ({ ...prev, [`resolve_${index}`]: true }));
+
+    try {
+      await api.put(
+        `/api/adminauth/complaints/${complaintId}/status`,
+        {
           status: "resolved",
-          adminNotes: "Complaint has been approved and resolved by admin."
+          adminNotes: "Complaint has been resolved by admin."
         },
         {
           headers: {
@@ -226,37 +311,61 @@ export default function TicketsSection() {
       };
 
       setResolvedTickets(prev => [resolvedTicket, ...prev]);
-      setOpenTickets(prev => prev.filter((_, i) => i !== index));
+      setInProcessTickets(prev => prev.filter((_, i) => i !== index));
 
-      toast.success("✅ Complaint has been approved and resolved successfully!");
+      toast.success("✅ Ticket has been resolved successfully!");
 
     } catch (error) {
-      console.error("Failed to approve complaint:", error);
-      toast.error("❌ Failed to approve complaint. Please try again.");
+      console.error("Failed to resolve ticket:", error);
+      toast.error("❌ Failed to resolve ticket. Please try again.");
     } finally {
-      setActionLoading(prev => ({ ...prev, [`approve_${index}`]: false }));
+      setActionLoading(prev => ({ ...prev, [`resolve_${index}`]: false }));
     }
   };
 
-  // Handle reject
-  const handleReject = async (index) => {
+  // Handle reject click (open modal)
+  const handleReject = (index) => {
     const ticket = openTickets[index];
-    const confirmReject = confirm(
-      `Are you sure you want to reject this complaint?\n\nSubject: ${ticket.subject}\n\nThis action cannot be undone.`
-    );
+    setRejectionModal({
+      show: true,
+      ticket: { ...ticket, index },
+      reason: ''
+    });
+  };
 
-    if (!confirmReject) return;
+  // Confirm rejection after entering reason
+  const confirmReject = async () => {
+    const { ticket, reason } = rejectionModal;
+    
+    if (!reason.trim()) {
+      toast.warning("Please provide a reason for rejection.");
+      return;
+    }
 
-    setActionLoading(prev => ({ ...prev, [`reject_${index}`]: true }));
+    setActionLoading(prev => ({ ...prev, [`reject_${ticket.index}`]: true }));
+    setRejectionModal(prev => ({ ...prev, show: false }));
 
     try {
-      setOpenTickets(prev => prev.filter((_, i) => i !== index));
-      toast.error("❌ Complaint has been rejected and removed from the list.");
+      await api.put(
+        `/api/adminauth/complaints/${ticket._id}/status`,
+        {
+          status: "rejected",
+          adminNotes: reason.trim()
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+
+      setOpenTickets(prev => prev.filter((_, i) => i !== ticket.index));
+      toast.error("❌ Complaint has been rejected.");
     } catch (error) {
       console.error("Failed to reject complaint:", error);
       toast.error("❌ Failed to reject complaint. Please try again.");
     } finally {
-      setActionLoading(prev => ({ ...prev, [`reject_${index}`]: false }));
+      setActionLoading(prev => ({ ...prev, [`reject_${ticket.index}`]: false }));
     }
   };
 
@@ -284,7 +393,7 @@ icon: <Ticket size={18} />,
 
 {
 id: "open",
-label: "Open Tickets",
+label: "Open Ticket",
 value: stats.open,
 subLabel: "Pending Action",
 borderColor: "border-orange-200",
@@ -295,8 +404,20 @@ icon: <MessageSquare size={18} />,
 },
 
 {
+id: "inProcess",
+label: "Inprocess Ticket",
+value: stats.inProcess,
+subLabel: "Being Handled",
+borderColor: "border-purple-200",
+bgColor: "bg-purple-50",
+textColor: "text-purple-500",
+badgeColor: "bg-purple-50 text-purple-600",
+icon: <Clock size={18} />,
+},
+
+{
 id: "resolved",
-label: "Resolved",
+label: "Resolved Section",
 value: stats.resolved,
 subLabel: "Completed",
 borderColor: "border-green-200",
@@ -351,7 +472,7 @@ icon: <AlertCircle size={18} />,
         </div>
 
         {/* Stats Cards Section */}
-       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
   {statCards.map((card) => (
     <div
       key={card.id}
@@ -387,15 +508,12 @@ icon: <AlertCircle size={18} />,
 
 </div>
 
-        {/* Alternative Minimal Cards Design */}
-      
-
         {/* Open Tickets */}
         {(activeFilter === "total" || activeFilter === "open" || activeFilter === "priority") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner mb-8">
           <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
             <MessageSquare size={20} />
-            Open Tickets ({displayedOpenTickets.length})
+            Open Ticket ({displayedOpenTickets.length})
           </h2>
 
           {/* Desktop Table View */}
@@ -563,12 +681,170 @@ icon: <AlertCircle size={18} />,
         </div>
         )}
 
+        {/* In-Process Tickets */}
+        {(activeFilter === "total" || activeFilter === "inProcess" || activeFilter === "priority") && (
+        <div className="bg-[#D4C5E2] rounded-2xl p-6 shadow-inner mb-8">
+          <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
+            <Clock size={20} />
+            Inprocess Ticket ({displayedInProcessTickets.length})
+          </h2>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white text-black font-semibold rounded-lg">
+                  <th className="p-3 rounded-tl-lg">Ticket ID</th>
+                  <th className="p-3">Subject & Files</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">Raised By</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3 rounded-tr-lg">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedInProcessTickets.length > 0 ? (
+                  displayedInProcessTickets.map((ticket, index) => (
+                    <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-3 font-semibold text-sm">{ticket.id}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
+                          {ticket.subject}
+                        </div>
+                        {ticket.hasAttachments && (
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 flex items-center gap-1"
+                          >
+                            <Paperclip size={12} /> {ticket.attachmentCount} file(s)
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-3 text-sm">{ticket.complaintType}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                        {ticket.studentId && (
+                          <div className="text-xs text-gray-500">ID: {ticket.studentId}</div>
+                        )}
+                        {ticket.studentRoom && (
+                          <div className="text-xs text-gray-500">Room: {ticket.studentRoom}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <Clock size={12} /> {ticket.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">{ticket.dateRaised}</td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleResolve(index)}
+                            disabled={actionLoading[`resolve_${index}`]}
+                            className="p-1 text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
+                            title="Approve to Resolve"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-gray-600">
+                      No in-process tickets available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
+            {displayedInProcessTickets.length > 0 ? (
+              displayedInProcessTickets.map((ticket, index) => (
+                <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Ticket ID</span>
+                      <p className="font-bold text-sm">{ticket.id}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <Clock size={12} /> {ticket.status}
+                    </span>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Subject</span>
+                    <p className="text-sm font-medium">{ticket.subject}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Type</span>
+                    <p className="text-sm">{ticket.complaintType}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Raised By</span>
+                    <p className="text-sm font-medium">{ticket.raisedBy}</p>
+                    {ticket.studentId && (
+                      <p className="text-xs text-gray-500">ID: {ticket.studentId}</p>
+                    )}
+                    {ticket.studentRoom && (
+                      <p className="text-xs text-gray-500">Room: {ticket.studentRoom}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mb-3">
+                    <span className="text-xs font-semibold text-gray-500">Date</span>
+                    <p className="text-sm">{ticket.dateRaised}</p>
+                  </div>
+                  
+                  {ticket.hasAttachments && (
+                    <button
+                      onClick={() => viewTicketDetails(ticket)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1 mb-3"
+                    >
+                      <Paperclip size={12} /> {ticket.attachmentCount} attachment(s)
+                    </button>
+                  )}
+                  
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleResolve(index)}
+                      disabled={actionLoading[`resolve_${index}`]}
+                      className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={16} /> Approve
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+                No in-process tickets available.
+              </div>
+            )}
+          </div>
+        </div>
+        )}
+
         {/* Resolved Tickets */}
         {(activeFilter === "total" || activeFilter === "resolved" || activeFilter === "priority") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
           <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
             <CheckCircle size={20} />
-            Resolved Tickets ({displayedResolvedTickets.length})
+            Resolved Section ({displayedResolvedTickets.length})
           </h3>
 
           {/* Desktop Table View */}
@@ -831,6 +1107,62 @@ icon: <AlertCircle size={18} />,
                     </a>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rejection Reason Modal */}
+        {rejectionModal.show && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <XCircle className="text-white" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight">Reject Complaint</h3>
+                  <p className="text-red-100 text-xs mt-0.5">Please provide a reason for rejection</p>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4">
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Complaint Subject</label>
+                  <p className="text-gray-700 text-sm font-semibold truncate">{rejectionModal.ticket?.subject}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                    <MessageSquare size={14} className="text-red-500" />
+                    Rejection Reason
+                  </label>
+                  <textarea
+                    value={rejectionModal.reason}
+                    onChange={(e) => setRejectionModal(prev => ({ ...prev, reason: e.target.value }))}
+                    placeholder="Explain why this complaint is being rejected..."
+                    className="w-full h-32 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm resize-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 px-6 py-4 flex gap-3 justify-end border-t border-gray-100">
+                <button
+                  onClick={() => setRejectionModal({ show: false, ticket: null, reason: '' })}
+                  className="px-5 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmReject}
+                  className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-200 transition-all active:scale-95"
+                >
+                  Confirm Reject
+                </button>
               </div>
             </div>
           </div>
