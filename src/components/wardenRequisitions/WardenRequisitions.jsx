@@ -122,6 +122,7 @@ const TypeBadge = ({ type }) => {
     parent:  { bg: "#F3E8FF", color: "#7C3AED", label: "Parent", icon: <HiOutlineUsers /> },
     worker:  { bg: "#FEF3C7", color: "#D97706", label: "Worker", icon: <HiOutlineBriefcase /> },
     staff:   { bg: "#DBEAFE", color: "#0284C7", label: "Staff", icon: <HiOutlineBriefcase /> },
+    notice:  { bg: "#FDF2F8", color: "#DB2777", label: "Notice", icon: <HiOutlineDocumentText /> },
   };
   const t = map[type] || map.student;
   return (
@@ -184,7 +185,11 @@ const WardenRequisitions = () => {
         notes
       });
       if (res.data.success) {
-        toast.success(`Registration approved successfully! ID: ${res.data.entityId}`);
+        const successMsg = selectedReq.requisitionType === 'notice' 
+          ? "Notice approved and issued successfully!"
+          : `Registration approved successfully! ID: ${res.data.entityId}`;
+          
+        toast.success(successMsg);
         setShowModal(false);
         setNotes("");
         fetchRequisitions();
@@ -304,6 +309,7 @@ const WardenRequisitions = () => {
               <option value="parent">Parent</option>
               <option value="worker">Worker</option>
               <option value="staff">Staff</option>
+              <option value="notice">Notice</option>
             </select>
           </div>
         </header>
@@ -348,13 +354,15 @@ const WardenRequisitions = () => {
                         <TypeBadge type={req.requisitionType} />
                       </td>
                       <td style={{ padding: "16px" }}>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{req.data?.firstName} {req.data?.lastName}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {req.requisitionType === 'notice' ? req.data?.title : `${req.data?.firstName} ${req.data?.lastName}`}
+                        </div>
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        {req.data?.email}
+                        {req.requisitionType === 'notice' ? `To: ${req.data?.recipientType}` : req.data?.email}
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        {req.data?.contactNumber}
+                        {req.requisitionType === 'notice' ? (req.data?.individualRecipient || "All") : req.data?.contactNumber}
                       </td>
                       <td style={{ padding: "16px" }}>
                         <StatusBadge status={req.status} />
@@ -420,22 +428,26 @@ const WardenRequisitions = () => {
                   {selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1)} Information
                 </div>
                 <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>First Name</label>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.firstName || "N/A"}</div>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Last Name</label>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.lastName || "N/A"}</div>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Email</label>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.email || "N/A"}</div>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Contact Number</label>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.contactNumber || "N/A"}</div>
-                  </div>
+                  {selectedReq.requisitionType !== 'notice' && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>First Name</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.firstName || "N/A"}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Last Name</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.lastName || "N/A"}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Email</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.email || "N/A"}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Contact Number</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.contactNumber || "N/A"}</div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Student/Worker specific fields */}
                   {(selectedReq.requisitionType === 'student' || selectedReq.requisitionType === 'worker') && (
@@ -476,6 +488,40 @@ const WardenRequisitions = () => {
                           <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.feeStatus}</div>
                         </div>
                       )}
+                    </>
+                  )}
+
+                  {/* Notice specific fields */}
+                  {selectedReq.requisitionType === 'notice' && (
+                    <>
+                      {selectedReq.data?.template && (
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Template</label>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.template}</div>
+                        </div>
+                      )}
+                      {selectedReq.data?.recipientType && (
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Recipient Type</label>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.recipientType}</div>
+                        </div>
+                      )}
+                      {selectedReq.data?.individualRecipient && (
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Recipient ID</label>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.individualRecipient}</div>
+                        </div>
+                      )}
+                      {selectedReq.data?.issueDate && (
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Issue Date</label>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{new Date(selectedReq.data.issueDate).toLocaleDateString()}</div>
+                        </div>
+                      )}
+                      <div style={{ gridColumn: "span 2" }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Message</label>
+                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data.message}</div>
+                      </div>
                     </>
                   )}
 
