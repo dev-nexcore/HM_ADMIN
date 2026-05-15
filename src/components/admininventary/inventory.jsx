@@ -188,18 +188,17 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
     },
   ];
 
-  // Dynamic filter options based on actual inventory data + predefined + localStorage
-  const uniqueStatuses = ["All Status", ...new Set([
-    ...PREDEFINED_STATUSES,
-    ...inventory.map(item => item.status),
-    ...(typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('customInventoryStatuses') || '[]') : [])
-  ].filter(Boolean))];
+  const [uniqueStatuses, setUniqueStatuses] = useState(["All Status", ...PREDEFINED_STATUSES]);
+  const [uniqueCategories, setUniqueCategories] = useState(["All Categories", ...PREDEFINED_CATEGORIES]);
 
-  const uniqueCategories = ["All Categories", ...new Set([
-    ...PREDEFINED_CATEGORIES,
-    ...inventory.map(item => item.category),
-    ...(typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('customInventoryCategories') || '[]') : [])
-  ].filter(Boolean))];
+  useEffect(() => {
+    // Load custom options from localStorage after mount
+    const customStatuses = JSON.parse(localStorage.getItem('customInventoryStatuses') || '[]');
+    const customCategories = JSON.parse(localStorage.getItem('customInventoryCategories') || '[]');
+    
+    setUniqueStatuses([...new Set(["All Status", ...PREDEFINED_STATUSES, ...inventory.map(item => item.status), ...customStatuses])].filter(Boolean));
+    setUniqueCategories([...new Set(["All Categories", ...PREDEFINED_CATEGORIES, ...inventory.map(item => item.category), ...customCategories])].filter(Boolean));
+  }, [inventory]);
 
   const toggleVisibility = (barcode) => {
     setHiddenRows((prev) => ({

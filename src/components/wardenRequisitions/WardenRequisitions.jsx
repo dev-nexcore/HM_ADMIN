@@ -123,6 +123,7 @@ const TypeBadge = ({ type }) => {
     worker:  { bg: "#FEF3C7", color: "#D97706", label: "Worker", icon: <HiOutlineBriefcase /> },
     staff:   { bg: "#DBEAFE", color: "#0284C7", label: "Staff", icon: <HiOutlineBriefcase /> },
     notice:  { bg: "#FDF2F8", color: "#DB2777", label: "Notice", icon: <HiOutlineDocumentText /> },
+    inventory_replacement: { bg: "#FFF7ED", color: "#EA580C", label: "Replacement", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> },
   };
   const t = map[type] || map.student;
   return (
@@ -185,9 +186,13 @@ const WardenRequisitions = () => {
         notes
       });
       if (res.data.success) {
-        const successMsg = selectedReq.requisitionType === 'notice' 
-          ? "Notice approved and issued successfully!"
-          : `Registration approved successfully! ID: ${res.data.entityId}`;
+        let successMsg = `Registration approved successfully! ID: ${res.data.entityId}`;
+        
+        if (selectedReq.requisitionType === 'notice') {
+          successMsg = "Notice approved and issued successfully!";
+        } else if (selectedReq.requisitionType === 'inventory_replacement') {
+          successMsg = "Inventory replacement request approved!";
+        }
           
         toast.success(successMsg);
         setShowModal(false);
@@ -310,6 +315,7 @@ const WardenRequisitions = () => {
               <option value="worker">Worker</option>
               <option value="staff">Staff</option>
               <option value="notice">Notice</option>
+              <option value="inventory_replacement">Replacement</option>
             </select>
           </div>
         </header>
@@ -355,14 +361,20 @@ const WardenRequisitions = () => {
                       </td>
                       <td style={{ padding: "16px" }}>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {req.requisitionType === 'notice' ? req.data?.title : `${req.data?.firstName} ${req.data?.lastName}`}
+                          {req.requisitionType === 'notice' ? req.data?.title : 
+                           req.requisitionType === 'inventory_replacement' ? req.data?.itemName :
+                           `${req.data?.firstName} ${req.data?.lastName}`}
                         </div>
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        {req.requisitionType === 'notice' ? `To: ${req.data?.recipientType}` : req.data?.email}
+                        {req.requisitionType === 'notice' ? `To: ${req.data?.recipientType}` : 
+                         req.requisitionType === 'inventory_replacement' ? `ID: ${req.data?.barcodeId}` :
+                         req.data?.email}
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        {req.requisitionType === 'notice' ? (req.data?.individualRecipient || "All") : req.data?.contactNumber}
+                        {req.requisitionType === 'notice' ? (req.data?.individualRecipient || "All") : 
+                         req.requisitionType === 'inventory_replacement' ? "N/A" :
+                         req.data?.contactNumber}
                       </td>
                       <td style={{ padding: "16px" }}>
                         <StatusBadge status={req.status} />
@@ -428,7 +440,7 @@ const WardenRequisitions = () => {
                   {selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1)} Information
                 </div>
                 <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  {selectedReq.requisitionType !== 'notice' && (
+                  {selectedReq.requisitionType !== 'notice' && selectedReq.requisitionType !== 'inventory_replacement' && (
                     <>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>First Name</label>
@@ -542,17 +554,35 @@ const WardenRequisitions = () => {
                       )}
                     </>
                   )}
+
+                  {/* Inventory Replacement specific fields */}
+                  {selectedReq.requisitionType === 'inventory_replacement' && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Item Name</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.itemName}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Barcode ID</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.barcodeId}</div>
+                      </div>
+                      <div style={{ gridColumn: "span 2" }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Replacement Reason</label>
+                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data?.reason}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Documents */}
-              {(selectedReq.documents?.aadharCard || selectedReq.documents?.panCard) && (
+              {(selectedReq.documents?.aadharCard || selectedReq.documents?.panCard || selectedReq.documents?.photo) && (
                 <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Documents</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Documents / Evidence</div>
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                     {selectedReq.documents.aadharCard && (
                       <a 
-                        href={`${process.env.NEXT_PUBLIC_API_URL}/${selectedReq.documents.aadharCard.path}`}
+                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/${selectedReq.documents.aadharCard.path}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12 }}
@@ -562,12 +592,22 @@ const WardenRequisitions = () => {
                     )}
                     {selectedReq.documents.panCard && (
                       <a 
-                        href={`${process.env.NEXT_PUBLIC_API_URL}/${selectedReq.documents.panCard.path}`}
+                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/${selectedReq.documents.panCard.path}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12 }}
                       >
                         <HiOutlineDocumentText /> View PAN Card
+                      </a>
+                    )}
+                    {selectedReq.documents.photo && (
+                      <a 
+                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/uploads/wardens/${selectedReq.documents.photo.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12, borderColor: T.orange, color: T.orange }}
+                      >
+                        <HiOutlineEye /> View Item Photo
                       </a>
                     )}
                   </div>
