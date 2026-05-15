@@ -36,20 +36,33 @@ export default function InvoicePage() {
     paidInvoices: 0,
   });
   const [activeFilter, setActiveFilter] = useState("total");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filterData = (data) => {
+  const filterData = (data, sectionName) => {
+    let filtered = [...data];
+    
+    // Filter by status (activeFilter)
     if (activeFilter === "pending") {
-      return data.filter(row => row[4] === "Pending" || row[4] === "Overdue");
+      filtered = filtered.filter(row => row[4] === "Pending" || row[4] === "Overdue");
+    } else if (activeFilter === "paid") {
+      filtered = filtered.filter(row => row[4] === "Paid" || row[4] === "Approved");
     }
-    if (activeFilter === "paid") {
-      return data.filter(row => row[4] === "Paid" || row[4] === "Approved");
+
+    // Filter by search term (Student Name or Room No)
+    if (searchTerm.trim() !== "") {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(row => 
+        row[0].toLowerCase().includes(lowerSearch) || // Student Name
+        row[1].toLowerCase().includes(lowerSearch)    // Room No
+      );
     }
-    return data; // For "total" and "revenue"
+    
+    return filtered;
   };
 
-  const displayedStudentFees = filterData(studentFees);
-  const displayedManagementInvoices = filterData(managementInvoices);
-  const displayedPurchaseReceipts = filterData(purchaseReceipts);
+  const displayedStudentFees = filterData(studentFees, "Student Fees Invoices");
+  const displayedManagementInvoices = filterData(managementInvoices, "Management Invoices (Salaries)");
+  const displayedPurchaseReceipts = filterData(purchaseReceipts, "Staff Purchase Receipts");
 
   useEffect(() => {
     // Simulated API data — replace with axios requests
@@ -414,6 +427,7 @@ export default function InvoicePage() {
           <p className="text-gray-600 mt-2 ml-3">Manage all financial transactions</p>
         </div>
 
+
         {/* Stats Cards Section */}
 
 
@@ -530,6 +544,33 @@ export default function InvoicePage() {
 
         </div>
 
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-400">🔍</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Search by student name or room number..."
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">Filter Status:</span>
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none transition-all"
+            >
+              <option value="total">All Invoices</option>
+              <option value="pending">Pending Only</option>
+              <option value="paid">Paid Only</option>
+            </select>
+          </div>
+        </div>
 
         {/* Invoice Sections */}
         <div className="space-y-8">
@@ -537,6 +578,7 @@ export default function InvoicePage() {
           <InvoiceSection
             title="Student Fees Invoices"
             headers={[
+              "Sr. No.",
               "Student Name",
               "Room no.",
               "Amount",
@@ -554,6 +596,7 @@ export default function InvoicePage() {
           <InvoiceSection
             title="Management Invoices (Salaries)"
             headers={[
+              "Sr. No.",
               "Staff Name",
               "Role",
               "Amount",
@@ -567,7 +610,8 @@ export default function InvoicePage() {
             onDownload={handleDownload}
           />
 
-          {/* Purchase Receipts Section */}
+
+          {/* Purchase Receipts Section - Commented out as requested
           <InvoiceSection
             title="Staff Purchase Receipts"
             headers={[
@@ -583,6 +627,7 @@ export default function InvoicePage() {
             onView={handleView}
             onDownload={handleDownload}
           />
+          */}
         </div>
 
         {/* Modal for details */}
@@ -600,8 +645,21 @@ export default function InvoicePage() {
   );
 }
 
-// InvoiceSection Component with modern design
+// InvoiceSection Component with modern design and pagination
 function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Reset to page 1 when data changes (e.g. on search)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = data.slice(startIndex, startIndex + itemsPerPage);
+
   // Function to get status color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -646,9 +704,30 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
       {/* Section Header */}
-      <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4">
-        <h2 className="text-xl font-semibold text-black">{title}</h2>
-        <p className="text-sm text-gray-700 mt-1">Total: {data.length} records</p>
+      <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 className="text-xl font-semibold text-black">{title}</h2>
+          <p className="text-sm text-gray-700 mt-1">Total: {data.length} records</p>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2 bg-white/20 p-1 rounded-lg">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="p-1.5 rounded-md hover:bg-white/30 disabled:opacity-50 text-black transition-all"
+            >
+              ←
+            </button>
+            <span className="text-xs font-bold text-black px-2">Page {currentPage} of {totalPages}</span>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="p-1.5 rounded-md hover:bg-white/30 disabled:opacity-50 text-black transition-all"
+            >
+              →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Desktop Table View */}
@@ -664,8 +743,12 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, rowIdx) => (
+            {currentData.map((row, rowIdx) => (
               <tr key={rowIdx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                {/* Sr. No Column */}
+                <td className="px-4 py-3 text-sm text-gray-600 font-medium">
+                  {startIndex + rowIdx + 1}
+                </td>
                 {row.map((cell, cellIdx) => (
                   <td key={cellIdx} className="px-4 py-3 text-sm text-gray-600">
                     {cellIdx === row.length - 1 ? (
@@ -703,19 +786,22 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
 
       {/* Mobile Card View */}
       <div className="md:hidden p-4 space-y-4">
-        {data.map((row, rowIdx) => (
-          <div key={rowIdx} className="bg-gray-50 rounded-lg p-4 shadow-sm">
+        {currentData.map((row, rowIdx) => (
+          <div key={rowIdx} className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200 relative">
+            <div className="absolute top-2 right-2 text-[10px] font-bold text-gray-400">
+              #{startIndex + rowIdx + 1}
+            </div>
             {headers.map((header, idx) => (
-              idx < headers.length - 1 && (
+              idx > 0 && idx < headers.length - 1 && (
                 <div key={idx} className="mb-2">
                   <span className="text-xs font-semibold text-gray-500">{header}:</span>
                   <span className="ml-2 text-sm text-gray-700">
                     {idx === headers.length - 2 ? (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row[idx])}`}>
-                        {row[idx]}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row[idx-1])}`}>
+                        {row[idx-1]}
                       </span>
                     ) : (
-                      row[idx]
+                      row[idx-1]
                     )}
                   </span>
                 </div>
@@ -738,6 +824,42 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
           </div>
         ))}
       </div>
+
+      {/* Desktop Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="hidden md:flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <div className="text-sm text-gray-500">
+            Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, data.length)}</span> of <span className="font-medium">{data.length}</span> results
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+            >
+              Previous
+            </button>
+            <div className="flex gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 flex items-center justify-center text-sm font-bold rounded-xl transition-all ${currentPage === i + 1 ? 'bg-[#4F8DCF] text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1002,12 +1002,12 @@ icon: <AlertCircle size={18} />,
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-600">Subject</label>
-                    <p className="text-gray-900">{selectedTicket.subject}</p>
+                    <p className="text-gray-900 break-all">{selectedTicket.subject}</p>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-600">Description</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{selectedTicket.description}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap break-all">{selectedTicket.description}</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
