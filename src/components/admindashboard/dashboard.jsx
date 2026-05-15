@@ -161,7 +161,7 @@ const Dashboard = () => {
           },
           {
             title: "Available Beds",
-            value: `${Math.max(0, bedData.totalBeds - bedData.occupiedBeds)} / ${bedData.totalBeds}`,
+            value: `${bedData.availableBeds} / ${bedData.totalBeds}`,
             color: "text-purple-600",
             isCurrency: false,
             icon: <CheckCircle size={20} />,
