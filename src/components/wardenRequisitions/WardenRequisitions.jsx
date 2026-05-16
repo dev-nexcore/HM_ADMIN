@@ -188,6 +188,8 @@ const WardenRequisitions = () => {
             ticketId: c.ticketId,
             studentName: c.raisedBy?.name,
             studentEmail: c.raisedBy?.email,
+            adminNotes: c.adminNotes,
+            targetStatus: c.targetStatus
           }
         }));
         allItems = [...allItems, ...complaints];
@@ -233,11 +235,12 @@ const WardenRequisitions = () => {
       setSubmitting(true);
       
       if (selectedReq.isComplaint) {
+        const targetStatus = selectedReq.data?.targetStatus || 'resolved';
         await api.put(`/api/adminauth/complaints/${id}/status`, {
-          status: 'resolved',
-          adminNotes: notes || "Resolution approved by Admin."
+          status: targetStatus,
+          adminNotes: notes || `Request approved by Admin.`
         });
-        toast.success("Complaint resolution approved!");
+        toast.success(`Complaint request approved! Status changed to ${targetStatus}.`);
         setShowModal(false);
         setNotes("");
         fetchRequisitions();
@@ -282,11 +285,18 @@ const WardenRequisitions = () => {
       setSubmitting(true);
       
       if (selectedReq.isComplaint) {
+        const targetStatus = selectedReq.data?.targetStatus;
+        let returnStatus = 'in progress'; // Default for resolution rejection
+        
+        if (targetStatus === 'in progress' || targetStatus === 'rejected') {
+          returnStatus = 'pending';
+        }
+
         await api.put(`/api/adminauth/complaints/${id}/status`, {
-          status: 'in progress',
+          status: returnStatus,
           adminNotes: rejectionReason
         });
-        toast.success("Resolution rejected. Complaint returned to In Progress.");
+        toast.success(`Resolution rejected. Complaint set to ${returnStatus}.`);
         setShowModal(false);
         setShowRejectModal(false);
         setRejectionReason("");
@@ -666,6 +676,21 @@ const WardenRequisitions = () => {
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Ticket ID</label>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.ticketId}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Requested Action</label>
+                        <div style={{ 
+                          fontWeight: 800, 
+                          fontSize: 12, 
+                          color: selectedReq.data?.targetStatus === 'in progress' ? T.blue : 
+                                 selectedReq.data?.targetStatus === 'resolved' ? T.green : 
+                                 selectedReq.data?.targetStatus === 'rejected' ? T.red : T.text,
+                          textTransform: 'uppercase'
+                        }}>
+                          {selectedReq.data?.targetStatus === 'in progress' ? 'Start Processing' : 
+                           selectedReq.data?.targetStatus === 'resolved' ? 'Mark as Resolved' : 
+                           selectedReq.data?.targetStatus === 'rejected' ? 'Reject Complaint' : 'N/A'}
+                        </div>
                       </div>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Student</label>
