@@ -385,7 +385,14 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const generateMonthlyStockReport = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/api/adminauth/inventory/stock-report", {
+      
+      // Construct query parameters based on current filters
+      const params = new URLSearchParams();
+      if (statusFilter && statusFilter !== "All Status") params.append("status", statusFilter);
+      if (categoryFilter && categoryFilter !== "All Categories") params.append("category", categoryFilter);
+      if (searchQuery) params.append("search", searchQuery);
+
+      const response = await api.get(`/api/adminauth/inventory/stock-report?${params.toString()}`, {
         headers: { "Content-Type": "application/json" },
         responseType: "blob",
       });

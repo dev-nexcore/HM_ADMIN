@@ -96,7 +96,10 @@ export default function AuditLogsSection() {
     try {
       setExporting(true);
       const params = {
+        ...(searchTerm && { search: searchTerm }),
         ...(activeFilters.actionType !== 'all' && { actionType: activeFilters.actionType }),
+        ...(activeFilters.adminId !== 'all' && { adminId: activeFilters.adminId }),
+        ...(activeFilters.targetType !== 'all' && { targetType: activeFilters.targetType }),
         ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
         ...(activeFilters.endDate && { endDate: activeFilters.endDate })
       };
