@@ -126,6 +126,7 @@ const StudentManagement = () => {
     admissionDate: getTodaysDate(), emergencyContactName: "",
     feeStatus: "", hasCollegeId: true, studentIdCard: null, feesReceipt: null, isWorking: false,
     roomType: "",
+    relation: "",
   });
 
   const [editingStudent, setEditingStudent] = useState(null);
@@ -402,7 +403,7 @@ const StudentManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ firstName:"",lastName:"",contactNumber:"",email:"",roomNumber:"",bedNumber:"",emergencyContactNumber:"",admissionDate:getTodaysDate(),emergencyContactName:"",feeStatus:"",hasCollegeId:true, isWorking: false, roomType: "" });
+    setFormData({ firstName:"",lastName:"",contactNumber:"",email:"",roomNumber:"",bedNumber:"",emergencyContactNumber:"",admissionDate:getTodaysDate(),emergencyContactName:"",feeStatus:"",hasCollegeId:true, isWorking: false, roomType: "", relation: "" });
     setStudentDocuments({ aadharCard:null,panCard:null,studentIdCard:null,feesReceipt:null });
     setEditingStudent(null); setErrors({}); setShowEditModal(false);
   };
@@ -411,7 +412,7 @@ const StudentManagement = () => {
     const errs = validateForm(formData); if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const res = await registerStudentAPI({ ...formData, roomBedNumber: formData.bedNumber || "Not Assigned", aadharCard: studentDocuments.aadharCard, panCard: studentDocuments.panCard, studentIdCard: studentDocuments.studentIdCard, feesReceipt: studentDocuments.feesReceipt });
+      const res = await registerStudentAPI({ ...formData, roomBedNumber: formData.bedNumber || "Not Assigned", aadharCard: studentDocuments.aadharCard, panCard: studentDocuments.panCard, studentIdCard: studentDocuments.studentIdCard, feesReceipt: studentDocuments.feesReceipt, relation: formData.relation });
       setRefreshTrigger(p => p + 1); resetForm();
       toast.success(`Student registered! Password: ${res.student?.password}`, { autoClose: 6000 });
     } catch (e) { toast.error(e.message || "Error registering student."); }
@@ -420,7 +421,22 @@ const StudentManagement = () => {
 
   const handleEdit = (studentId) => {
     const s = students.find(s => s.id === studentId); if (!s) return;
-    setFormData({ firstName:s.firstName||"", lastName:s.lastName||"", contactNumber:s.contact, email:s.email||"", roomNumber:s.roomDetails?.roomNo||"", bedNumber:s.roomObjectId||"", emergencyContactNumber:s.emergencyContactNumber||"", admissionDate:s.admissionDate?new Date(s.admissionDate).toISOString().split("T")[0]:"", emergencyContactName:s.emergencyContactName||"", feeStatus:s.feeStatus, hasCollegeId:s.hasCollegeId??true, isWorking:s.isWorking??false });
+    setFormData({ 
+      firstName:s.firstName||"", 
+      lastName:s.lastName||"", 
+      contactNumber:s.contact, 
+      email:s.email||"", 
+      roomNumber:s.roomDetails?.roomNo||"", 
+      bedNumber:s.roomObjectId||"", 
+      emergencyContactNumber:s.emergencyContactNumber||"", 
+      admissionDate:s.admissionDate?new Date(s.admissionDate).toISOString().split("T")[0]:"", 
+      emergencyContactName:s.emergencyContactName||"", 
+      feeStatus:s.feeStatus, 
+      hasCollegeId:s.hasCollegeId??true, 
+      isWorking:s.isWorking??false,
+      roomType: s.roomType || "",
+      relation: s.relation || "" 
+    });
     setStudentDocuments({ aadharCard:s.documents?.aadharCard||null, panCard:s.documents?.panCard||null, studentIdCard:s.documents?.studentIdCard||null, feesReceipt:s.documents?.feesReceipt||null });
     setEditingStudent(studentId); setErrors({}); setShowEditModal(true);
   };
@@ -430,7 +446,7 @@ const StudentManagement = () => {
     setLoading(true);
     try {
       const fd = new FormData();
-      ["firstName","lastName","contactNumber","email","emergencyContactNumber","admissionDate","emergencyContactName","feeStatus"].forEach(k => fd.append(k, formData[k]));
+      ["firstName","lastName","contactNumber","email","emergencyContactNumber","admissionDate","emergencyContactName","feeStatus", "roomType", "relation"].forEach(k => fd.append(k, formData[k]));
       fd.append("roomBedNumber", formData.bedNumber);
       fd.append("hasCollegeId", formData.hasCollegeId);
       fd.append("isWorking", formData.isWorking);
@@ -755,6 +771,12 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>Emergency Contact Name</label>
           <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange} placeholder="Enter Name" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+        </div>
+
+        {/* Relation */}
+        <div className="w-full px-2">
+          <label className="block mb-2 text-black ml-2" style={labelStyle}>Relation</label>
+          <input type="text" name="relation" value={formData.relation} onChange={handleInputChange} placeholder="e.g. Father, Mother" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
         </div>
 
         {/* Fee Status */}
