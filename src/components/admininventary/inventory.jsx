@@ -63,6 +63,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [editReceiptFile, setEditReceiptFile] = useState(null);
   const [scannedItem, setScannedItem] = useState(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [otherEditLocation, setOtherEditLocation] = useState('');
@@ -465,24 +466,45 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
 
   const handleEditSave = async () => {
     try {
-      let finalData = { ...editData };
+      const toastId = toast.loading("Saving changes...");
+      
+      const formDataToSend = new FormData();
+      
+      // Basic info
+      formDataToSend.append("itemName", editData.itemName);
+      formDataToSend.append("barcodeId", editData.barcodeId);
+      formDataToSend.append("description", editData.description || "");
+      formDataToSend.append("purchaseDate", editData.purchaseDate || "");
+      formDataToSend.append("purchaseCost", editData.purchaseCost || "");
 
-      if (editData.location === '__others__') finalData.location = otherEditLocation;
-      if (editData.category === '__others__') finalData.category = otherEditCategory;
-      if (editData.status === '__others__') finalData.status = otherEditStatus;
-      if (editData.roomNo === '__others__') finalData.roomNo = otherEditRoomNo;
-      if (editData.floor === '__others__') finalData.floor = otherEditFloor;
+      // Resolve "others" fields
+      formDataToSend.append("location", editData.location === '__others__' ? otherEditLocation : editData.location);
+      formDataToSend.append("category", editData.category === '__others__' ? otherEditCategory : editData.category);
+      formDataToSend.append("status", editData.status === '__others__' ? otherEditStatus : editData.status);
+      formDataToSend.append("roomNo", editData.roomNo === '__others__' ? otherEditRoomNo : editData.roomNo);
+      formDataToSend.append("floor", editData.floor === '__others__' ? otherEditFloor : editData.floor);
+
+      // Receipt file
+      if (editReceiptFile) {
+        formDataToSend.append("receipt", editReceiptFile);
+      }
 
       const { data } = await api.put(
         `/api/adminauth/inventory/${editData._id}`,
-        finalData
+        formDataToSend,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+
       setInventory((prev) =>
         prev.map((item) => (item._id === data.item._id ? data.item : item))
       );
+      
+      toast.success("Item updated successfully!", { id: toastId });
       setShowEditModal(false);
+      setEditReceiptFile(null);
     } catch (error) {
       console.error("Failed to update inventory:", error);
+      toast.error("Failed to update item. Please try again.");
     }
   };
 
@@ -1440,6 +1462,22 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                   onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                   placeholder="Enter description here..."
                 />
+              </div>
+
+              {/* Receipt Upload */}
+              <div className="mt-6 space-y-1">
+                <label className="text-sm font-semibold text-gray-700 ml-1">Update Receipt</label>
+                <div className="flex items-center gap-4 border border-gray-300 p-3 rounded-xl bg-gray-50">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setEditReceiptFile(e.target.files[0])}
+                    className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {editData.receiptUrl && !editReceiptFile && (
+                    <span className="text-xs text-green-600 font-medium italic">Current receipt attached</span>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-4 mt-8">
