@@ -1,6 +1,8 @@
 import React from 'react';
 import { X, Calendar, MapPin, Package, Info, QrCode } from 'lucide-react';
 
+const BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224';
+
 const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
   if (!isOpen || !item) return null;
 
@@ -163,8 +165,7 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
               </div>
 
               {/* QR Code Section */}
-             // Replace the QR Code section with:
-<div>
+              <div>
   <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
     QR Code
   </h3>
@@ -172,13 +173,13 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
     {item.qrCodeUrl ? (
       <div className="space-y-3">
         <img 
-          src={item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `${window.location.protocol}//${window.location.host}${item.qrCodeUrl}`}
+          src={item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `${BASE_URL}${item.qrCodeUrl.startsWith('/') ? '' : '/'}${item.qrCodeUrl}`}
           alt="QR Code"
           className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
           onError={(e) => {
             console.error('QR Code image failed to load:', e.target.src);
             e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
+            if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
           }}
         />
         <div style={{display: 'none'}} className="text-red-500 text-sm">
@@ -224,7 +225,7 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <p className="text-sm text-gray-600 mb-2">Receipt available</p>
                     <button
-                      onClick={() => window.open(item.receiptUrl && item.receiptUrl.startsWith('http') ? item.receiptUrl : `http://localhost:5224${item.receiptUrl || ''}`, '_blank')}
+                      onClick={() => window.open(item.receiptUrl.startsWith('http') ? item.receiptUrl : `${BASE_URL}${item.receiptUrl.startsWith('/') ? '' : '/'}${item.receiptUrl}`, '_blank')}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       View Receipt
