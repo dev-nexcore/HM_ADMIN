@@ -124,6 +124,7 @@ const TypeBadge = ({ type }) => {
     staff:   { bg: "#DBEAFE", color: "#0284C7", label: "Staff", icon: <HiOutlineBriefcase /> },
     notice:  { bg: "#FDF2F8", color: "#DB2777", label: "Notice", icon: <HiOutlineDocumentText /> },
     inventory_replacement: { bg: "#FFF7ED", color: "#EA580C", label: "Replacement", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> },
+    complaint_resolution: { bg: "#EEF2FF", color: "#4338CA", label: "Complaint", icon: <HiOutlineDocumentText /> },
   };
   const t = map[type] || map.student;
   return (
@@ -155,10 +156,45 @@ const WardenRequisitions = () => {
   const fetchRequisitions = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/adminauth/requisitions");
-      if (res.data.success) {
-        setRequisitions(res.data.requisitions);
+      const [reqRes, compRes] = await Promise.all([
+        api.get("/api/adminauth/requisitions"),
+        api.get("/api/adminauth/complaints?limit=200") // Fetch more to get resolved ones too
+      ]);
+      
+      let allItems = [];
+      if (reqRes.data.success) {
+        allItems = [...reqRes.data.requisitions];
       }
+
+      if (compRes.data.complaints) {
+        const relevantComplaints = compRes.data.complaints.filter(c => 
+          c.status === 'pending_approval' || c.status === 'resolved'
+        );
+        
+        const complaints = relevantComplaints.map(c => ({
+          _id: c._id,
+          isComplaint: true,
+          requestedByName: "Hostel Warden",
+          requestedBy: { wardenId: "Warden Team" },
+          requisitionType: "complaint_resolution",
+          status: c.status === 'pending_approval' ? 'pending' : 'approved', 
+          createdAt: c.filedDate,
+          approvedAt: c.updatedAt,
+          approvedByName: "Admin",
+          data: {
+            subject: c.subject,
+            description: c.description,
+            complaintType: c.displayType,
+            ticketId: c.ticketId,
+            studentName: c.raisedBy?.name,
+            studentEmail: c.raisedBy?.email,
+          }
+        }));
+        allItems = [...allItems, ...complaints];
+      }
+
+      allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setRequisitions(allItems);
     } catch (error) {
       toast.error("Failed to fetch requisitions");
       console.error(error);
@@ -169,10 +205,24 @@ const WardenRequisitions = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get("/api/adminauth/requisitions/stats");
-      if (res.data.success) {
-        setStats(res.data.stats);
+      const [reqRes, compRes] = await Promise.all([
+        api.get("/api/adminauth/requisitions/stats"),
+        api.get("/api/adminauth/complaints?limit=200")
+      ]);
+      
+      let s = { total: 0, pending: 0, approved: 0, rejected: 0 };
+      if (reqRes.data.success) {
+        s = { ...reqRes.data.stats };
       }
+      
+      if (compRes.data.complaints) {
+        const cPending = compRes.data.complaints.filter(c => c.status === 'pending_approval').length;
+        const cApproved = compRes.data.complaints.filter(c => c.status === 'resolved').length;
+        s.total += (cPending + cApproved);
+        s.pending += cPending;
+        s.approved += cApproved;
+      }
+      setStats(s);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
     }
@@ -181,6 +231,20 @@ const WardenRequisitions = () => {
   const handleApprove = async (id) => {
     try {
       setSubmitting(true);
+      
+      if (selectedReq.isComplaint) {
+        await api.put(`/api/adminauth/complaints/${id}/status`, {
+          status: 'resolved',
+          adminNotes: notes || "Resolution approved by Admin."
+        });
+        toast.success("Complaint resolution approved!");
+        setShowModal(false);
+        setNotes("");
+        fetchRequisitions();
+        fetchStats();
+        return;
+      }
+
       const res = await api.put(`/api/adminauth/requisitions/${id}/status`, {
         status: 'approved',
         notes
@@ -216,6 +280,22 @@ const WardenRequisitions = () => {
     
     try {
       setSubmitting(true);
+      
+      if (selectedReq.isComplaint) {
+        await api.put(`/api/adminauth/complaints/${id}/status`, {
+          status: 'in progress',
+          adminNotes: rejectionReason
+        });
+        toast.success("Resolution rejected. Complaint returned to In Progress.");
+        setShowModal(false);
+        setShowRejectModal(false);
+        setRejectionReason("");
+        setNotes("");
+        fetchRequisitions();
+        fetchStats();
+        return;
+      }
+
       const res = await api.put(`/api/adminauth/requisitions/${id}/status`, {
         status: 'rejected',
         rejectionReason,
@@ -243,6 +323,7 @@ const WardenRequisitions = () => {
         req.requestedByName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.data?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.data?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        req.data?.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.data?.email?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || req.status === statusFilter;
       const matchesType = typeFilter === "all" || req.requisitionType === typeFilter;
@@ -316,6 +397,7 @@ const WardenRequisitions = () => {
               <option value="staff">Staff</option>
               <option value="notice">Notice</option>
               <option value="inventory_replacement">Replacement</option>
+              <option value="complaint_resolution">Complaint</option>
             </select>
           </div>
         </header>
@@ -363,17 +445,20 @@ const WardenRequisitions = () => {
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
                           {req.requisitionType === 'notice' ? req.data?.title : 
                            req.requisitionType === 'inventory_replacement' ? req.data?.itemName :
+                           req.requisitionType === 'complaint_resolution' ? req.data?.subject :
                            `${req.data?.firstName} ${req.data?.lastName}`}
                         </div>
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
                         {req.requisitionType === 'notice' ? `To: ${req.data?.recipientType}` : 
                          req.requisitionType === 'inventory_replacement' ? `ID: ${req.data?.barcodeId}` :
+                         req.requisitionType === 'complaint_resolution' ? `Student: ${req.data?.studentName}` :
                          req.data?.email}
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
                         {req.requisitionType === 'notice' ? (req.data?.individualRecipient || "All") : 
                          req.requisitionType === 'inventory_replacement' ? "N/A" :
+                         req.requisitionType === 'complaint_resolution' ? req.data?.ticketId :
                          req.data?.contactNumber}
                       </td>
                       <td style={{ padding: "16px" }}>
@@ -437,10 +522,12 @@ const WardenRequisitions = () => {
               {/* Registrant Details */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 12 }}>
-                  {selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1)} Information
+                  {selectedReq.requisitionType === 'complaint_resolution' 
+                    ? 'Complaint Details' 
+                    : `${selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1)} Information`}
                 </div>
                 <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  {selectedReq.requisitionType !== 'notice' && selectedReq.requisitionType !== 'inventory_replacement' && (
+                  {selectedReq.requisitionType !== 'notice' && selectedReq.requisitionType !== 'inventory_replacement' && selectedReq.requisitionType !== 'complaint_resolution' && (
                     <>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>First Name</label>
@@ -569,6 +656,28 @@ const WardenRequisitions = () => {
                       <div style={{ gridColumn: "span 2" }}>
                         <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Replacement Reason</label>
                         <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data?.reason}</div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Complaint Resolution specific fields */}
+                  {selectedReq.requisitionType === 'complaint_resolution' && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Ticket ID</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.ticketId}</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Student</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.studentName} ({selectedReq.data?.studentEmail})</div>
+                      </div>
+                      <div style={{ gridColumn: "span 2" }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Subject</label>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.subject}</div>
+                      </div>
+                      <div style={{ gridColumn: "span 2" }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Description</label>
+                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data?.description}</div>
                       </div>
                     </>
                   )}
