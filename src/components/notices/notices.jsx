@@ -12,6 +12,14 @@ import {
   Clock3,
   Wrench,
   AlertTriangle,
+  FileText,
+  Users,
+  UserCheck,
+  Eye,
+  Trash2,
+  Edit,
+  Info,
+  X
 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -37,10 +45,14 @@ const HostelNotices = () => {
   });
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState(null);
+  const [viewingNotice, setViewingNotice] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoticeId, setDeleteNoticeId] = useState(null);
   const [formErrors, setFormErrors] = useState(null);
   const [activeFilterCard, setActiveFilterCard] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const fetchNotices = async () => {
     try {
@@ -62,10 +74,28 @@ const HostelNotices = () => {
   }, [filters]);
 
   const handleIssueNotice = async () => {
+    // Basic Frontend Validation
+    if (!form.recipient) {
+      toast.error("Please select a recipient type.");
+      return;
+    }
+    if (!form.template) {
+      toast.error("Please select a notice template.");
+      return;
+    }
+    if (!form.title.trim()) {
+      toast.error("Please enter a notice title.");
+      return;
+    }
+    if (!form.message.trim()) {
+      toast.error("Please enter the notice message.");
+      return;
+    }
+
     const toastId = toast.loading("Issuing notice...");
 
     try {
-      await api.post("/api/adminauth/issue-notice", {
+      const response = await api.post("/api/adminauth/issue-notice", {
         template: form.template,
         title: form.title,
         message: form.message,
@@ -74,24 +104,24 @@ const HostelNotices = () => {
         individualRecipient: form.individualRecipient || "",
       });
 
-      toast.update(toastId, {
-        render: "✅ Notice issued successfully",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000
-      });
-
-      fetchNotices();
-      setForm(initialFormState);
-
+      if (response.data.success) {
+        toast.success("Notice issued successfully!", { id: toastId });
+        setForm({
+          template: "",
+          title: "",
+          message: "",
+          date: new Date().toISOString().split("T")[0],
+          recipient: "",
+          individualRecipient: "",
+        });
+        fetchNotices();
+      } else {
+        toast.error(response.data.message || "Failed to issue notice.", { id: toastId });
+      }
     } catch (err) {
-      toast.update(toastId, {
-        render: "❌ Notice issue failed",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000
-      });
-      console.error(err);
+      console.error("Issue notice error:", err);
+      const errorMessage = err.response?.data?.message || "Failed to issue notice. Please try again.";
+      toast.error(errorMessage, { id: toastId });
     }
   };
 
@@ -147,6 +177,16 @@ const HostelNotices = () => {
   const handleCancelEdit = () => {
     setIsPopupOpen(false);
     setEditingNotice(null);
+  };
+
+  const handleViewDetails = (notice) => {
+    setViewingNotice(notice);
+    setIsViewModalOpen(true);
+  };
+
+  const closeViewModal = () => {
+    setIsViewModalOpen(false);
+    setViewingNotice(null);
   };
 
   const handleCalendarClick = () => {
@@ -219,129 +259,128 @@ const HostelNotices = () => {
         {/* Alternative Minimal Cards Design (Like your reference) */}
        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
   
-  {/* Total Items */}
+  {/* Total Notices */}
   <div
     onClick={() => handleFilterCardClick("all")}
-    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+    className={`bg-white rounded-xl p-4 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
       activeFilterCard === "all"
         ? "border-blue-400 shadow-md ring-1 ring-blue-200"
         : "border-gray-200"
     }`}
   >
-    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-      <Package className="w-5 h-5 text-blue-500" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+        <FileText className="w-4 h-4 text-blue-500" />
+      </div>
+      <div className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-600 uppercase tracking-wider">
+        All
+      </div>
     </div>
 
-    <div className="text-4xl font-bold text-black">{stats.total}</div>
+    <div className="text-2xl font-bold text-black">{stats.total}</div>
 
-    <div className="text-gray-700 text-sm font-medium mt-1">
-      Total Items
-    </div>
-
-    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
-      All
+    <div className="text-gray-500 text-[11px] font-bold uppercase tracking-tight mt-1">
+      Total Notices
     </div>
   </div>
 
-  {/* Available */}
+  {/* Active Notices */}
   <div
     onClick={() => handleFilterCardClick("active")}
-    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+    className={`bg-white rounded-xl p-4 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
       activeFilterCard === "active"
         ? "border-green-400 shadow-md ring-1 ring-green-200"
         : "border-gray-200"
     }`}
   >
-    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mb-4">
-      <CheckCircle className="w-5 h-5 text-green-500" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+        <CheckCircle className="w-4 h-4 text-green-500" />
+      </div>
+      <div className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-50 text-green-600 uppercase tracking-wider">
+        Visible
+      </div>
     </div>
 
-    <div className="text-4xl font-bold text-black">{stats.active}</div>
+    <div className="text-2xl font-bold text-black">{stats.active}</div>
 
-    <div className="text-gray-700 text-sm font-medium mt-1">
-      Available
-    </div>
-
-    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600">
-      Ready
+    <div className="text-gray-500 text-[11px] font-bold uppercase tracking-tight mt-1">
+      Active
     </div>
   </div>
 
-  {/* In Use */}
+  {/* Archived Notices */}
   <div
     onClick={() => handleFilterCardClick("archived")}
-    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+    className={`bg-white rounded-xl p-4 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
       activeFilterCard === "archived"
         ? "border-orange-400 shadow-md ring-1 ring-orange-200"
         : "border-gray-200"
     }`}
   >
-    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center mb-4">
-      <Clock3 className="w-5 h-5 text-orange-500" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+        <Clock3 className="w-4 h-4 text-orange-500" />
+      </div>
+      <div className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-50 text-orange-600 uppercase tracking-wider">
+        History
+      </div>
     </div>
 
-    <div className="text-4xl font-bold text-black">
-      {stats.archived}
-    </div>
+    <div className="text-2xl font-bold text-black">{stats.archived}</div>
 
-    <div className="text-gray-700 text-sm font-medium mt-1">
-      In Use
-    </div>
-
-    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-orange-50 text-orange-600">
-      Active
+    <div className="text-gray-500 text-[11px] font-bold uppercase tracking-tight mt-1">
+      Archived
     </div>
   </div>
 
-  {/* Maintenance */}
+  {/* For Students */}
   <div
     onClick={() => handleFilterCardClick("students")}
-    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+    className={`bg-white rounded-xl p-4 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
       activeFilterCard === "students"
         ? "border-purple-400 shadow-md ring-1 ring-purple-200"
         : "border-gray-200"
     }`}
   >
-    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-      <Wrench className="w-5 h-5 text-purple-500" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+        <Users className="w-4 h-4 text-purple-500" />
+      </div>
+      <div className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-50 text-purple-600 uppercase tracking-wider">
+        Students
+      </div>
     </div>
 
-    <div className="text-4xl font-bold text-black">
-      {stats.toStudents}
-    </div>
+    <div className="text-2xl font-bold text-black">{stats.toStudents}</div>
 
-    <div className="text-gray-700 text-sm font-medium mt-1">
-      Maintenance
-    </div>
-
-    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-600">
-      Under repair
+    <div className="text-gray-500 text-[11px] font-bold uppercase tracking-tight mt-1">
+      To Students
     </div>
   </div>
 
-  {/* Damaged */}
+  {/* For Wardens */}
   <div
     onClick={() => handleFilterCardClick("warden")}
-    className={`bg-white rounded-2xl p-5 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+    className={`bg-white rounded-xl p-4 border shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
       activeFilterCard === "warden"
         ? "border-red-400 shadow-md ring-1 ring-red-200"
         : "border-gray-200"
     }`}
   >
-    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mb-4">
-      <AlertTriangle className="w-5 h-5 text-red-500" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+        <UserCheck className="w-4 h-4 text-red-500" />
+      </div>
+      <div className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-50 text-red-600 uppercase tracking-wider">
+        Warden
+      </div>
     </div>
 
-    <div className="text-4xl font-bold text-black">
-      {stats.toWarden}
-    </div>
+    <div className="text-2xl font-bold text-black">{stats.toWarden}</div>
 
-    <div className="text-gray-700 text-sm font-medium mt-1">
-      Damaged
-    </div>
-
-    <div className="inline-block mt-4 px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-600">
-      Needs attention
+    <div className="text-gray-500 text-[11px] font-bold uppercase tracking-tight mt-1">
+      To Warden
     </div>
   </div>
 </div>
@@ -622,6 +661,10 @@ const HostelNotices = () => {
           loading={loading}
           handleEdit={handleEdit}
           handleDelete={handleDelete}
+          handleViewDetails={handleViewDetails}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          ITEMS_PER_PAGE={ITEMS_PER_PAGE}
         />
          {/* Edit Popup Modal */}
         {/* Edit Popup Modal */}
@@ -905,47 +948,88 @@ const HostelNotices = () => {
             </div>
           </div>
         )}
-        {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/30 bg-opacity-20 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <svg
-                    className="h-6 w-6 text-red-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                    />
-                  </svg>
+        {/* View Details Modal */}
+        {isViewModalOpen && viewingNotice && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div 
+                className="px-8 py-6 flex items-center justify-between shrink-0"
+                style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 10px 0px rgba(0, 0, 0, 0.25)" }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/30 p-2.5 rounded-xl backdrop-blur-md shadow-inner">
+                    <Info className="text-black" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-black font-extrabold text-xl leading-tight font-[Poppins]">Notice Details</h3>
+                    <p className="text-black/60 text-xs mt-1 font-bold tracking-wide uppercase">Ref: {viewingNotice.id || viewingNotice._id?.slice(-6).toUpperCase()}</p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Delete Notice
-                </h3>
-                <p className="text-sm text-gray-500 mb-6">
-                  Are you sure you want to delete this notice? This action
-                  cannot be undone.
-                </p>
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={cancelDelete}
-                    className="bg-gray-300 text-black px-6 py-2 rounded-lg font-semibold text-[14px] hover:bg-gray-400 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold text-[14px] hover:bg-red-700 transition-colors"
-                  >
-                    Delete
-                  </button>
+                <button 
+                  onClick={closeViewModal}
+                  className="bg-white/40 hover:bg-white/60 p-2 rounded-full text-black transition-all duration-200 shadow-sm"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 space-y-6 overflow-y-auto font-[Poppins]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[#f3f4f0] p-4 rounded-xl border border-[#BEC5AD]/30 shadow-sm">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Template</label>
+                    <p className="text-black font-bold text-base">{viewingNotice.template}</p>
+                  </div>
+                  <div className="bg-[#f3f4f0] p-4 rounded-xl border border-[#BEC5AD]/30 shadow-sm">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Title</label>
+                    <p className="text-black font-bold text-base">{viewingNotice.title}</p>
+                  </div>
+                  <div className="bg-[#f3f4f0] p-4 rounded-xl border border-[#BEC5AD]/30 shadow-sm">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Recipient</label>
+                    <p className="text-black font-bold text-base">{viewingNotice.recipient}</p>
+                  </div>
+                  <div className="bg-[#f3f4f0] p-4 rounded-xl border border-[#BEC5AD]/30 shadow-sm">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Issue Date</label>
+                    <p className="text-black font-bold text-base">{viewingNotice.date}</p>
+                  </div>
+                  <div className="bg-[#f3f4f0] p-4 rounded-xl border border-[#BEC5AD]/30 shadow-sm">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Status</label>
+                    <div className="mt-1">
+                      <span className={`px-4 py-1.5 rounded-xl text-xs font-bold text-white uppercase ${viewingNotice.status === 'Active' ? 'bg-[#28C404] shadow-md shadow-green-100' : 'bg-[#5A5D50] shadow-md shadow-gray-100'}`}>
+                        {viewingNotice.status}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+
+                {viewingNotice.individualRecipient && (
+                  <div className="bg-[#BEC5AD]/10 p-4 rounded-xl border border-[#BEC5AD]/50">
+                    <label className="text-[10px] font-bold text-[#7a816a] uppercase tracking-widest mb-1 block">Individual Recipient</label>
+                    <p className="text-black font-bold text-sm">{viewingNotice.individualRecipient}</p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 block">Message Content</label>
+                  <div 
+                    className="rounded-2xl p-6 text-black text-sm leading-relaxed whitespace-pre-wrap font-medium min-h-[150px]"
+                    style={{ backgroundColor: "white", border: "1px solid #BEC5AD", boxShadow: "0px 2px 10px 0px rgba(0,0,0,0.05)" }}
+                  >
+                    {viewingNotice.message}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-[#f3f4f0] px-8 py-5 border-t border-[#BEC5AD]/20 shrink-0">
+                <button
+                  onClick={closeViewModal}
+                  className="w-full py-3.5 text-black rounded-xl font-bold text-sm shadow-lg transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: "#BEC5AD" }}
+                >
+                  Close View
+                </button>
               </div>
             </div>
           </div>
@@ -959,7 +1043,7 @@ const HostelNotices = () => {
   );
 };
 
-function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
+function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDetails, currentPage, setCurrentPage, ITEMS_PER_PAGE }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -975,6 +1059,9 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
       </div>
     );
   }
+
+  const totalPages = Math.ceil(notices.length / ITEMS_PER_PAGE);
+  const displayedNotices = notices.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div>
@@ -992,16 +1079,18 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
         <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] hidden sm:table">
           <thead>
             <tr className="bg-white font-[Poppins] font-semibold">
-              <th className="p-3 pl-15 text-left rounded-tl-3xl">Title</th>
+              <th className="p-3 text-left rounded-tl-3xl">Sr No</th>
+              <th className="p-3 text-left">Title</th>
               <th className="p-3 text-left">Recipient</th>
               <th className="p-3 text-left">Date Issued</th>
-              <th className="p-3 pl-8 text-left">Status</th>
+              <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left rounded-tr-3xl">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {notices.map((n) => (
+            {displayedNotices.map((n, index) => (
               <tr key={n.id} className="font-[Poppins] font-semibold">
+                <td className="p-2 pl-5">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
                 <td className="p-2">{n.title}</td>
                 <td className="p-2">{n.recipient}</td>
                 <td className="p-2">{n.date}</td>
@@ -1013,21 +1102,28 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
                   </span>
                 </td>
                 <td className="p-2">
-                  <div className="flex items-center gap-5">
-                   <div className="flex gap-5 mt-3">
-  <div
-    className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-blue-600"
-    onClick={() => handleEdit(n)}
-  >
-    <FiEdit2 size={20} />
-  </div>
-  <div
-    className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-red-600"
-    onClick={() => handleDelete(n.id)}
-  >
-    <FiTrash2 size={20} />
-  </div>
-</div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleViewDetails(n)}
+                      className="p-1.5 text-green-600 hover:text-green-800 transition-colors bg-white rounded-lg shadow-sm"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(n)}
+                      className="p-1.5 text-blue-600 hover:text-blue-800 transition-colors bg-white rounded-lg shadow-sm"
+                      title="Edit Notice"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(n.id)}
+                      className="p-1.5 text-red-600 hover:text-red-800 transition-colors bg-white rounded-lg shadow-sm"
+                      title="Delete Notice"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -1037,42 +1133,115 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete }) {
 
         {/* Mobile Card View */}
         <div className="space-y-4 sm:hidden">
-          {notices.map((n) => (
-            <div key={n.id} className="bg-white rounded-xl p-4 shadow-md">
-              <div className="mb-2">
-                <strong>Title:</strong> {n.title}
-              </div>
-              <div className="mb-2">
-                <strong>Recipient:</strong> {n.recipient}
-              </div>
-              <div className="mb-2">
-                <strong>Date Issued:</strong> {n.date}
-              </div>
-              <div className="mb-2">
-                <strong>Status:</strong>{" "}
+          {displayedNotices.map((n, index) => (
+            <div key={n.id} className="bg-white rounded-xl p-4 shadow-md border-l-4 border-blue-500">
+              <div className="flex justify-between items-start mb-3">
+                <span className="text-xs font-bold text-blue-600">Sr No: {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>
                 <span
-                  className={`inline-block px-3 py-1 rounded-[12px] font-semibold text-white text-sm ${n.status === "Active" ? "bg-[#28C404]" : "bg-[#5A5D50]"}`}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase ${n.status === "Active" ? "bg-[#28C404]" : "bg-[#5A5D50]"}`}
                 >
                   {n.status}
                 </span>
               </div>
-              <div className="flex gap-5 mt-3">
-                <div
-                  className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-blue-600"
+              <div className="mb-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Title</p>
+                <p className="text-sm font-bold text-gray-900">{n.title}</p>
+              </div>
+              <div className="mb-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recipient</p>
+                <p className="text-sm font-medium">{n.recipient}</p>
+              </div>
+              <div className="mb-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date Issued</p>
+                <p className="text-sm font-medium">{n.date}</p>
+              </div>
+              <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
+                <button
+                  onClick={() => handleViewDetails(n)}
+                  className="flex-1 bg-green-50 text-green-600 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors"
+                >
+                  View
+                </button>
+                <button
                   onClick={() => handleEdit(n)}
+                  className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
                 >
-                  <FiEdit2 size={20} />
-                </div>
-                <div
-                  className="cursor-pointer hover:opacity-70 transition hover:scale-110 text-red-600"
+                  Edit
+                </button>
+                <button
                   onClick={() => handleDelete(n.id)}
+                  className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
                 >
-                  <FiTrash2 size={20} />
-                </div>
+                  Delete
+                </button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 mt-4 rounded-xl border border-gray-100 shadow-sm">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700 font-[Poppins]">
+                  Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
+                  <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, notices.length)}</span> of{" "}
+                  <span className="font-medium">{notices.length}</span> notices
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <Package className="h-5 w-5 rotate-180" aria-hidden="true" />
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                        currentPage === i + 1
+                          ? "z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                          : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Next</span>
+                    <Package className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
