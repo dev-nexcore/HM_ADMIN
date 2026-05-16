@@ -25,51 +25,86 @@ export default function TicketsSection() {
   const [openTickets, setOpenTickets] = useState([]);
   const [inProcessTickets, setInProcessTickets] = useState([]);
   const [resolvedTickets, setResolvedTickets] = useState([]);
+  const [rejectedTickets, setRejectedTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [attachmentModal, setAttachmentModal] = useState({ show: false, url: '', type: '', filename: '' });
   const [activeFilter, setActiveFilter] = useState("total");
+  const [openPage, setOpenPage] = useState(1);
+  const [inProcessPage, setInProcessPage] = useState(1);
+  const [resolvedPage, setResolvedPage] = useState(1);
+  const [rejectedPage, setRejectedPage] = useState(1);
   const [rejectionModal, setRejectionModal] = useState({ show: false, ticket: null, reason: '' });
+  const ITEMS_PER_PAGE = 10;
 
   // Calculate statistics dynamically
   const totalOpen = openTickets.length;
   const totalInProcess = inProcessTickets.length;
   const totalResolved = resolvedTickets.length;
-  const highPriority = [...openTickets, ...inProcessTickets].filter(ticket => 
-    ticket.complaintType?.toLowerCase().includes('urgent') || 
-    ticket.complaintType?.toLowerCase().includes('emergency')
-  ).length;
+  const totalRejected = rejectedTickets.length;
 
   const stats = {
-    total: totalOpen + totalInProcess + totalResolved,
+    total: totalOpen + totalInProcess + totalResolved + totalRejected,
     open: totalOpen,
     inProcess: totalInProcess,
     resolved: totalResolved,
-    highPriority: highPriority
+    rejected: totalRejected
   };
 
-  const displayedOpenTickets = openTickets.filter(ticket => {
-    if (activeFilter === "priority") {
-      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
-    }
-    return true;
-  });
+  // Pagination Helper Slicing
+  const displayedOpenTickets = openTickets.slice((openPage - 1) * ITEMS_PER_PAGE, openPage * ITEMS_PER_PAGE);
+  const displayedInProcessTickets = inProcessTickets.slice((inProcessPage - 1) * ITEMS_PER_PAGE, inProcessPage * ITEMS_PER_PAGE);
+  const displayedResolvedTickets = resolvedTickets.slice((resolvedPage - 1) * ITEMS_PER_PAGE, resolvedPage * ITEMS_PER_PAGE);
+  const displayedRejectedTickets = rejectedTickets.slice((rejectedPage - 1) * ITEMS_PER_PAGE, rejectedPage * ITEMS_PER_PAGE);
 
-  const displayedInProcessTickets = inProcessTickets.filter(ticket => {
-    if (activeFilter === "priority") {
-      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
-    }
-    return true;
-  });
+  // Pagination Component
+  const Pagination = ({ totalItems, currentPage, onPageChange }) => {
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    if (totalPages <= 1) return null;
 
-  const displayedResolvedTickets = resolvedTickets.filter(ticket => {
-    if (activeFilter === "priority") {
-      return ticket.complaintType?.toLowerCase().includes('urgent') || ticket.complaintType?.toLowerCase().includes('emergency');
-    }
-    return true;
-  });
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <div className="text-sm text-gray-600 font-medium bg-white/50 px-4 py-2 rounded-full border border-white/20">
+          Showing <span className="text-black font-bold">{Math.min(totalItems, (currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> -{" "}
+          <span className="text-black font-bold">{Math.min(totalItems, currentPage * ITEMS_PER_PAGE)}</span> of{" "}
+          <span className="text-black font-bold">{totalItems}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            Previous
+          </button>
+          <div className="flex gap-1 hidden md:flex">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => onPageChange(i + 1)}
+                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                  currentPage === i + 1 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // Fetch open complaints/tickets (pending status)
   const fetchOpenTickets = async () => {
@@ -177,6 +212,43 @@ export default function TicketsSection() {
     }
   };
 
+  // Fetch rejected complaints/tickets
+  const fetchRejectedTickets = async () => {
+    try {
+      const response = await api.get(
+        `/api/adminauth/complaints/rejected`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+      
+      const formattedTickets = response.data.complaints.map(complaint => ({
+        id: complaint.ticketId,
+        _id: complaint._id,
+        subject: complaint.subject,
+        description: complaint.description,
+        complaintType: complaint.complaintType,
+        raisedBy: complaint.raisedBy ? complaint.raisedBy.name : 'Unknown Student',
+        studentId: complaint.raisedBy ? complaint.raisedBy.studentId : '',
+        studentRoom: complaint.raisedBy ? complaint.raisedBy.roomNumber : '',
+        status: "Rejected Section",
+        dateRaised: new Date(complaint.filedDate).toLocaleDateString('en-GB'),
+        rejectedDate: new Date(complaint.rejectedDate).toLocaleDateString('en-GB'),
+        adminNotes: complaint.adminNotes,
+        hasAttachments: complaint.hasAttachments,
+        attachmentCount: complaint.attachmentCount,
+        attachments: complaint.attachments || []
+      }));
+      
+      setRejectedTickets(formattedTickets);
+    } catch (error) {
+      console.error("Failed to fetch rejected tickets:", error);
+      toast.error("Failed to fetch rejected tickets. Please try again.");
+    }
+  };
+
   // Fetch ticket details with attachments
   const fetchTicketDetails = async (ticketId) => {
     try {
@@ -206,6 +278,14 @@ export default function TicketsSection() {
 
   // View attachment
   const viewAttachment = async (complaintId, attachmentId, filename, mimeType) => {
+    console.log("Viewing attachment:", { complaintId, attachmentId, filename });
+    
+    if (!complaintId || !attachmentId) {
+      console.error("Missing complaintId or attachmentId", { complaintId, attachmentId });
+      toast.error("Invalid attachment reference. Please try again.");
+      return;
+    }
+
     try {
       const response = await api.get(
         `/api/adminauth/complaints/${complaintId}/attachment/${attachmentId}`,
@@ -233,7 +313,12 @@ export default function TicketsSection() {
     const loadTickets = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchOpenTickets(), fetchInProcessTickets(), fetchResolvedTickets()]);
+        await Promise.all([
+          fetchOpenTickets(), 
+          fetchInProcessTickets(), 
+          fetchResolvedTickets(),
+          fetchRejectedTickets()
+        ]);
       } catch (error) {
         console.error("Failed to load tickets:", error);
       } finally {
@@ -359,6 +444,14 @@ export default function TicketsSection() {
         }
       );
 
+      const rejectedTicket = {
+        ...ticket,
+        status: "Rejected",
+        rejectedDate: new Date().toLocaleDateString('en-GB'),
+        adminNotes: reason.trim()
+      };
+
+      setRejectedTickets(prev => [rejectedTicket, ...prev]);
       setOpenTickets(prev => prev.filter((_, i) => i !== ticket.index));
       toast.error("❌ Complaint has been rejected.");
     } catch (error) {
@@ -428,15 +521,15 @@ icon: <CheckCircle size={18} />,
 },
 
 {
-id: "priority",
-label: "High Priority",
-value: stats.highPriority,
-subLabel: "Urgent",
+id: "rejected",
+label: "Rejected Section",
+value: stats.rejected,
+subLabel: "Rejected",
 borderColor: "border-red-200",
 bgColor: "bg-red-50",
 textColor: "text-red-500",
 badgeColor: "bg-red-50 text-red-600",
-icon: <AlertCircle size={18} />,
+icon: <XCircle size={18} />,
 },
 ];
 
@@ -509,7 +602,7 @@ icon: <AlertCircle size={18} />,
 </div>
 
         {/* Open Tickets */}
-        {(activeFilter === "total" || activeFilter === "open" || activeFilter === "priority") && (
+        {(activeFilter === "total" || activeFilter === "open") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner mb-8">
           <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
             <MessageSquare size={20} />
@@ -678,11 +771,17 @@ icon: <AlertCircle size={18} />,
               </div>
             )}
           </div>
+
+          <Pagination 
+            totalItems={totalOpen} 
+            currentPage={openPage} 
+            onPageChange={setOpenPage} 
+          />
         </div>
         )}
 
         {/* In-Process Tickets */}
-        {(activeFilter === "total" || activeFilter === "inProcess" || activeFilter === "priority") && (
+        {(activeFilter === "total" || activeFilter === "inProcess") && (
         <div className="bg-[#D4C5E2] rounded-2xl p-6 shadow-inner mb-8">
           <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
             <Clock size={20} />
@@ -836,11 +935,17 @@ icon: <AlertCircle size={18} />,
               </div>
             )}
           </div>
+
+          <Pagination 
+            totalItems={totalInProcess} 
+            currentPage={inProcessPage} 
+            onPageChange={setInProcessPage} 
+          />
         </div>
         )}
 
         {/* Resolved Tickets */}
-        {(activeFilter === "total" || activeFilter === "resolved" || activeFilter === "priority") && (
+        {(activeFilter === "total" || activeFilter === "resolved") && (
         <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
           <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
             <CheckCircle size={20} />
@@ -858,7 +963,8 @@ icon: <AlertCircle size={18} />,
                   <th className="p-3">Raised By</th>
                   <th className="p-3">Status</th>
                   <th className="p-3">Filed</th>
-                  <th className="p-3 rounded-tr-lg">Resolved</th>
+                  <th className="p-3">Resolved</th>
+                  <th className="p-3 rounded-tr-lg">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -893,11 +999,20 @@ icon: <AlertCircle size={18} />,
                       </td>
                       <td className="p-3 text-sm">{ticket.dateRaised}</td>
                       <td className="p-3 text-sm">{ticket.resolvedDate || 'N/A'}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => viewTicketDetails(ticket)}
+                          className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-gray-600">
+                    <td colSpan={8} className="text-center py-8 text-gray-600">
                       No resolved tickets available.
                     </td>
                   </tr>
@@ -949,15 +1064,23 @@ icon: <AlertCircle size={18} />,
                       <p className="text-sm">{ticket.resolvedDate || 'N/A'}</p>
                     </div>
                   </div>
-                  
                   {ticket.hasAttachments && (
                     <button
                       onClick={() => viewTicketDetails(ticket)}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1 mb-2"
                     >
                       <Paperclip size={12} /> {ticket.attachmentCount} attachment(s)
                     </button>
                   )}
+                  
+                  <div className="flex gap-2 pt-2 border-t border-gray-100 mt-1">
+                    <button
+                      onClick={() => viewTicketDetails(ticket)}
+                      className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Eye size={16} /> View Details
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -966,6 +1089,165 @@ icon: <AlertCircle size={18} />,
               </div>
             )}
           </div>
+
+          <Pagination 
+            totalItems={totalResolved} 
+            currentPage={resolvedPage} 
+            onPageChange={setResolvedPage} 
+          />
+        </div>
+        )}
+
+        {/* Rejected Tickets Section */}
+        {(activeFilter === "total" || activeFilter === "rejected") && (
+        <div className="bg-[#E5D1D1] rounded-2xl p-6 shadow-inner mt-8">
+          <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
+            <XCircle size={20} className="text-red-600" />
+            Rejected Section ({displayedRejectedTickets.length})
+          </h3>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white text-black font-semibold rounded-lg">
+                  <th className="p-3 rounded-tl-lg">Ticket ID</th>
+                  <th className="p-3">Subject & Files</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">Raised By</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Filed</th>
+                  <th className="p-3">Rejected</th>
+                  <th className="p-3 rounded-tr-lg">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedRejectedTickets.length > 0 ? (
+                  displayedRejectedTickets.map((ticket) => (
+                    <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-3 font-semibold text-sm">{ticket.id}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
+                          {ticket.subject}
+                        </div>
+                        {ticket.hasAttachments && (
+                          <button
+                            onClick={() => viewTicketDetails(ticket)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 flex items-center gap-1"
+                          >
+                            <Paperclip size={12} /> {ticket.attachmentCount} file(s)
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-3 text-sm">{ticket.complaintType}</td>
+                      <td className="p-3">
+                        <div className="text-sm font-medium">{ticket.raisedBy}</div>
+                        {ticket.studentId && (
+                          <div className="text-xs text-gray-500">{ticket.studentId}</div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          <XCircle size={12} /> Rejected
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">{ticket.dateRaised}</td>
+                      <td className="p-3 text-sm">{ticket.rejectedDate || 'N/A'}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => viewTicketDetails(ticket)}
+                          className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="text-center py-8 text-gray-600">
+                      No rejected tickets available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
+            {displayedRejectedTickets.length > 0 ? (
+              displayedRejectedTickets.map((ticket) => (
+                <div key={ticket.id} className="bg-white rounded-xl p-4 shadow-md border-l-4 border-red-500">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Ticket ID</span>
+                      <p className="font-bold text-sm">{ticket.id}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <XCircle size={12} /> Rejected
+                    </span>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Subject</span>
+                    <p className="text-sm font-medium">{ticket.subject}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Type</span>
+                    <p className="text-sm">{ticket.complaintType}</p>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-gray-500">Raised By</span>
+                    <p className="text-sm font-medium">{ticket.raisedBy}</p>
+                    {ticket.studentId && (
+                      <p className="text-xs text-gray-500">{ticket.studentId}</p>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Filed</span>
+                      <p className="text-sm">{ticket.dateRaised}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">Rejected</span>
+                      <p className="text-sm">{ticket.rejectedDate || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {ticket.adminNotes && (
+                    <div className="mb-3 p-2 bg-red-50 rounded-lg">
+                      <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Reason</span>
+                      <p className="text-xs text-red-700 italic">{ticket.adminNotes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-2 pt-2 border-t border-gray-100 mt-3">
+                    <button
+                      onClick={() => viewTicketDetails(ticket)}
+                      className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Eye size={16} /> View Details
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+                No rejected tickets available.
+              </div>
+            )}
+          </div>
+
+          <Pagination 
+            totalItems={totalRejected} 
+            currentPage={rejectedPage} 
+            onPageChange={setRejectedPage} 
+          />
         </div>
         )}
 
