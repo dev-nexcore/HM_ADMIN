@@ -653,6 +653,13 @@ export default function LeaveRequestsPage() {
   const [rejectReason, setRejectReason]         = useState("");
   const [showViewModal, setShowViewModal]       = useState(false);
   const [selectedLeave, setSelectedLeave]       = useState(null);
+  
+  // ── Search & Filter ────────────────────────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = {
@@ -752,36 +759,120 @@ export default function LeaveRequestsPage() {
   };
 
   // ── Filtered list (client-side) ────────────────────────────────────────────
-  const filteredRequests =
-    activeFilter === "All"
-      ? leaveRequests
-      : leaveRequests.filter(r => r.status?.toLowerCase() === activeFilter.toLowerCase());
+  const filteredRequests = leaveRequests.filter(r => {
+    const matchesFilter = activeFilter === "All" || r.status?.toLowerCase() === activeFilter.toLowerCase();
+    const matchesSearch = 
+      r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.reason?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const displayedRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
+
+  // ── Pagination Component ───────────────────────────────────────────────────
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-between mt-6 px-2">
+        <p className="text-sm text-gray-500 font-medium">
+          Showing <span className="text-black font-bold">{Math.min(filteredRequests.length, (currentPage - 1) * itemsPerPage + 1)}</span> to{" "}
+          <span className="text-black font-bold">{Math.min(filteredRequests.length, currentPage * itemsPerPage)}</span> of{" "}
+          <span className="text-black font-bold">{filteredRequests.length}</span> entries
+        </p>
+        <div className="flex gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            Previous
+          </button>
+          <div className="flex gap-1 hidden sm:flex">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                  currentPage === i + 1
+                    ? "bg-[#4F8CCF] text-white shadow-lg shadow-[#4F8CCF]/20"
+                    : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => p + 1)}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // ── Shared action buttons ──────────────────────────────────────────────────
   const ActionButtons = ({ req, compact = false }) => {
-    const base = compact
-      ? "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-      : "flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors";
-
-    return req.status?.toLowerCase() === "pending" ? (
-      <div className={`flex ${compact ? "flex-col" : "flex-col sm:flex-row"} gap-2`}>
-        <button className={`${base} bg-blue-500 hover:bg-blue-600 text-white`} onClick={() => { setSelectedLeave(req); setShowViewModal(true); }}>
-          <Eye size={14}/> VIEW
-        </button>
-        <button className={`${base} bg-[#28C404] hover:bg-green-700 text-white`} onClick={() => { setSelectedLeaveId(req.id); setShowApproveModal(true); }}>
-          <CheckCircle size={14}/> APPROVE
-        </button>
-        <button className={`${base} bg-[#FF0000] hover:bg-red-600 text-white`} onClick={() => { setSelectedLeaveId(req.id); setShowRejectModal(true); }}>
-          <XCircle size={14}/> REJECT
-        </button>
-        <button className={`${base} bg-white border border-gray-300 hover:bg-gray-100 text-black`} onClick={() => handleMessage(req.id)}>
-          <Mail size={14}/> MESSAGE
-        </button>
-      </div>
-    ) : (
-      <button className={`${base} bg-blue-500 hover:bg-blue-600 text-white`} onClick={() => { setSelectedLeave(req); setShowViewModal(true); }}>
-        <Eye size={14}/> VIEW
+    const btnBase = "relative flex items-center justify-center transition-all duration-200 transform active:scale-90 group";
+    
+    // Modern circular buttons with subtle colors
+    const IconButton = ({ icon, color, label, onClick }) => (
+      <button 
+        onClick={onClick}
+        title={label}
+        className={`${btnBase} ${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full`}
+        style={{ backgroundColor: `${color}15`, color: color }}
+      >
+        <div className="absolute inset-0 rounded-full bg-current opacity-0 group-hover:opacity-10 transition-opacity" />
+        {icon}
+        {!compact && (
+          <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none font-bold uppercase tracking-wider">
+            {label}
+          </span>
+        )}
       </button>
+    );
+
+    return (
+      <div className={`flex items-center justify-center ${compact ? 'gap-2' : 'gap-4'}`}>
+        <IconButton 
+          icon={<Eye size={compact ? 16 : 18} />} 
+          color="#3B82F6" 
+          label="View Details" 
+          onClick={() => { setSelectedLeave(req); setShowViewModal(true); }} 
+        />
+        
+        {req.status?.toLowerCase() === "pending" && (
+          <>
+            <IconButton 
+              icon={<CheckCircle size={compact ? 16 : 18} />} 
+              color="#10B981" 
+              label="Approve" 
+              onClick={() => { setSelectedLeaveId(req.id); setShowApproveModal(true); }} 
+            />
+            <IconButton 
+              icon={<XCircle size={compact ? 16 : 18} />} 
+              color="#EF4444" 
+              label="Reject" 
+              onClick={() => { setSelectedLeaveId(req.id); setShowRejectModal(true); }} 
+            />
+          </>
+        )}
+      </div>
     );
   };
 
@@ -790,9 +881,53 @@ export default function LeaveRequestsPage() {
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-white text-black">
 
       {/* ── Header ── */}
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 ml-1 sm:ml-2" style={{ fontFamily: "Inter" }}>
-        <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
-      </h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 ml-1 sm:ml-2">
+        <h2 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "Inter" }}>
+          <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
+        </h2>
+
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* Status Dropdown */}
+          <div className="relative group">
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value)}
+              className="appearance-none pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#4F8CCF]/20 focus:border-[#4F8CCF] transition-all cursor-pointer w-full sm:w-40"
+            >
+              <option value="All">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative w-full md:w-80 group">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#4F8CCF] transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <input 
+              type="text"
+              placeholder="Search student or type..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4F8CCF]/20 focus:border-[#4F8CCF] transition-all"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm("")}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── STAT CARDS (TOP) ── */}
       <div className="mb-8">
@@ -812,16 +947,31 @@ export default function LeaveRequestsPage() {
         </div>
 
         {/* Active filter badge */}
-        {activeFilter !== "All" && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-sm text-gray-600">Filtering by:</span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4F8CCF]/10 text-[#4F8CCF] text-sm font-semibold rounded-full border border-[#4F8CCF]/30">
-              {activeFilter}
-              <button onClick={() => setActiveFilter("All")} className="ml-1 hover:text-red-500 transition-colors font-bold">×</button>
-            </span>
-            <span className="text-sm text-gray-500">({filteredRequests.length} request{filteredRequests.length !== 1 ? "s" : ""})</span>
-          </div>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {activeFilter !== "All" && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Status:</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4F8CCF]/10 text-[#4F8CCF] text-sm font-semibold rounded-full border border-[#4F8CCF]/30">
+                {activeFilter}
+                <button onClick={() => setActiveFilter("All")} className="ml-1 hover:text-red-500 transition-colors font-bold">×</button>
+              </span>
+            </div>
+          )}
+          
+          {searchTerm && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Search:</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded-full border border-gray-300">
+                "{searchTerm}"
+                <button onClick={() => setSearchTerm("")} className="ml-1 hover:text-red-500 transition-colors font-bold">×</button>
+              </span>
+            </div>
+          )}
+
+          {(activeFilter !== "All" || searchTerm) && (
+            <span className="text-sm text-gray-500">({filteredRequests.length} result{filteredRequests.length !== 1 ? "s" : ""})</span>
+          )}
+        </div>
       </div>
 
       {/* ── Mobile Card View ── */}
@@ -829,11 +979,11 @@ export default function LeaveRequestsPage() {
         <div className="bg-[#BEC5AD] rounded-2xl p-3 sm:p-4 shadow-inner">
           {loading ? (
             <p className="text-center py-6 text-gray-600">Loading...</p>
-          ) : filteredRequests.length === 0 ? (
+          ) : displayedRequests.length === 0 ? (
             <p className="text-center py-8 text-gray-600">No leave requests found.</p>
           ) : (
             <div className="space-y-3">
-              {filteredRequests.map(req => (
+              {displayedRequests.map(req => (
                 <div key={req.id} className="bg-white rounded-xl p-4 shadow-sm border border-black/10">
                   {/* Header */}
                   <div className="flex justify-between items-start mb-3">
@@ -859,6 +1009,7 @@ export default function LeaveRequestsPage() {
             </div>
           )}
         </div>
+        <Pagination />
       </div>
 
       {/* ── Desktop Table View ── */}
@@ -882,12 +1033,12 @@ export default function LeaveRequestsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRequests.length === 0 && !loading && (
+                  {displayedRequests.length === 0 && !loading && (
                     <tr>
                       <td colSpan={5} className="text-center py-8 text-gray-600">No leave requests found.</td>
                     </tr>
                   )}
-                  {filteredRequests.map(req => (
+                  {displayedRequests.map(req => (
                     <tr key={req.id} className="hover:bg-black/5 border-t border-black/10">
                       <td className="px-4 py-3 text-center font-medium">{req.name}</td>
                       <td className="px-4 py-3 text-center">{req.type}</td>
@@ -902,9 +1053,7 @@ export default function LeaveRequestsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <ActionButtons req={req} compact />
-                        </div>
+                        <ActionButtons req={req} compact />
                       </td>
                     </tr>
                   ))}
@@ -913,6 +1062,7 @@ export default function LeaveRequestsPage() {
             </div>
           )}
         </div>
+        <Pagination />
       </div>
 
       {/* ── Approve Modal ── */}
@@ -952,43 +1102,70 @@ export default function LeaveRequestsPage() {
       {/* ── View Modal ── */}
       {showViewModal && selectedLeave && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full sm:w-[450px] rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold mb-5" style={{ fontFamily: "Inter" }}>Leave Details</h3>
+          <div className="bg-white w-full sm:w-[550px] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-[#F9FAFB] rounded-t-2xl">
+              <h3 className="text-lg font-extrabold text-gray-900 uppercase tracking-tight" style={{ fontFamily: "Poppins" }}>
+                Leave Application Details
+              </h3>
+              <button 
+                onClick={() => { setShowViewModal(false); setSelectedLeave(null); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
 
-            <div className="space-y-3">
-              {[
-                ["Requester",  selectedLeave.name],
-                ["Leave Type", selectedLeave.type],
-                ["From",       selectedLeave.from],
-                ["To",         selectedLeave.to],
-                ["Reason",     selectedLeave.reason],
-              ].map(([k, v]) => (
-                <div key={k} className="flex gap-2 text-sm">
-                  <span className="text-gray-500 font-medium w-28 shrink-0">{k}</span>
-                  <span className="text-black font-semibold">{v}</span>
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Grid info */}
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                {[
+                  ["Requester",  selectedLeave.name],
+                  ["Leave Type", selectedLeave.type],
+                  ["From Date",       selectedLeave.from],
+                  ["To Date",         selectedLeave.to],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold">{k}</span>
+                    <span className="text-sm text-black font-semibold">{v}</span>
+                  </div>
+                ))}
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold">Status</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
+                    {selectedLeave.status}
+                  </span>
                 </div>
-              ))}
-
-              {/* Status badge */}
-              <div className="flex gap-2 text-sm items-center">
-                <span className="text-gray-500 font-medium w-28 shrink-0">Status</span>
-                <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
-                  {selectedLeave.status?.charAt(0).toUpperCase() + selectedLeave.status?.slice(1).toLowerCase()}
-                </span>
               </div>
 
+              {/* Reason box */}
+              <div className="space-y-2">
+                <span className="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold">Detailed Reason</span>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700 leading-relaxed break-words whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {selectedLeave.reason}
+                </div>
+              </div>
+
+              {/* Admin Comments (if rejected) */}
               {selectedLeave.status?.toLowerCase() === "rejected" && selectedLeave.adminComments && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
-                  <p className="text-xs text-red-700">
-                    <span className="font-bold">Rejection Reason: </span>
-                    {selectedLeave.adminComments}
-                  </p>
+                <div className="space-y-2">
+                  <span className="text-[10px] text-red-400 uppercase tracking-[0.1em] font-bold">Admin Rejection Feedback</span>
+                  <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-800 italic leading-relaxed break-words whitespace-pre-wrap">
+                    "{selectedLeave.adminComments}"
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end mt-6">
-              <button onClick={() => { setShowViewModal(false); setSelectedLeave(null); }} className="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-semibold transition">Close</button>
+            {/* Modal Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex justify-end">
+              <button 
+                onClick={() => { setShowViewModal(false); setSelectedLeave(null); }} 
+                className="px-6 py-2.5 bg-black text-white hover:bg-gray-800 rounded-xl text-sm font-bold uppercase tracking-wider transition-all transform active:scale-95"
+              >
+                Close Details
+              </button>
             </div>
           </div>
         </div>
