@@ -562,9 +562,11 @@ const statusStyles = {
   pending:  "bg-orange-500 text-white",
   approved: "bg-green-600 text-white",
   rejected: "bg-red-600 text-white",
+  parent_approved: "bg-purple-600 text-white",
   Pending:  "bg-orange-500 text-white",
   Approved: "bg-green-600 text-white",
   Rejected: "bg-red-600 text-white",
+  Parent_approved: "bg-purple-600 text-white",
 };
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -856,7 +858,7 @@ export default function LeaveRequestsPage() {
           onClick={() => { setSelectedLeave(req); setShowViewModal(true); }} 
         />
         
-        {req.status?.toLowerCase() === "pending" && (
+        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") && (
           <>
             <IconButton 
               icon={<CheckCircle size={compact ? 16 : 18} />} 
@@ -996,8 +998,8 @@ export default function LeaveRequestsPage() {
                         <p className="text-xs text-gray-500 mt-0.5">{req.type}</p>
                       </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-lg font-semibold text-[10px] uppercase tracking-wider ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
-                      {req.status?.charAt(0).toUpperCase() + req.status?.slice(1).toLowerCase()}
+                    <span className={`px-2.5 py-1 rounded-lg font-semibold text-[10px] uppercase tracking-wider whitespace-nowrap ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
+                      {req.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                     </span>
                   </div>
 
@@ -1056,12 +1058,16 @@ export default function LeaveRequestsPage() {
                         <span className="font-medium">{req.to}</span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-semibold text-xs ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
-                          {req.status?.charAt(0).toUpperCase() + req.status?.slice(1).toLowerCase()}
+                        <span className={`inline-block min-w-[100px] text-center px-3 py-1 rounded-lg font-semibold text-xs whitespace-nowrap ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
+                          {req.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <ActionButtons req={req} compact />
+                        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") ? (
+                          <ActionButtons req={req} compact />
+                        ) : (
+                          <ActionButtons req={req} compact />
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1141,8 +1147,8 @@ export default function LeaveRequestsPage() {
                 ))}
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold">Status</span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
-                    {selectedLeave.status}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit whitespace-nowrap ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
+                    {selectedLeave.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                   </span>
                 </div>
               </div>
