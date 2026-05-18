@@ -96,7 +96,16 @@ const css = {
   activeTab: {
     color: T.accent,
     borderBottomColor: T.accent,
-  }
+  },
+  input: {
+    background: "#fff",
+    border: `1.5px solid ${T.accent}20`,
+    borderRadius: "14px",
+    padding: "10px 16px",
+    fontSize: "13px",
+    outline: "none",
+    transition: "all 0.2s ease",
+  },
 };
 
 const Attendance = () => {
@@ -130,8 +139,13 @@ const Attendance = () => {
 
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
-      const name = log.studentId?.studentName || log.employeeCode || "Unknown";
-      return name.toLowerCase().includes(searchTerm.toLowerCase());
+      const student = log.studentId;
+      const name = student ? `${student.firstName} ${student.lastName}` : (log.employeeCode || "Unknown");
+      const room = student?.roomBedNumber?.roomNo || "";
+      const searchStr = searchTerm.toLowerCase();
+      return name.toLowerCase().includes(searchStr) || 
+             (student?.studentId || "").toLowerCase().includes(searchStr) ||
+             room.toLowerCase().includes(searchStr);
     });
   }, [logs, searchTerm]);
 
@@ -237,19 +251,28 @@ const Attendance = () => {
                     <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td style={{ padding: "16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: "8px", background: T.accentLight, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>
-                            {activeTab === 'students' ? (log.studentId?.studentName?.charAt(0) || "?") : log.employeeCode?.charAt(0)}
+                          <div style={{ width: 32, height: 32, borderRadius: "8px", background: T.accentLight, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, overflow: "hidden" }}>
+                            {log.originalLog?.selfie ? (
+                              <img src={log.originalLog.selfie} alt="selfie" style={{ width: "100%", height: "100%", objectCover: "cover" }} />
+                            ) : (
+                              (log.studentId?.firstName?.charAt(0) || "?")
+                            )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 14 }}>{log.studentId?.studentName || "Employee " + log.employeeCode}</div>
+                            <div style={{ fontWeight: 700, fontSize: 14 }}>
+                              {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : `Employee ${log.employeeCode}`}
+                            </div>
                             <div style={{ fontSize: 11, color: T.textMuted }}>{log.studentId?.studentId || log.employeeCode}</div>
                           </div>
                         </div>
                       </td>
                       <td style={{ padding: "16px", fontSize: 13, color: T.text }}>
-                        {log.studentId?.roomBedNumber && typeof log.studentId.roomBedNumber === 'object'
-                          ? `${log.studentId.roomBedNumber.barcodeId} - ${log.studentId.roomBedNumber.roomNo}`
-                          : (log.studentId?.roomBedNumber || "N/A")}
+                        {log.studentId?.roomBedNumber ? (
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            <span style={{ fontWeight: 800 }}>Room {log.studentId.roomBedNumber.roomNo}</span>
+                            <span style={{ fontSize: "10px", color: T.textMuted }}>Bed: {log.studentId.roomBedNumber.barcodeId}</span>
+                          </div>
+                        ) : "N/A"}
                       </td>
                       <td style={{ padding: "16px" }}>
                         <span style={{ 
