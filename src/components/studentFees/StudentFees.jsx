@@ -230,15 +230,20 @@ const StudentFees = () => {
       student.roomType === "5" ? 4500 :
       student.roomType === "4" ? 5000 :
       student.roomType === "3" ? 5500 : 0;
+    
+    // ── Security Deposit (One-time) = 3 months fee ──────────────────────────
     const depositAmount = monthlyFee * 3;
 
-    // ── totalFees = monthlyFee (standard charge per student) ─────────────────
-    // If invoices exist, use the max(monthlyFee, invoiced sum) so extra charges
-    // (mess, maintenance etc.) are also counted. If no invoice yet, show monthlyFee.
+    // ── Hostel Fee (Every 3 months) = 3 months fee ──────────────────────────
+    const quarterlyFee = monthlyFee * 3;
+
+    // ── totalFees = depositAmount + quarterlyFee (Initial mandatory charge) ──
+    // If invoices exist, use the max(invoicedTotal, depositAmount + quarterlyFee)
+    // so extra charges (mess, maintenance etc.) are also counted correctly.
     const invoicedTotal = studentInvoices.reduce((s, i) => s + (i.amount || 0), 0);
     const totalFees = invoicedTotal > 0
-      ? Math.max(invoicedTotal, monthlyFee)
-      : monthlyFee;
+      ? Math.max(invoicedTotal, depositAmount + quarterlyFee)
+      : depositAmount + quarterlyFee;
 
     // ── paidFees = actual money received across all invoices ─────────────────
     // If an invoice is marked "paid" but paidAmount is 0/missing, fallback to invoice amount.
@@ -257,12 +262,11 @@ const StudentFees = () => {
       i => i.status !== "paid" && new Date(i.dueDate) < new Date()
     );
 
-    // ── Status: PAID only when full monthly fee is cleared ──────────────────
+    // ── Status: PAID only when full fees are cleared ─────────────────────────
     let status;
     if (monthlyFee === 0 && studentInvoices.length === 0) {
       status = "no_invoice";
     } else if (pendingFees <= 0) {
-      // paid only when totalFees (monthlyFee) fully covered
       status = "paid";
     } else if (isOverdue) {
       status = "overdue";
@@ -275,6 +279,7 @@ const StudentFees = () => {
       roomBedNumber: roomDisplay,
       studentName,
       monthlyFee,
+      quarterlyFee,
       depositAmount,
       totalFees,
       paidFees,
@@ -765,7 +770,7 @@ const StudentFees = () => {
             <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }} className="sf-table-min">
               <thead>
                 <tr>
-                  {["Student Identity", "Room/Bed", "Monthly Fee", "Total Billed", "Paid", "Outstanding", "Status", ""].map(h => (
+                  {["Student Identity", "Room/Bed", "Fee Structure", "Total Billed", "Paid", "Outstanding", "Status", ""].map(h => (
                     <th key={h} style={{
                       textAlign: "left", padding: "0 20px 12px",
                       fontSize: 11, fontWeight: 800, color: T.textMuted,
@@ -799,9 +804,17 @@ const StudentFees = () => {
                       <p style={{ fontSize: 11, color: T.textMuted, margin: 0 }}>Hostel Asset</p>
                     </td>
                     <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
-                      <p style={{ fontWeight: 800, color: T.accent, fontSize: 13, margin: 0 }}>{formatCurrency(s.monthlyFee)}</p>
-                      <p style={{ fontSize: 10, color: T.textMuted, margin: 0 }}>Standard Monthly</p>
-                      <p style={{ fontSize: 9, color: T.orange, fontWeight: 700, margin: 0, marginTop: 2 }}>Deposit: {formatCurrency(s.depositAmount)}</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontWeight: 800, color: T.accent, fontSize: 13 }}>{formatCurrency(s.quarterlyFee)}</span>
+                          <span style={{ fontSize: 10, background: T.accentLight, color: T.accentDark, padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Every 3 Months</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontWeight: 700, color: T.gold, fontSize: 12 }}>Deposit: {formatCurrency(s.depositAmount)}</span>
+                          <span style={{ fontSize: 10, background: T.goldLight, color: T.gold, padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>One-Time</span>
+                        </div>
+                        <span style={{ fontSize: 10, color: T.textMuted }}>Monthly Base: {formatCurrency(s.monthlyFee)}</span>
+                      </div>
                     </td>
                     <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
                       <p style={{ fontWeight: 800, color: T.text, fontSize: 13, margin: 0 }}>{formatCurrency(s.totalFees)}</p>
@@ -826,7 +839,7 @@ const StudentFees = () => {
                         </button>
                         <button style={{ ...css.btnPrimary, padding: "10px 18px" }} onClick={() => {
                           setSelectedStudentId(s._id);
-                          setInvoiceForm(f => ({ ...f, amount: s.monthlyFee > 0 ? String(s.monthlyFee) : "" }));
+                          setInvoiceForm(f => ({ ...f, amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }));
                           setShowGenerateModal(true);
                         }}>
                           <HiOutlinePlus size={16} /> Bill
@@ -873,7 +886,7 @@ const StudentFees = () => {
                   <button style={{ ...css.btnSecondary, flex: 1, justifyContent: "center" }} onClick={() => { setSelectedStudentId(s._id); setShowLedgerModal(true); }}>Statement</button>
                   <button style={{ ...css.btnPrimary, flex: 1, justifyContent: "center" }} onClick={() => {
                     setSelectedStudentId(s._id);
-                    setInvoiceForm(f => ({ ...f, amount: s.monthlyFee > 0 ? String(s.monthlyFee) : "" }));
+                    setInvoiceForm(f => ({ ...f, amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }));
                     setShowGenerateModal(true);
                   }}>New Bill</button>
                 </div>
@@ -946,7 +959,7 @@ const StudentFees = () => {
               {/* ── Show fee summary in header ── */}
               <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }} className="sf-modal-header-summary">
                 {[
-                  { label: "Monthly Fee", val: activeStudent.monthlyFee },
+                  { label: "3 Months Hostel Fee", val: activeStudent.quarterlyFee },
                   { label: "Security Deposit", val: activeStudent.depositAmount, isDeposit: true },
                   { label: "Already Paid", val: activeStudent.paidFees },
                   { label: "Outstanding", val: activeStudent.pendingFees },
@@ -1000,7 +1013,7 @@ const StudentFees = () => {
                       const type = e.target.value;
                       let amt = invoiceForm.amount;
                       if (type === "security_deposit") amt = String(activeStudent.depositAmount);
-                      else if (type === "hostel_fee") amt = String(activeStudent.monthlyFee);
+                      else if (type === "hostel_fee") amt = String(activeStudent.quarterlyFee);
                       setInvoiceForm({ ...invoiceForm, invoiceType: type, amount: amt });
                     }}
                   >
