@@ -562,9 +562,11 @@ const statusStyles = {
   pending:  "bg-orange-500 text-white",
   approved: "bg-green-600 text-white",
   rejected: "bg-red-600 text-white",
+  parent_approved: "bg-purple-600 text-white",
   Pending:  "bg-orange-500 text-white",
   Approved: "bg-green-600 text-white",
   Rejected: "bg-red-600 text-white",
+  Parent_approved: "bg-purple-600 text-white",
 };
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -856,7 +858,7 @@ export default function LeaveRequestsPage() {
           onClick={() => { setSelectedLeave(req); setShowViewModal(true); }} 
         />
         
-        {req.status?.toLowerCase() === "pending" && (
+        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") && (
           <>
             <IconButton 
               icon={<CheckCircle size={compact ? 16 : 18} />} 
@@ -983,16 +985,21 @@ export default function LeaveRequestsPage() {
             <p className="text-center py-8 text-gray-600">No leave requests found.</p>
           ) : (
             <div className="space-y-3">
-              {displayedRequests.map(req => (
+              {displayedRequests.map((req, index) => (
                 <div key={req.id} className="bg-white rounded-xl p-4 shadow-sm border border-black/10">
-                  {/* Header */}
+                  {/* Header with Sr No */}
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-bold text-sm">{req.name}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{req.type}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#4F8CCF]/10 text-[#4F8CCF] font-bold text-sm">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">{req.name}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{req.type}</p>
+                      </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-lg font-semibold text-[10px] uppercase tracking-wider ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
-                      {req.status?.charAt(0).toUpperCase() + req.status?.slice(1).toLowerCase()}
+                    <span className={`px-2.5 py-1 rounded-lg font-semibold text-[10px] uppercase tracking-wider whitespace-nowrap ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
+                      {req.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                     </span>
                   </div>
 
@@ -1022,7 +1029,7 @@ export default function LeaveRequestsPage() {
               <table className="min-w-full text-black text-sm">
                 <thead>
                   <tr className="bg-white">
-                    {["Requester Name", "Type", "Dates", "Status", "Actions"].map((h, i, arr) => (
+                    {["Sr No", "Requester Name", "Type", "Dates", "Status", "Actions"].map((h, i, arr) => (
                       <th key={h} className="px-4 py-3 text-center font-semibold relative" style={{ fontFamily: "Poppins" }}>
                         {h}
                         {i < arr.length - 1 && (
@@ -1035,11 +1042,14 @@ export default function LeaveRequestsPage() {
                 <tbody>
                   {displayedRequests.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-600">No leave requests found.</td>
+                      <td colSpan={6} className="text-center py-8 text-gray-600">No leave requests found.</td>
                     </tr>
                   )}
-                  {displayedRequests.map(req => (
+                  {displayedRequests.map((req, index) => (
                     <tr key={req.id} className="hover:bg-black/5 border-t border-black/10">
+                      <td className="px-4 py-3 text-center font-bold text-gray-700">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
                       <td className="px-4 py-3 text-center font-medium">{req.name}</td>
                       <td className="px-4 py-3 text-center">{req.type}</td>
                       <td className="px-4 py-3 text-center whitespace-nowrap text-sm">
@@ -1048,12 +1058,16 @@ export default function LeaveRequestsPage() {
                         <span className="font-medium">{req.to}</span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-block w-24 text-center px-3 py-1 rounded-lg font-semibold text-xs ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
-                          {req.status?.charAt(0).toUpperCase() + req.status?.slice(1).toLowerCase()}
+                        <span className={`inline-block min-w-[100px] text-center px-3 py-1 rounded-lg font-semibold text-xs whitespace-nowrap ${statusStyles[req.status] || "bg-gray-200 text-black"}`}>
+                          {req.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <ActionButtons req={req} compact />
+                        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") ? (
+                          <ActionButtons req={req} compact />
+                        ) : (
+                          <ActionButtons req={req} compact />
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1133,8 +1147,8 @@ export default function LeaveRequestsPage() {
                 ))}
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] text-gray-400 uppercase tracking-[0.1em] font-bold">Status</span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
-                    {selectedLeave.status}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit whitespace-nowrap ${statusStyles[selectedLeave.status] || "bg-gray-200 text-black"}`}>
+                    {selectedLeave.status?.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
                   </span>
                 </div>
               </div>
