@@ -140,6 +140,7 @@ const StatusBadge = ({ status }) => {
     paid: { bg: "#ECFDF5", color: "#059669", label: "Paid", icon: <HiOutlineCheckCircle /> },
     overdue: { bg: "#FEF2F2", color: "#DC2626", label: "Overdue", icon: <HiOutlineExclamationCircle /> },
     pending: { bg: "#FFFBEB", color: "#D97706", label: "Pending", icon: <HiOutlineClock /> },
+    pending_verification: { bg: "#EFF6FF", color: "#2563EB", label: "Verification Required", icon: <HiOutlineClock /> },
     no_invoice: { bg: "#F9FAFB", color: "#6B7280", label: "No Bill", icon: null },
   };
   const s = map[status] || map.no_invoice;
@@ -181,6 +182,9 @@ const StudentFees = () => {
     description: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [verifyingOCR, setVerifyingOCR] = useState(false);
+  const [ocrError, setOcrError] = useState(null);
+  const [ocrSuccess, setOcrSuccess] = useState(null);
   const selectedYear = new Date().getFullYear();
 
   useEffect(() => { fetchData(); }, []);
@@ -389,6 +393,39 @@ const StudentFees = () => {
       toast.error("Failed to update status");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAdminVerifyOCR = async (invoiceId, file) => {
+    if (!file) return;
+    setVerifyingOCR(true);
+    setOcrError(null);
+    setOcrSuccess(null);
+
+    const formData = new FormData();
+    formData.append("screenshot", file);
+
+    try {
+      toast.loading("Running OCR and matching UTR...", { id: "ocr-toast" });
+      const res = await api.post(`/api/adminauth/invoices/student/${invoiceId}/verify-ocr`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Payment verified successfully!", { id: "ocr-toast" });
+        setOcrSuccess(res.data.message);
+        setSelectedInvoice(null);
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("OCR matching error:", err);
+      const errMsg = err.response?.data?.message || "Failed to verify screenshot OCR";
+      setOcrError(errMsg);
+      toast.error(errMsg, { id: "ocr-toast" });
+    } finally {
+      setVerifyingOCR(false);
     }
   };
 
@@ -1219,7 +1256,7 @@ const StudentFees = () => {
       {/* ── Invoice Detail Modal ── */}
       {selectedInvoice && (
         <ModalOverlay onClose={() => setSelectedInvoice(null)}>
-          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 520, padding: 0, overflow: "hidden" }}>
+          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 520, maxHeight: "90vh", padding: 0, overflowY: "auto" }}>
             {/* Invoice Header */}
             <div style={{
               background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
@@ -1321,48 +1358,130 @@ const StudentFees = () => {
                     {/* Actions */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {selectedInvoice.status !== "paid" && invRemaining > 0 && (
-                        <div style={{ background: "#F9FAFB", padding: 16, borderRadius: 16, border: `1px solid ${T.border}` }}>
-                          <p style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-                            Record Payment
-                          </p>
-                          {/* ── FIX: controlled React state, no getElementById ── */}
-                          <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                            <div style={{ position: "relative", flex: 1 }}>
-                              <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: T.textMuted, fontWeight: 700 }}>₹</span>
-                              <input
-                                type="number"
-                                value={partialAmt}
-                                onChange={e => setPartialAmt(e.target.value)}
-                                placeholder="Amount"
-                                max={invRemaining}
-                                style={{ width: "100%", padding: "10px 10px 10px 28px", borderRadius: 12, border: `1.5px solid ${T.border}`, fontSize: 14, fontWeight: 700, outline: "none" }}
-                              />
+                        selectedInvoice.status === 'pending_verification' ? (
+                          <div style={{ background: "#F8FAF5", padding: 20, borderRadius: 20, border: `1.5px solid ${T.accent}40`, marginBottom: 8 }} className="sf-verification-panel animate-fade-in">
+                            <p style={{ fontSize: 12, fontWeight: 900, color: T.accent, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                              <span>🔒</span> UPI QR Double-Verification Required
+                            </p>
+                            
+                            <div style={{ background: "#fff", padding: 14, borderRadius: 14, border: `1px solid ${T.border}`, marginBottom: 16 }}>
+                              <p style={{ margin: "0 0 6px 0", color: T.textMuted, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Parent Submission Details</p>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
+                                <p style={{ margin: 0, fontWeight: 700, color: T.text }}>
+                                  Submitted UTR: <span style={{ color: "#C2410C", fontFamily: "monospace", fontSize: 13, fontWeight: 800 }}>{selectedInvoice.transactionId}</span>
+                                </p>
+                                {selectedInvoice.parentScreenshot && (
+                                  <div style={{ marginTop: 6 }}>
+                                    <p style={{ margin: "0 0 4px 0", fontSize: 11, fontWeight: 700, color: T.textMuted }}>Parent Payment Screenshot:</p>
+                                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                                      <div style={{ width: 80, height: 80, borderRadius: 8, overflow: "hidden", border: `1px solid ${T.border}`, background: "#F3F4F6", cursor: "zoom-in" }} onClick={() => window.open(`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`, '_blank')}>
+                                        <img 
+                                          src={`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`} 
+                                          alt="Parent Receipt" 
+                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                      </div>
+                                      <a 
+                                        href={`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        style={{ fontSize: 11, color: T.accent, fontWeight: 700, textDecoration: "underline" }}
+                                      >
+                                        Open full size image ↗
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <button
-                              style={{ ...css.btnPrimary, padding: "0 20px", fontSize: 13, borderRadius: 12 }}
-                              disabled={submitting}
-                              onClick={() => handleRecordPayment(selectedInvoice._id, partialAmt, "cash")}
-                            >
-                              {submitting ? "..." : "Record Cash"}
-                            </button>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                              <p style={{ margin: "0 0 2px 0", fontSize: 11, fontWeight: 800, color: T.text, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                Upload Bank credit SMS / Notification screenshot *
+                              </p>
+                              <div style={{ position: "relative" }}>
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  disabled={verifyingOCR}
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      handleAdminVerifyOCR(selectedInvoice._id, e.target.files[0]);
+                                    }
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px",
+                                    borderRadius: 14,
+                                    border: `1.5px dashed ${T.accent}50`,
+                                    background: "#fff",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    cursor: "pointer"
+                                  }}
+                                />
+                              </div>
+                              <p style={{ margin: 0, fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>
+                                💡 Upload the notification screenshot containing the credit reference message from your phone. The system will parse it, match the 12-digit UTR, and mark it as successful.
+                              </p>
+
+                              {verifyingOCR && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.accent, fontSize: 12, fontWeight: 800, marginTop: 4 }} className="animate-pulse">
+                                  <span>⏳</span> Running OCR engine & comparing UTRs...
+                                </div>
+                              )}
+
+                              {ocrError && (
+                                <div style={{ padding: 12, borderRadius: 12, background: "#FEF2F2", border: "1px solid #FCA5A5", color: "#B91C1C", fontSize: 11, fontWeight: 700, marginTop: 4, lineHeight: 1.4 }}>
+                                  ⚠️ {ocrError}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ display: "flex", gap: 10 }}>
-                            <button
-                              style={{ ...css.btnSecondary, flex: 1, justifyContent: "center", borderColor: T.green, color: T.green, fontSize: 12 }}
-                              disabled={submitting}
-                              onClick={() => handleMarkFullyPaid(selectedInvoice, "cash")}
-                            >
-                              Mark Fully Paid (Cash)
-                            </button>
-                            <button
-                              style={{ ...css.btnPrimary, flex: 1, justifyContent: "center", fontSize: 12 }}
-                              disabled={submitting}
-                              onClick={() => handleRazorpayPayment(selectedInvoice)}
-                            >
-                              Pay Online
-                            </button>
+                        ) : (
+                          <div style={{ background: "#F9FAFB", padding: 16, borderRadius: 16, border: `1px solid ${T.border}` }}>
+                            <p style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                              Record Payment
+                            </p>
+                            {/* ── FIX: controlled React state, no getElementById ── */}
+                            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                              <div style={{ position: "relative", flex: 1 }}>
+                                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: T.textMuted, fontWeight: 700 }}>₹</span>
+                                <input
+                                  type="number"
+                                  value={partialAmt}
+                                  onChange={e => setPartialAmt(e.target.value)}
+                                  placeholder="Amount"
+                                  max={invRemaining}
+                                  style={{ width: "100%", padding: "10px 10px 10px 28px", borderRadius: 12, border: `1.5px solid ${T.border}`, fontSize: 14, fontWeight: 700, outline: "none" }}
+                                />
+                              </div>
+                              <button
+                                style={{ ...css.btnPrimary, padding: "0 20px", fontSize: 13, borderRadius: 12 }}
+                                disabled={submitting}
+                                onClick={() => handleRecordPayment(selectedInvoice._id, partialAmt, "cash")}
+                              >
+                                {submitting ? "..." : "Record Cash"}
+                              </button>
+                            </div>
+                            <div style={{ display: "flex", gap: 10 }}>
+                              <button
+                                style={{ ...css.btnSecondary, flex: 1, justifyContent: "center", borderColor: T.green, color: T.green, fontSize: 12 }}
+                                disabled={submitting}
+                                onClick={() => handleMarkFullyPaid(selectedInvoice, "cash")}
+                              >
+                                Mark Fully Paid (Cash)
+                              </button>
+                              <button
+                                style={{ ...css.btnPrimary, flex: 1, justifyContent: "center", fontSize: 12 }}
+                                disabled={submitting}
+                                onClick={() => handleRazorpayPayment(selectedInvoice)}
+                              >
+                                Pay Online
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        )
                       )}
                       <button
                         style={{ ...css.btnSecondary, width: "100%", justifyContent: "center", border: "none", background: "transparent", color: T.textMuted }}
