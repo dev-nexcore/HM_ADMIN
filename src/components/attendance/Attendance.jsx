@@ -95,7 +95,7 @@ const css = {
   },
   activeTab: {
     color: T.accent,
-    borderBottomColor: T.accent,
+    borderBottom: `3px solid ${T.accent}`,
   },
   input: {
     background: "#fff",
@@ -114,6 +114,7 @@ const Attendance = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterDirection, setFilterDirection] = useState("ALL");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
@@ -140,14 +141,36 @@ const Attendance = () => {
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       const student = log.studentId;
-      const name = student ? `${student.firstName} ${student.lastName}` : (log.employeeCode || "Unknown");
-      const room = student?.roomBedNumber?.roomNo || "";
+      const staff = log.staffId;
+      
+      // Determine category: "students", "workers", "staff"
+      let category = "unknown";
+      if (student) {
+         category = student.isWorking ? "workers" : "students";
+      } else if (staff) {
+         category = "staff";
+      } else {
+         const code = log.employeeCode || "";
+         if (code.startsWith("STUW")) category = "workers";
+         else if (code.startsWith("EMP") || code.startsWith("STAFF")) category = "staff";
+         else if (code.startsWith("STU")) category = "students";
+         else category = "staff"; // fallback
+      }
+      
+      // Filter by active tab
+      if (activeTab !== category) return false;
+
+      // Filter by direction
+      if (filterDirection !== "ALL" && log.direction !== filterDirection) return false;
+
+      const name = student ? `${student.firstName} ${student.lastName}` : (staff ? `${staff.firstName} ${staff.lastName}` : (log.employeeCode || "Unknown"));
+      const room = student?.roomBedNumber?.roomNo || staff?.designation || "";
       const searchStr = searchTerm.toLowerCase();
       return name.toLowerCase().includes(searchStr) || 
-             (student?.studentId || "").toLowerCase().includes(searchStr) ||
+             (student?.studentId || staff?.staffId || "").toLowerCase().includes(searchStr) ||
              room.toLowerCase().includes(searchStr);
     });
-  }, [logs, searchTerm]);
+  }, [logs, searchTerm, activeTab, filterDirection]);
 
   return (
     <div style={css.page}>
@@ -161,13 +184,18 @@ const Attendance = () => {
           
           <div className="header-actions" style={{ display: "flex", gap: 12 }}>
              <div className="date-container" style={{ position: "relative" }}>
-              <HiOutlineCalendar size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+              <HiOutlineCalendar size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
               <input 
                 type="date" 
                 className="date-input"
-                style={{ ...css.btnSecondary, paddingLeft: 40, width: 180 }} 
+                style={{ ...css.input, paddingLeft: 40, width: 180, cursor: "pointer" }} 
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
+                onClick={e => {
+                  try {
+                    e.target.showPicker();
+                  } catch (err) {}
+                }}
               />
             </div>
             <button style={css.btnSecondary} className="action-btn" onClick={() => window.print()}>
@@ -182,10 +210,10 @@ const Attendance = () => {
         {stats && (
           <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
             {[
-              { label: "Total Strength", value: stats.totalStudents, icon: <HiOutlineUserGroup />, color: T.blue, bg: "#EBF5FF" },
-              { label: "Present Today", value: stats.presentToday, icon: <HiOutlineCheckCircle />, color: T.green, bg: "#F0FDF4" },
-              { label: "Absent / Leave", value: stats.absentToday, icon: <HiOutlineXCircle />, color: T.red, bg: "#FEF2F2" },
-              { label: "Check-ins Today", value: logs.filter(l => l.direction === 'IN').length, icon: <HiOutlineClock />, color: T.orange, bg: "#FFFBEB" },
+              { label: "Total Strength", value: activeTab === "students" ? stats.studentStats?.totalStudents : (activeTab === "workers" ? stats.workerStats?.totalWorkers : stats.staffStats?.totalStaff), icon: <HiOutlineUserGroup />, color: T.blue, bg: "#EBF5FF" },
+              { label: "Present Today", value: activeTab === "students" ? stats.studentStats?.presentToday : (activeTab === "workers" ? stats.workerStats?.presentToday : stats.staffStats?.presentToday), icon: <HiOutlineCheckCircle />, color: T.green, bg: "#F0FDF4" },
+              { label: "Absent / Leave", value: activeTab === "students" ? stats.studentStats?.absentToday : (activeTab === "workers" ? stats.workerStats?.absentToday : stats.staffStats?.absentToday), icon: <HiOutlineXCircle />, color: T.red, bg: "#FEF2F2" },
+              { label: "Check-ins Today", value: filteredLogs.filter(l => l.direction === 'IN').length, icon: <HiOutlineClock />, color: T.purple, bg: "#F3E8FF" },
             ].map((stat, i) => (
               <div key={i} style={{ ...css.glassCard, padding: "20px", display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ width: 48, height: 48, borderRadius: "14px", background: stat.bg, color: stat.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
@@ -209,6 +237,12 @@ const Attendance = () => {
               Student Attendance
             </div>
             <div 
+              style={{ ...css.tab, ...(activeTab === "workers" ? css.activeTab : {}) }}
+              onClick={() => setActiveTab("workers")}
+            >
+              Worker Attendance
+            </div>
+            <div 
               style={{ ...css.tab, ...(activeTab === "staff" ? css.activeTab : {}) }}
               onClick={() => setActiveTab("staff")}
             >
@@ -227,9 +261,19 @@ const Attendance = () => {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <button style={css.btnSecondary} className="filter-btn">
-              <HiOutlineFilter size={18} /> Filters
-            </button>
+            <div style={{ position: "relative" }}>
+              <HiOutlineFilter size={18} color={T.accent} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+              <select 
+                style={{ ...css.btnSecondary, paddingLeft: 38, appearance: "none", paddingRight: 24 }} 
+                className="filter-btn"
+                value={filterDirection}
+                onChange={e => setFilterDirection(e.target.value)}
+              >
+                <option value="ALL">All Directions</option>
+                <option value="IN">Check In (IN)</option>
+                <option value="OUT">Check Out (OUT)</option>
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -241,9 +285,12 @@ const Attendance = () => {
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                    {["Name / ID", "Room/Dept", "Direction", "Time", "Device", "Method"].map(h => (
-                      <th key={h} style={{ textAlign: "left", padding: "16px", fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</th>
-                    ))}
+                    <th style={css.th}>Name / ID</th>
+                    <th style={css.th}>{activeTab === "staff" ? "Designation" : "Room"}</th>
+                    <th style={css.th}>Direction</th>
+                    <th style={css.th}>Time</th>
+                    <th style={css.th}>Device</th>
+                    <th style={css.th}>Method</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,26 +300,25 @@ const Attendance = () => {
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 32, height: 32, borderRadius: "8px", background: T.accentLight, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, overflow: "hidden" }}>
                             {log.originalLog?.selfie ? (
-                              <img src={log.originalLog.selfie} alt="selfie" style={{ width: "100%", height: "100%", objectCover: "cover" }} />
+                              <img src={log.originalLog.selfie} alt="selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
-                              (log.studentId?.firstName?.charAt(0) || "?")
+                              (log.studentId?.firstName?.charAt(0) || log.staffId?.firstName?.charAt(0) || "?")
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 14 }}>
-                              {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : `Employee ${log.employeeCode}`}
+                            <div style={{ fontWeight: 500, color: T.text }}>
+                              {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : (log.staffId ? `${log.staffId.firstName} ${log.staffId.lastName}` : (log.employeeCode || "Unknown"))}
                             </div>
-                            <div style={{ fontSize: 11, color: T.textMuted }}>{log.studentId?.studentId || log.employeeCode}</div>
+                            <div style={{ fontSize: 12, color: T.textLight }}>
+                              ID: {log.studentId?.studentId || log.staffId?.staffId || log.employeeCode}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "16px", fontSize: 13, color: T.text }}>
-                        {log.studentId?.roomBedNumber ? (
-                          <div style={{ display: "flex", flexDirection: "column" }}>
-                            <span style={{ fontWeight: 800 }}>Room {log.studentId.roomBedNumber.roomNo}</span>
-                            <span style={{ fontSize: "10px", color: T.textMuted }}>Bed: {log.studentId.roomBedNumber.barcodeId}</span>
-                          </div>
-                        ) : "N/A"}
+                      <td style={css.td}>
+                        <span style={css.roomBadge}>
+                          {activeTab === "staff" ? (log.staffId?.designation || "Staff") : (log.studentId?.roomBedNumber?.roomNo || "-")}
+                        </span>
                       </td>
                       <td style={{ padding: "16px" }}>
                         <span style={{ 
