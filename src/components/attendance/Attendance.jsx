@@ -116,6 +116,8 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDirection, setFilterDirection] = useState("ALL");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedUserLogs, setSelectedUserLogs] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchAttendance();
@@ -129,7 +131,21 @@ const Attendance = () => {
         api.get("/api/adminauth/attendance/stats", { params: { date: selectedDate } })
       ]);
       
-      if (logsRes.data.success) setLogs(logsRes.data.logs);
+      if (logsRes.data.success) {
+        // Deduplicate logs that happen within the same minute for the same user and direction
+        const uniqueLogs = [];
+        const seenLogs = new Set();
+        logsRes.data.logs.forEach(l => {
+           const id = l.studentId?.studentId || l.staffId?.staffId || l.employeeCode || 'Unknown';
+           const timeStr = new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+           const key = `${id}-${timeStr}-${l.direction}`;
+           if (!seenLogs.has(key)) {
+             seenLogs.add(key);
+             uniqueLogs.push(l);
+           }
+        });
+        setLogs(uniqueLogs);
+      }
       if (statsRes.data.success) setStats(statsRes.data.stats);
     } catch (error) {
       toast.error("Failed to fetch attendance data");
@@ -171,6 +187,23 @@ const Attendance = () => {
              room.toLowerCase().includes(searchStr);
     });
   }, [logs, searchTerm, activeTab, filterDirection]);
+
+  const groupedFilteredLogs = useMemo(() => {
+    const groups = {};
+    filteredLogs.forEach(log => {
+      const id = log.studentId?.studentId || log.staffId?.staffId || log.employeeCode || `Unknown-${Math.random()}`;
+      if (!groups[id]) {
+        groups[id] = [];
+      }
+      groups[id].push(log);
+    });
+    
+    const uniqueLogs = Object.values(groups).map(group => {
+      group.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      return group[0];
+    });
+    return uniqueLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [filteredLogs]);
 
   return (
     <div style={css.page}>
@@ -278,7 +311,7 @@ const Attendance = () => {
 
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>Loading attendance logs...</div>
-          ) : filteredLogs.length === 0 ? (
+          ) : groupedFilteredLogs.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>No logs for this date</div>
           ) : (
             <div className="table-container">
@@ -291,10 +324,11 @@ const Attendance = () => {
                     <th style={css.th}>Time</th>
                     <th style={css.th}>Device</th>
                     <th style={css.th}>Method</th>
+                    <th style={css.th}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLogs.map((log, i) => (
+                  {groupedFilteredLogs.map((log, i) => (
                     <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td style={{ padding: "16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -302,22 +336,22 @@ const Attendance = () => {
                             {log.originalLog?.selfie ? (
                               <img src={log.originalLog.selfie} alt="selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
-                              (log.studentId?.firstName?.charAt(0) || log.staffId?.firstName?.charAt(0) || "?")
+                              (log.studentId?.firstName?.charAt(0) || log.staffId?.firstName?.charAt(0) || log.wardenId?.firstName?.charAt(0) || "?")
                             )}
                           </div>
                           <div>
                             <div style={{ fontWeight: 500, color: T.text }}>
-                              {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : (log.staffId ? `${log.staffId.firstName} ${log.staffId.lastName}` : (log.employeeCode || "Unknown"))}
+                              {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : (log.staffId ? `${log.staffId.firstName} ${log.staffId.lastName}` : (log.wardenId ? `${log.wardenId.firstName} ${log.wardenId.lastName}` : (log.employeeCode || "Unknown")))}
                             </div>
                             <div style={{ fontSize: 12, color: T.textLight }}>
-                              ID: {log.studentId?.studentId || log.staffId?.staffId || log.employeeCode}
+                              ID: {log.studentId?.studentId || log.staffId?.staffId || log.wardenId?.wardenId || log.employeeCode}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td style={css.td}>
                         <span style={css.roomBadge}>
-                          {activeTab === "staff" ? (log.staffId?.designation || "Staff") : (log.studentId?.roomBedNumber?.roomNo || "-")}
+                          {activeTab === "staff" ? (log.staffId?.designation || (log.wardenId ? "Warden" : "Staff")) : (log.studentId?.roomBedNumber?.roomNo || "-")}
                         </span>
                       </td>
                       <td style={{ padding: "16px" }}>
@@ -343,6 +377,32 @@ const Attendance = () => {
                       <td style={{ padding: "16px", fontSize: 12, fontWeight: 600 }}>
                         {log.verificationType}
                       </td>
+                      <td style={{ padding: "16px" }}>
+                        {(() => {
+                           const id = log.studentId?.studentId || log.staffId?.staffId || log.wardenId?.wardenId || log.employeeCode;
+                           if (!id) return null;
+                           const userLogs = logs.filter(l => (l.studentId?.studentId || l.staffId?.staffId || l.wardenId?.wardenId || l.employeeCode) === id);
+                           if (userLogs.length > 1) {
+                             return (
+                               <button 
+                                 onClick={() => {
+                                   const sorted = [...userLogs].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                                   setSelectedUserLogs(sorted);
+                                   setShowModal(true);
+                                 }}
+                                 style={{ 
+                                   background: "transparent", color: T.accent, border: `1px solid ${T.accent}`,
+                                   borderRadius: "8px", padding: "6px 12px", fontSize: "12px", cursor: "pointer",
+                                   fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "4px"
+                                 }}
+                               >
+                                 View All <span style={{ background: T.accentLight, padding: "2px 6px", borderRadius: "4px", fontSize: "10px" }}>{userLogs.length}</span>
+                               </button>
+                             );
+                           }
+                           return null;
+                        })()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -351,6 +411,68 @@ const Attendance = () => {
           )}
         </div>
       </div>
+
+      {showModal && selectedUserLogs && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
+          backgroundColor: "rgba(0,0,0,0.4)", zIndex: 9999,
+          display: "flex", justifyContent: "center", alignItems: "center",
+          backdropFilter: "blur(4px)"
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: "24px", padding: "32px", width: "90%", maxWidth: "600px",
+            maxHeight: "80vh", overflowY: "auto",
+            boxShadow: `0 20px 40px ${T.shadow}`
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "20px", color: T.text, fontWeight: 800 }}>Check-in History</h3>
+                <p style={{ margin: "4px 0 0", fontSize: "14px", color: T.textMuted }}>
+                  {selectedUserLogs[0].studentId ? `${selectedUserLogs[0].studentId.firstName} ${selectedUserLogs[0].studentId.lastName}` : 
+                  (selectedUserLogs[0].staffId ? `${selectedUserLogs[0].staffId.firstName} ${selectedUserLogs[0].staffId.lastName}` : 
+                  (selectedUserLogs[0].employeeCode || "Unknown"))}
+                </p>
+              </div>
+              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0 }}>
+                <HiOutlineXCircle size={28} />
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {selectedUserLogs.map((l, idx) => (
+                <div key={idx} style={{ 
+                  display: "flex", justifyContent: "space-between", alignItems: "center", 
+                  padding: "16px", borderRadius: "16px", border: `1px solid ${T.border}`,
+                  background: l.direction === 'IN' ? "#F8FAF5" : "#FEF2F2"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <span style={{ 
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      width: "40px", height: "40px", borderRadius: "12px",
+                      background: l.direction === 'IN' ? "#D1FAE5" : "#FEE2E2",
+                      color: l.direction === 'IN' ? "#059669" : "#DC2626"
+                    }}>
+                      {l.direction === 'IN' ? <HiOutlineArrowNarrowRight size={20} /> : <HiOutlineArrowNarrowLeft size={20} />}
+                    </span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: "15px", color: T.text }}>
+                        {new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <div style={{ fontSize: "12px", color: T.textMuted, display: "flex", alignItems: "center", gap: "4px", marginTop: "4px" }}>
+                        <HiOutlineLocationMarker size={14} /> {l.deviceName}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: T.textMuted }}>
+                    {l.verificationType}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @media (max-width: 768px) {
           .page-header {

@@ -1348,6 +1348,21 @@ import axios from "axios";
 
 const BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL;
 
+const generateTimeOptions = () => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hh = h.toString().padStart(2, '0');
+      const mm = m.toString().padStart(2, '0');
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12 = h % 12 || 12;
+      const display = `${h12.toString().padStart(2, '0')}:${mm} ${ampm}`;
+      options.push({ value: `${hh}:${mm}`, display });
+    }
+  }
+  return options;
+};
+
 const StaffAllotment = () => {
   const [activeTab, setActiveTab] = useState("warden");
   const [activeFilter, setActiveFilter] = useState(null);
@@ -1361,6 +1376,7 @@ const StaffAllotment = () => {
     emailId: "",
     designation: "",
     otherDesignation: "",
+    shiftStart: "",
     shiftEnd: "",
     salary: "",
   });
@@ -1390,7 +1406,7 @@ const StaffAllotment = () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/wardenauth/all`);
       const formattedData = response.data.wardens.map((warden) => ({
-        id: warden.id,
+        id: warden._id,
         firstName: warden.firstName,
         lastName: warden.lastName,
         name: `${warden.firstName} ${warden.lastName}`,
@@ -1610,7 +1626,7 @@ const staffStats = [
         salary: Number(formData.salary),
       };
       const response = await axios.post(
-        `${BASE_URL}/api/staffauth/register-staff`,
+        `${BASE_URL}/api/adminauth/register-staff`,
         payload
       );
       setSuccessMsg(response.data.message);
@@ -1893,12 +1909,17 @@ const staffStats = [
               )}
               <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
                 placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
-              <div className="flex items-center gap-2">
-                <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange}
-                  className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
-                <Clock size={18} />
-                <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange}
-                  className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
+              <div className="flex gap-3">
+                <div className="relative w-full">
+                  <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">Start Time</span>
+                  <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                    className="w-full h-[45px] px-2 sm:px-3 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
+                </div>
+                <div className="relative w-full">
+                  <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">End Time</span>
+                  <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                    className="w-full h-[45px] px-2 sm:px-3 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
+                </div>
               </div>
             </div>
             <div className="mt-6 text-center">
@@ -1997,11 +2018,17 @@ const staffStats = [
                       onChange={handleInputChange} placeholder="Specify Designation"
                       className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
                   )}
-                  <div className="flex gap-2">
-                    <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange}
-                      className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
-                    <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange}
-                      className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
+                  <div className="flex gap-3">
+                    <div className="relative w-full">
+                      <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">Start Time</span>
+                      <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                        className="w-full h-[45px] px-2 sm:px-3 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
+                    </div>
+                    <div className="relative w-full">
+                      <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">End Time</span>
+                      <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                        className="w-full h-[45px] px-2 sm:px-3 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
+                    </div>
                   </div>
                 </>
               )}

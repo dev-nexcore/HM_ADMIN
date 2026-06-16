@@ -53,7 +53,7 @@ const buildPayslipHTML = (salary, monthName, year) => {
   const netWords      = numberToWords(salary?.netSalary || 0);
   const payDate       = salary?.paymentDate ? new Date(salary.paymentDate).toLocaleDateString('en-GB') : 'Processing';
   const accountDisplay = salary?.accountNumber ? `XXXX${salary.accountNumber.slice(-4)}` : 'N/A';
-  const empId         = `#${salary?._id?.slice(-6).toUpperCase() || 'N/A'}`;
+  const empId         = salary?.employeeId || `#${salary?._id?.slice(-6).toUpperCase() || 'N/A'}`;
   const basicFmt      = (salary?.basicSalary || 0).toLocaleString('en-IN');
   const netFmt        = (salary?.netSalary   || 0).toLocaleString('en-IN');
   const sigName       = salary?.processedByName && !salary.processedByName.includes('undefined')
@@ -303,7 +303,8 @@ export default function StaffSalaryContent() {
 
   const [formData, setFormData] = useState({
     staffId: "", amountToPay: "", paymentMethod: "bank_transfer",
-    allowances: 0, deductions: 0, bankName: "", accountNumber: "", ifscCode: ""
+    allowances: 0, otherDeductions: 0, bankName: "", accountNumber: "", ifscCode: "",
+    baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0, absentDeduction: 0
   })
 
   const months = [
@@ -335,6 +336,63 @@ export default function StaffSalaryContent() {
     } catch { console.error("Failed to fetch staff") }
   }
 
+  const handleStaffSelect = async (staffId) => {
+    const staff = staffs.find(s => s._id === staffId);
+    if (!staff) {
+      setFormData(prev => ({ ...prev, staffId: "", amountToPay: "", baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0 }));
+      return;
+    }
+    
+    // Set loading state for amount
+    setFormData(prev => ({ ...prev, staffId, amountToPay: "Calculating..." }));
+
+    try {
+      const start = new Date(selectedYear, selectedMonth - 1, 1);
+      const end = new Date(selectedYear, selectedMonth, 0); // Last day
+      const daysInMonth = end.getDate();
+      
+      const res = await api.get(`/api/adminauth/attendance/logs`, {
+        params: {
+          startDate: start.toISOString(),
+          endDate: end.toISOString()
+        }
+      });
+      
+      const logs = res.data.logs || [];
+      const staffLogs = logs.filter(log => (
+        log.staffId?._id === staffId || 
+        log.studentId?._id === staffId || 
+        log.wardenId?._id === staffId
+      ));
+      
+      const uniqueDates = new Set();
+      staffLogs.forEach(log => {
+        const dateStr = new Date(log.timestamp).toISOString().split('T')[0];
+        uniqueDates.add(dateStr);
+      });
+      const presentDays = uniqueDates.size;
+      
+      const baseSalary = staff.salary || 0;
+      const absentDays = Math.max(0, daysInMonth - presentDays);
+      const absentDeduction = Math.round((baseSalary / daysInMonth) * absentDays);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        amountToPay: baseSalary || 0,
+        baseSalaryRaw: baseSalary,
+        presentDays: presentDays,
+        daysInMonth: daysInMonth,
+        absentDeduction: absentDeduction,
+        otherDeductions: 0
+      }));
+      toast.success(`Calculated based on attendance: ${presentDays}/${daysInMonth} days`);
+    } catch (err) {
+      console.error("Failed to calculate attendance salary", err);
+      setFormData(prev => ({ ...prev, amountToPay: staff.salary || 0, baseSalaryRaw: staff.salary || 0, absentDeduction: 0 }));
+      toast.error("Failed to calculate attendance, using flat salary");
+    }
+  }
+
   const handleProcessSalary = async (e) => {
     e.preventDefault()
     if (!formData.staffId || !formData.amountToPay) { toast.error("Please fill all required fields"); return; }
@@ -346,7 +404,7 @@ export default function StaffSalaryContent() {
         year: selectedYear,
         basicSalary: Number(formData.amountToPay),
         allowances: Number(formData.allowances),
-        deductions: Number(formData.deductions),
+        deductions: Number(formData.otherDeductions) + Number(formData.absentDeduction),
         paymentMethod: formData.paymentMethod,
         bankName: formData.bankName,
         accountNumber: formData.accountNumber,
@@ -357,7 +415,7 @@ export default function StaffSalaryContent() {
         toast.success("Salary processed successfully")
         setShowProcessSalary(false)
         fetchSalaries()
-        setFormData({ staffId:"", amountToPay:"", paymentMethod:"bank_transfer", allowances:0, deductions:0, bankName:"", accountNumber:"", ifscCode:"" })
+        setFormData({ staffId:"", amountToPay:"", paymentMethod:"bank_transfer", allowances:0, otherDeductions:0, bankName:"", accountNumber:"", ifscCode:"", absentDeduction: 0, presentDays: 0, daysInMonth: 0 })
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process salary")
@@ -696,7 +754,7 @@ export default function StaffSalaryContent() {
           {[
             { Icon: HiOutlineUser,         label: "Name",        value: salary?.staffName?.toUpperCase(), mono: false },
             { Icon: HiOutlineOfficeBuilding,label: "Designation", value: salary?.role || 'Warden',        mono: false },
-            { Icon: HiOutlineHashtag,      label: "Emp ID",      value: `#${salary?._id?.slice(-6).toUpperCase()}`, mono: true  },
+            { Icon: HiOutlineHashtag,      label: "Emp ID",      value: salary?.employeeId || `#${salary?._id?.slice(-6).toUpperCase()}`, mono: true  },
           ].map(({ Icon, label, value, mono }) => (
             <div key={label} className="flex items-center gap-2 text-xs mb-2.5">
               <Icon size={14} className="text-gray-300 shrink-0" />
@@ -900,10 +958,7 @@ export default function StaffSalaryContent() {
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Staff Member</label>
                   <select value={formData.staffId}
-                    onChange={e => {
-                      const staff = staffs.find(s => s._id === e.target.value)
-                      setFormData(prev => ({ ...prev, staffId: e.target.value, amountToPay: staff?.salary || "" }))
-                    }}
+                    onChange={e => handleStaffSelect(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all"
                     required>
                     <option value="">Choose member...</option>
@@ -916,13 +971,49 @@ export default function StaffSalaryContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">Base Salary (₹)</label>
-                  <div className="relative">
-                    <HiOutlineCurrencyRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                    <input type="number" value={formData.amountToPay}
-                      onChange={e => setFormData(prev => ({ ...prev, amountToPay: e.target.value }))}
-                      className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all"
-                      required />
+                  <div className="relative flex flex-col gap-1">
+                    <div className="relative">
+                      <HiOutlineCurrencyRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <input type={formData.amountToPay === "Calculating..." ? "text" : "number"} value={formData.amountToPay}
+                        onChange={e => setFormData(prev => ({ ...prev, amountToPay: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50"
+                        disabled={formData.amountToPay === "Calculating..."}
+                        required />
+                    </div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Allowances (₹)</label>
+                    <input type="number" value={formData.allowances}
+                      onChange={e => setFormData(prev => ({ ...prev, allowances: e.target.value }))}
+                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Other Deductions (₹)</label>
+                    <input type="number" value={formData.otherDeductions}
+                      onChange={e => setFormData(prev => ({ ...prev, otherDeductions: e.target.value }))}
+                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                  </div>
+                </div>
+                
+                {formData.daysInMonth > 0 && (
+                  <div className="bg-red-50 rounded-xl p-3 border border-red-100 flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-red-800 uppercase tracking-wide">
+                      Absent Deduction ({Math.max(0, formData.daysInMonth - formData.presentDays)} Days)
+                    </span>
+                    <span className="text-sm font-black text-red-700">
+                      -₹{formData.absentDeduction}
+                    </span>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 flex justify-between items-center mt-2">
+                  <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">Net Salary</span>
+                  <span className="text-lg font-black text-blue-700">
+                    ₹{((Number(formData.amountToPay) || 0) + (Number(formData.allowances) || 0) - (Number(formData.otherDeductions) || 0) - (Number(formData.absentDeduction) || 0)).toLocaleString('en-IN')}
+                  </span>
                 </div>
               </div>
 
