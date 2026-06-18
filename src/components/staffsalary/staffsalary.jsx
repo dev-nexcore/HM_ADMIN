@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import api from "../../lib/api"
-import { toast } from "react-hot-toast"
+import toast, { Toaster } from "react-hot-toast"
 import {
   HiOutlineUsers,
   HiOutlineCurrencyRupee,
@@ -304,7 +304,7 @@ export default function StaffSalaryContent() {
   const [formData, setFormData] = useState({
     staffId: "", amountToPay: "", paymentMethod: "bank_transfer",
     allowances: 0, otherDeductions: 0, bankName: "", accountNumber: "", ifscCode: "",
-    baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0, absentDeduction: 0
+    baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0, absentDeduction: 0, paidHolidays: 0, actualAttendance: 0, absentDaysRaw: 0, isCalculating: false
   })
 
   const months = [
@@ -339,42 +339,62 @@ export default function StaffSalaryContent() {
   const handleStaffSelect = async (staffId) => {
     const staff = staffs.find(s => s._id === staffId);
     if (!staff) {
-      setFormData(prev => ({ ...prev, staffId: "", amountToPay: "", baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0 }));
+      setFormData(prev => ({ ...prev, staffId: "", amountToPay: "", baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0, isCalculating: false }));
       return;
     }
     
     // Set loading state for amount
-    setFormData(prev => ({ ...prev, staffId, amountToPay: "Calculating..." }));
+    setFormData(prev => ({ ...prev, staffId, amountToPay: staff.salary || 0, baseSalaryRaw: staff.salary || 0, isCalculating: true }));
 
     try {
       const start = new Date(selectedYear, selectedMonth - 1, 1);
       const end = new Date(selectedYear, selectedMonth, 0); // Last day
       const daysInMonth = end.getDate();
       
-      const res = await api.get(`/api/adminauth/attendance/logs`, {
-        params: {
-          startDate: start.toISOString(),
-          endDate: end.toISOString()
-        }
-      });
+      // Fetch attendance logs and holidays concurrently
+      const [logsRes, holidaysRes] = await Promise.all([
+        api.get(`/api/adminauth/attendance/logs`, {
+          params: { startDate: start.toISOString(), endDate: end.toISOString() }
+        }),
+        api.get(`/api/adminauth/holidays`, {
+          params: { month: selectedMonth, year: selectedYear }
+        })
+      ]);
       
-      const logs = res.data.logs || [];
+      const logs = logsRes.data.logs || [];
+      const holidays = holidaysRes.data.holidays || [];
+
       const staffLogs = logs.filter(log => (
         log.staffId?._id === staffId || 
         log.studentId?._id === staffId || 
         log.wardenId?._id === staffId
       ));
       
-      const uniqueDates = new Set();
+      const attendanceDates = new Set();
+      
+      // 1. Add days the staff was present
       staffLogs.forEach(log => {
         const dateStr = new Date(log.timestamp).toISOString().split('T')[0];
-        uniqueDates.add(dateStr);
+        attendanceDates.add(dateStr);
       });
+
+      const holidayDates = new Set();
+      // 2. Add holidays (counted as paid days)
+      holidays.forEach(holiday => {
+        const hDate = new Date(holiday.date);
+        // Add if it falls within the current month/year view
+        if (hDate.getMonth() + 1 === selectedMonth && hDate.getFullYear() === selectedYear) {
+           const dateStr = hDate.toISOString().split('T')[0];
+           holidayDates.add(dateStr);
+        }
+      });
+
+      const uniqueDates = new Set([...attendanceDates, ...holidayDates]);
       const presentDays = uniqueDates.size;
       
       const baseSalary = staff.salary || 0;
-      const absentDays = Math.max(0, daysInMonth - presentDays);
-      const absentDeduction = Math.round((baseSalary / daysInMonth) * absentDays);
+      const absentDaysRaw = Math.max(0, daysInMonth - presentDays);
+      const absentDeduction = Math.round((baseSalary / daysInMonth) * absentDaysRaw);
       
       setFormData(prev => ({ 
         ...prev, 
@@ -383,12 +403,16 @@ export default function StaffSalaryContent() {
         presentDays: presentDays,
         daysInMonth: daysInMonth,
         absentDeduction: absentDeduction,
-        otherDeductions: 0
+        otherDeductions: 0,
+        paidHolidays: holidayDates.size,
+        actualAttendance: attendanceDates.size,
+        absentDaysRaw: absentDaysRaw,
+        isCalculating: false
       }));
-      toast.success(`Calculated based on attendance: ${presentDays}/${daysInMonth} days`);
+      toast.success(`Calculated: ${presentDays} paid days (${holidays.length} holidays included)`);
     } catch (err) {
       console.error("Failed to calculate attendance salary", err);
-      setFormData(prev => ({ ...prev, amountToPay: staff.salary || 0, baseSalaryRaw: staff.salary || 0, absentDeduction: 0 }));
+      setFormData(prev => ({ ...prev, amountToPay: staff.salary || 0, baseSalaryRaw: staff.salary || 0, absentDeduction: 0, isCalculating: false }));
       toast.error("Failed to calculate attendance, using flat salary");
     }
   }
@@ -410,6 +434,10 @@ export default function StaffSalaryContent() {
         accountNumber: formData.accountNumber,
         ifscCode: formData.ifscCode,
         tax: 0, pf: 0, loanDeduction: 0,
+        totalDays: formData.daysInMonth,
+        attendanceDays: formData.actualAttendance,
+        paidHolidays: formData.paidHolidays,
+        unpaidLeaves: formData.absentDaysRaw
       })
       if (res.data.success) {
         toast.success("Salary processed successfully")
@@ -783,6 +811,29 @@ export default function StaffSalaryContent() {
         </div>
       </div>
 
+      {/* ── Attendance Summary ── */}
+      <div className="border-2 border-gray-100 rounded-xl p-4 sm:p-5 mt-6 mb-6 bg-gray-50/30">
+        <h4 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Attendance Breakdown</h4>
+        <div className="grid grid-cols-2 xs:grid-cols-4 gap-4 text-center">
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Days</p>
+            <p className="text-lg font-black text-gray-900">{salary?.totalDays || 0}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Attendance</p>
+            <p className="text-lg font-black text-gray-900">{salary?.attendanceDays || 0}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Paid Holidays</p>
+            <p className="text-lg font-black text-green-700">{salary?.paidHolidays || 0}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Absences</p>
+            <p className="text-lg font-black text-red-600">{salary?.unpaidLeaves || 0}</p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Earnings Table ── */}
       <div className="border-2 border-gray-100 rounded-xl overflow-hidden">
         <table className="w-full text-xs">
@@ -856,6 +907,7 @@ export default function StaffSalaryContent() {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-3 sm:p-6 lg:p-8 overflow-x-hidden">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
 
         {/* Page Header */}
@@ -974,10 +1026,10 @@ export default function StaffSalaryContent() {
                   <div className="relative flex flex-col gap-1">
                     <div className="relative">
                       <HiOutlineCurrencyRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                      <input type={formData.amountToPay === "Calculating..." ? "text" : "number"} value={formData.amountToPay}
+                      <input type="number" value={formData.amountToPay}
                         onChange={e => setFormData(prev => ({ ...prev, amountToPay: e.target.value }))}
                         className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50"
-                        disabled={formData.amountToPay === "Calculating..."}
+                        disabled={formData.isCalculating}
                         required />
                     </div>
                   </div>
@@ -998,14 +1050,44 @@ export default function StaffSalaryContent() {
                   </div>
                 </div>
                 
-                {formData.daysInMonth > 0 && (
-                  <div className="bg-red-50 rounded-xl p-3 border border-red-100 flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-red-800 uppercase tracking-wide">
-                      Absent Deduction ({Math.max(0, formData.daysInMonth - formData.presentDays)} Days)
-                    </span>
-                    <span className="text-sm font-black text-red-700">
-                      -₹{formData.absentDeduction}
-                    </span>
+                {formData.isCalculating && (
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 flex items-center justify-center animate-pulse">
+                    <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">Calculating Attendance...</span>
+                  </div>
+                )}
+                
+                {!formData.isCalculating && formData.daysInMonth > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                    <div className="flex justify-between items-center text-xs border-b border-gray-200 pb-2">
+                      <span className="font-bold text-gray-500 uppercase tracking-widest">Total Days</span>
+                      <span className="font-black text-gray-900">{formData.daysInMonth}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-xs pt-1">
+                      <span className="font-bold text-gray-500 uppercase tracking-widest">Attendance</span>
+                      <span className="font-black text-gray-900">{formData.actualAttendance}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-green-600 uppercase tracking-widest">Paid Holidays</span>
+                      <span className="font-black text-green-700">{formData.paidHolidays || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs border-b border-gray-200 pb-3">
+                      <span className="font-bold text-blue-600 uppercase tracking-widest">Total Paid Days</span>
+                      <span className="font-black text-blue-700">{formData.presentDays}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-xs pt-1">
+                      <span className="font-bold text-gray-500 uppercase tracking-widest">Leaves</span>
+                      <span className="font-black text-gray-900 whitespace-nowrap">0</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-red-600 pt-1">
+                      <span className="font-bold uppercase tracking-widest">Absences</span>
+                      <span className="font-black text-red-700 whitespace-nowrap">{formData.absentDaysRaw}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-red-600 border-t border-red-100 pt-2 mt-1">
+                      <span className="font-bold uppercase tracking-widest">Deduction</span>
+                      <span className="font-black text-red-700 whitespace-nowrap">-₹{formData.absentDeduction}</span>
+                    </div>
                   </div>
                 )}
 
@@ -1048,7 +1130,7 @@ export default function StaffSalaryContent() {
                 className="flex-1 px-6 py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all order-2 sm:order-1">
                 Cancel
               </button>
-              <button type="submit" disabled={processing}
+              <button type="submit" disabled={processing || formData.isCalculating}
                 className="flex-1 px-6 py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all disabled:opacity-50 order-1 sm:order-2">
                 {processing ? "Processing..." : "Confirm & Process Payout"}
               </button>
