@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 import { FaRupeeSign } from "react-icons/fa";
 import { 
   TrendingUp, 
@@ -43,6 +44,8 @@ const Dashboard = () => {
     pendingComplaints: 0
   });
 
+  const [agentData, setAgentData] = useState(null);
+
   useEffect(() => {
     const fetchQuickStats = async () => {
       try {
@@ -53,6 +56,23 @@ const Dashboard = () => {
       }
     };
     fetchQuickStats();
+  }, []);
+
+  // Real-time socket listener for attendance updates
+  useEffect(() => {
+    const socketURL = process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:5000";
+    const socket = io(`${socketURL}/admin`);
+
+    socket.on('NEW_ATTENDANCE', async () => {
+      try {
+        const { data } = await api.get('/api/adminauth/todays-checkin-checkout');
+        setCheckInOutData(data);
+      } catch (error) {
+        console.error("Failed to fetch check-in/out status on socket update:", error);
+      }
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const [activeFilter, setActiveFilter] = useState("All");
@@ -111,10 +131,21 @@ const Dashboard = () => {
       }
     };
 
+    const fetchBiometricStatus = async () => {
+      try {
+        const { data } = await api.get(`/api/adminauth/attendance/biometric-status`);
+        setAgentData(data);
+      } catch (error) {
+        console.error("Failed to fetch biometric status:", error);
+        setAgentData({ status: 'Offline', devices: [] });
+      }
+    };
+
     fetchCheckInOutStatus();
     fetchBedOccupancyStatus();
     fetchFinancialSummary();
     fetchActivities();
+    fetchBiometricStatus();
   }, []);
 
   return (
@@ -123,7 +154,36 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
         <div className="flex items-center">
           <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
-          <h2 className="text-2xl font-bold text-black">Dashboard</h2>
+          <h2 className="text-2xl font-bold text-black flex items-center">
+            Dashboard
+            {agentData && (
+              <div className="flex gap-2 ml-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                  agentData.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    agentData.status === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                  }`}></span>
+                  Agent: {agentData.status}
+                </span>
+
+                {agentData.devices && agentData.devices.length > 0 && (
+                  <>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                      agentData.devices[0].softwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      Software: {agentData.devices[0].softwareStatus || 'Offline'}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                      agentData.devices[0].hardwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      Device: {agentData.devices[0].hardwareStatus || 'Offline'}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </h2>
         </div>
         {activeFilter !== "All" && (
           <button 

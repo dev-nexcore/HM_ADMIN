@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { io } from "socket.io-client";
 import {
   HiOutlineSearch,
   HiOutlineFilter,
@@ -118,10 +119,29 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedUserLogs, setSelectedUserLogs] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  useEffect(() => {
+    const socketURL = process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:5000";
+    const socket = io(`${socketURL}/admin`);
+
+    socket.on('connect', () => {
+      console.log('Connected to real-time attendance feed');
+    });
+
+    socket.on('NEW_ATTENDANCE', (data) => {
+      toast.success(`${data.count} new attendance log(s) received`);
+      setRefetchTrigger(prev => prev + 1);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     fetchAttendance();
-  }, [selectedDate]);
+  }, [selectedDate, refetchTrigger]);
 
   const fetchAttendance = async () => {
     try {
