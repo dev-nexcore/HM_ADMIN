@@ -4,6 +4,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   HiOutlineSearch,
   HiOutlineFilter,
@@ -166,8 +168,6 @@ const StudentFees = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [advFilters, setAdvFilters] = useState({ roomNumber: "", feeType: "all", minAmount: "", maxAmount: "" });
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -206,9 +206,11 @@ const StudentFees = () => {
     }
   };
 
+
+
   // ── Derived fee stats ─────────────────────────────────────────────────────
   const studentFeeStats = useMemo(() => students.map(student => {
-    const studentInvoices = invoices.filter(inv =>
+    const allStudentInvoices = invoices.filter(inv =>
       inv.studentId?._id?.toString() === student._id?.toString() ||
       inv.studentId?.toString() === student._id?.toString()
     );
@@ -229,53 +231,60 @@ const StudentFees = () => {
       `${student.firstName || ""} ${student.lastName || ""}`.trim() ||
       "Unknown Student";
 
-    // ── Monthly fee based on room type ──────────────────────────────────────
     const monthlyFee =
       student.roomType === "5" ? 4500 :
       student.roomType === "4" ? 5000 :
       student.roomType === "3" ? 5500 : 0;
     
-    // ── Security Deposit (One-time) = 3 months fee ──────────────────────────
     const depositAmount = monthlyFee * 3;
-
-    // ── Hostel Fee (Every 3 months) = 3 months fee ──────────────────────────
     const quarterlyFee = monthlyFee * 3;
 
-    // ── totalFees = depositAmount + quarterlyFee (Initial mandatory charge) ──
-    // If invoices exist, use the max(invoicedTotal, depositAmount + quarterlyFee)
-    // so extra charges (mess, maintenance etc.) are also counted correctly.
-    const invoicedTotal = studentInvoices.reduce((s, i) => s + (i.amount || 0), 0);
-    const totalFees = invoicedTotal > 0
-      ? Math.max(invoicedTotal, depositAmount + quarterlyFee)
-      : depositAmount + quarterlyFee;
+    const invoicedTotalAllTime = allStudentInvoices.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalFeesAllTime = invoicedTotalAllTime > 0 ? Math.max(invoicedTotalAllTime, depositAmount + quarterlyFee) : depositAmount + quarterlyFee;
 
-    // ── paidFees = actual money received across all invoices ─────────────────
-    // If an invoice is marked "paid" but paidAmount is 0/missing, fallback to invoice amount.
-    const paidFees = studentInvoices.reduce((s, i) => {
-      if (i.status === "paid") {
-        return s + (i.paidAmount > 0 ? i.paidAmount : i.amount || 0);
-      }
+    const paidFeesAllTime = allStudentInvoices.reduce((s, i) => {
+      if (i.status === "paid") return s + (i.paidAmount > 0 ? i.paidAmount : i.amount || 0);
       return s + (i.paidAmount || 0);
     }, 0);
 
-    // ── pendingFees = totalFees − what was actually paid ─────────────────────
-    const pendingFees = Math.max(0, totalFees - paidFees);
+    const pendingFeesAllTime = Math.max(0, totalFeesAllTime - paidFeesAllTime);
 
-    // ── overdue: any non-paid invoice past due date ──────────────────────────
-    const isOverdue = studentInvoices.some(
+    let totalFees = totalFeesAllTime;
+    let paidFees = paidFeesAllTime;
+    let pendingFees = pendingFeesAllTime;
+    let studentInvoices = allStudentInvoices;
+
+    const isOverdue = allStudentInvoices.some(
       i => i.status !== "paid" && new Date(i.dueDate) < new Date()
     );
 
-    // ── Status: PAID only when full fees are cleared ─────────────────────────
     let status;
-    if (monthlyFee === 0 && studentInvoices.length === 0) {
+    if (monthlyFee === 0 && allStudentInvoices.length === 0) {
       status = "no_invoice";
-    } else if (pendingFees <= 0) {
+    } else if (pendingFeesAllTime <= 0) {
       status = "paid";
     } else if (isOverdue) {
       status = "overdue";
     } else {
       status = "pending";
+    }
+
+    // ── Billing Cycle Calculation ──────────────────────────────────────────────
+    let billingCycleDisplay = "N/A";
+    if (student.admissionDate) {
+      let cycleStart = new Date(student.admissionDate);
+      let cycleEnd = new Date(cycleStart);
+      cycleEnd.setMonth(cycleEnd.getMonth() + 3);
+      
+      const now = new Date();
+      while (cycleEnd < now) {
+        cycleStart = new Date(cycleEnd);
+        cycleEnd = new Date(cycleStart);
+        cycleEnd.setMonth(cycleEnd.getMonth() + 3);
+      }
+      
+      const formatD = (d) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
+      billingCycleDisplay = `${formatD(cycleStart)} - ${formatD(cycleEnd)}`;
     }
 
     return {
@@ -285,6 +294,7 @@ const StudentFees = () => {
       monthlyFee,
       quarterlyFee,
       depositAmount,
+      billingCycleDisplay,
       totalFees,
       paidFees,
       pendingFees,
@@ -305,12 +315,8 @@ const StudentFees = () => {
       s.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.roomBedNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-    const matchesRoom = !advFilters.roomNumber || s.roomBedNumber?.toLowerCase().includes(advFilters.roomNumber.toLowerCase());
-    const matchesFeeType = advFilters.feeType === "all" || s.allInvoices.some(i => i.invoiceType === advFilters.feeType);
-    const matchesMin = !advFilters.minAmount || s.pendingFees >= Number(advFilters.minAmount);
-    const matchesMax = !advFilters.maxAmount || s.pendingFees <= Number(advFilters.maxAmount);
-    return matchesSearch && matchesStatus && matchesRoom && matchesFeeType && matchesMin && matchesMax;
-  }), [studentFeeStats, searchTerm, statusFilter, advFilters]);
+    return matchesSearch && matchesStatus;
+  }), [studentFeeStats, searchTerm, statusFilter]);
 
   // ── Generate Invoice ──────────────────────────────────────────────────────
   const handleGenerateInvoice = async (e) => {
@@ -651,13 +657,25 @@ const StudentFees = () => {
   const invoiceRemaining = (inv) =>
     Math.max(0, (inv.amount || 0) - (inv.paidAmount || 0));
 
-  const isAdvFiltered = advFilters.roomNumber || advFilters.feeType !== "all" || advFilters.minAmount || advFilters.maxAmount;
+  const globalStats = useMemo(() => {
+    let pending = 0;
+    let overdue = 0;
+    let collected = 0;
+
+    studentFeeStats.forEach(x => {
+      if (x.status === "pending") pending += x.pendingFees;
+      if (x.status === "overdue") overdue += x.pendingFees;
+      collected += x.paidFees;
+    });
+    return { pending, overdue, collected, totalDues: pending + overdue };
+  }, [studentFeeStats]);
 
   const statsData = [
-    { label: "Total Dues", value: studentFeeStats.reduce((s, x) => s + x.pendingFees, 0), icon: MdOutlinePendingActions, color: T.orange, bg: "#FFFBEB" },
-    { label: "Collected", value: studentFeeStats.reduce((s, x) => s + x.paidFees, 0), icon: MdOutlinePayments, color: T.green, bg: "#ECFDF5" },
-    { label: "Overdue Amount", value: studentFeeStats.reduce((s, x) => s + (x.status === "overdue" ? x.pendingFees : 0), 0), icon: HiOutlineExclamationCircle, color: T.red, bg: "#FEF2F2" },
-    { label: "Accounts", value: studentFeeStats.length, icon: FaHistory, color: T.accent, bg: T.accentLight, isCount: true },
+    { label: "Total Dues", value: globalStats.totalDues, icon: MdOutlinePendingActions, color: T.orange, bg: "#FFFBEB" },
+    { label: "Pending Amount", value: globalStats.pending, icon: HiOutlineClock, color: T.gold, bg: T.goldLight },
+    { label: "Collected", value: globalStats.collected, icon: MdOutlinePayments, color: T.green, bg: "#ECFDF5" },
+    { label: "Overdue Amount", value: globalStats.overdue, icon: HiOutlineExclamationCircle, color: T.red, bg: "#FEF2F2" },
+    { label: "Accounts", value: filteredStudents.length, icon: FaHistory, color: T.accent, bg: T.accentLight, isCount: true },
   ];
 
   return (
@@ -708,13 +726,13 @@ const StudentFees = () => {
           min-width: 1000px;
         }
       `}</style>
-
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
 
         {/* ── Header ── */}
         <header style={{
           display: "flex", justifyContent: "space-between", alignItems: "flex-end",
-          marginBottom: 40, flexWrap: "wrap", gap: 20
+          marginBottom: 40, flexWrap: "wrap", gap: 20,
+          position: "relative", zIndex: 100
         }} className="sf-fade-up sf-header-flex">
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
@@ -733,25 +751,8 @@ const StudentFees = () => {
               KGF Hostel Management • {selectedYear} Academic Session
             </p>
           </div>
-
-          <div style={{
-            display: "flex", background: "#fff", padding: 4, borderRadius: 18,
-            boxShadow: `0 4px 12px ${T.shadow}`, border: `1px solid ${T.border}`
-          }} className="sf-filter-tabs">
-            {["all", "pending", "overdue", "paid"].map((s) => (
-              <button key={s} onClick={() => setStatusFilter(s)} style={{
-                padding: "10px 20px", borderRadius: 14, fontSize: 12, fontWeight: 800,
-                textTransform: "uppercase", letterSpacing: "0.05em", border: "none", cursor: "pointer",
-                transition: "all 0.2s ease", background: statusFilter === s ? T.accent : "transparent",
-                color: statusFilter === s ? "#fff" : T.textMuted,
-                boxShadow: statusFilter === s ? `0 4px 12px ${T.accent}30` : "none",
-                whiteSpace: "nowrap"
-              }}>
-                {s}
-              </button>
-            ))}
-          </div>
         </header>
+
 
         {/* ── Stat Cards ── */}
         <div style={{
@@ -785,21 +786,26 @@ const StudentFees = () => {
 
         {/* ── Student Table ── */}
         <div style={css.glassCard} className="sf-fade-up">
-          <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }} className="sf-search-row">
-            <div style={{ position: "relative", flex: 1, minWidth: 300 }} className="sf-search-box">
+          <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap", background: "#F9FAFB", padding: 16, borderRadius: 20, border: `1px solid ${T.border}` }} className="sf-search-row">
+            <div style={{ position: "relative", flex: "1 1 250px", minWidth: 250 }} className="sf-search-box">
               <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
               <input
                 placeholder="Search students by name, ID or room..."
-                style={{ ...css.input, paddingLeft: 48 }}
+                style={{ ...css.input, paddingLeft: 48, background: "#fff", border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <button style={{ ...css.btnSecondary, width: "auto" }} onClick={() => setShowAdvancedFilters(true)} className="sf-search-box">
-              <HiOutlineFilter size={18} />
-              Advanced Filters
-              {isAdvFiltered && <div style={{ width: 6, height: 6, background: T.accent, borderRadius: "50%" }} />}
-            </button>
+            <select 
+              style={{ ...css.input, flex: "0 1 auto", width: "auto", minWidth: 140, cursor: "pointer", background: "#fff", border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", fontWeight: 700, color: T.textMuted, textTransform: "uppercase", fontSize: 12, letterSpacing: "0.05em" }}
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+              <option value="paid">Paid</option>
+            </select>
           </div>
 
           {/* Desktop Table */}
@@ -807,7 +813,7 @@ const StudentFees = () => {
             <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }} className="sf-table-min">
               <thead>
                 <tr>
-                  {["Student Identity", "Room/Bed", "Fee Structure", "Total Billed", "Paid", "Outstanding", "Status", ""].map(h => (
+                  {["Student Identity", "Room/Bed", "Billing Cycle", "Fee Structure", "Total Billed", "Paid", "Outstanding", "Status", ""].map(h => (
                     <th key={h} style={{
                       textAlign: "left", padding: "0 20px 12px",
                       fontSize: 11, fontWeight: 800, color: T.textMuted,
@@ -841,10 +847,13 @@ const StudentFees = () => {
                       <p style={{ fontSize: 11, color: T.textMuted, margin: 0 }}>Hostel Asset</p>
                     </td>
                     <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
+                      <p style={{ fontWeight: 800, color: T.text, fontSize: 13, margin: 0 }}>Quarterly</p>
+                      <p style={{ fontSize: 11, color: T.textMuted, margin: 0, marginTop: 4, fontWeight: 700 }}>{s.billingCycleDisplay}</p>
+                    </td>
+                    <td style={{ padding: "16px 20px", background: "#fff", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontWeight: 800, color: T.accent, fontSize: 13 }}>{formatCurrency(s.quarterlyFee)}</span>
-                          <span style={{ fontSize: 10, background: T.accentLight, color: T.accentDark, padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Every 3 Months</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontWeight: 700, color: T.gold, fontSize: 12 }}>Deposit: {formatCurrency(s.depositAmount)}</span>
@@ -933,55 +942,7 @@ const StudentFees = () => {
         </div>
       </div>
 
-      {/* ── Advanced Filters Modal ── */}
-      {showAdvancedFilters && (
-        <ModalOverlay onClose={() => setShowAdvancedFilters(false)}>
-          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 420 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 40, height: 40, background: T.goldLight, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <HiOutlineFilter size={20} color={T.gold} />
-                </div>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: T.text, margin: 0 }}>Refine Search</h3>
-              </div>
-              <button onClick={() => setShowAdvancedFilters(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: 12, padding: "8px", cursor: "pointer" }}>
-                <HiOutlineX size={20} color={T.textMuted} />
-              </button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <ModalField label="Room Specification">
-                <input style={css.input} placeholder="e.g. 101, Wing A"
-                  value={advFilters.roomNumber}
-                  onChange={e => setAdvFilters({ ...advFilters, roomNumber: e.target.value })} />
-              </ModalField>
-              <ModalField label="Fee Category">
-                <select style={css.input} value={advFilters.feeType} onChange={e => setAdvFilters({ ...advFilters, feeType: e.target.value })}>
-                  <option value="all">All Categories</option>
-                  <option value="hostel_fee">Hostel Fee</option>
-                  <option value="mess_fee">Mess Fee</option>
-                  <option value="security_deposit">Security Deposit</option>
-                  <option value="maintenance_fee">Maintenance</option>
-                </select>
-              </ModalField>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <ModalField label="Min Amount">
-                  <input style={css.input} type="number" placeholder="₹ 0" value={advFilters.minAmount} onChange={e => setAdvFilters({ ...advFilters, minAmount: e.target.value })} />
-                </ModalField>
-                <ModalField label="Max Amount">
-                  <input style={css.input} type="number" placeholder="₹ Max" value={advFilters.maxAmount} onChange={e => setAdvFilters({ ...advFilters, maxAmount: e.target.value })} />
-                </ModalField>
-              </div>
-              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                <button type="button" style={{ ...css.btnSecondary, flex: 1, justifyContent: "center" }}
-                  onClick={() => { setAdvFilters({ roomNumber: "", feeType: "all", minAmount: "", maxAmount: "" }); setShowAdvancedFilters(false); }}>
-                  Reset
-                </button>
-                <button style={css.btnPrimary} onClick={() => setShowAdvancedFilters(false)}>Apply Filters</button>
-              </div>
-            </div>
-          </div>
-        </ModalOverlay>
-      )}
+
 
       {/* ── Generate Invoice Modal ── */}
       {showGenerateModal && activeStudent && (

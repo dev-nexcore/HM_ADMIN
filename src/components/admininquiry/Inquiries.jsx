@@ -10,10 +10,14 @@ import {
   Calendar, 
   CheckCircle, 
   Clock, 
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
   User, 
   Trash2,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  XCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -22,6 +26,14 @@ const Inquiries = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [inquiryToDelete, setInquiryToDelete] = useState(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   useEffect(() => {
     fetchInquiries();
@@ -55,10 +67,15 @@ const Inquiries = () => {
     }
   };
 
-  const deleteInquiry = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inquiry?')) return;
+  const deleteInquiry = (id) => {
+    setInquiryToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!inquiryToDelete) return;
     try {
-      const res = await api.delete(`/api/inquiries/${id}`);
+      const res = await api.delete(`/api/inquiries/${inquiryToDelete}`);
       if (res.data.success) {
         toast.success('Inquiry deleted');
         fetchInquiries();
@@ -66,6 +83,9 @@ const Inquiries = () => {
     } catch (error) {
       console.error('Error deleting inquiry:', error);
       toast.error('Failed to delete inquiry');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setInquiryToDelete(null);
     }
   };
 
@@ -76,6 +96,12 @@ const Inquiries = () => {
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredInquiries.length / itemsPerPage);
+  const currentInquiries = filteredInquiries.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -122,8 +148,9 @@ const Inquiries = () => {
           <button 
             onClick={fetchInquiries}
             className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+            title="Refresh Inquiries"
           >
-            <Clock className="w-4 h-4 text-slate-600" />
+            <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -140,9 +167,10 @@ const Inquiries = () => {
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No inquiries found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {filteredInquiries.map((item) => (
-            <div key={item._id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 flex flex-col min-h-[500px]">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {currentInquiries.map((item) => (
+              <div key={item._id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 flex flex-col min-h-[500px]">
               {/* Status Badge */}
               <div className={`absolute top-8 right-8 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(item.status)}`}>
                 {item.status}
@@ -197,7 +225,10 @@ const Inquiries = () => {
                 </div>
 
                 {item.message && (
-                  <div className="mt-4 p-5 bg-slate-50 rounded-3xl relative italic">
+                  <div 
+                    className="mt-4 p-5 bg-slate-50 rounded-3xl relative italic max-h-32 overflow-y-auto"
+                    style={{ scrollbarWidth: 'thin' }}
+                  >
                     <p className="text-[13px] text-slate-500 font-medium leading-relaxed">"{item.message}"</p>
                   </div>
                 )}
@@ -219,6 +250,13 @@ const Inquiries = () => {
                   >
                     <ExternalLink size={18} />
                   </button>
+                  <button 
+                    onClick={() => updateStatus(item._id, 'rejected')}
+                    className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                    title="Mark as Rejected"
+                  >
+                    <XCircle size={18} />
+                  </button>
                 </div>
                 <button 
                   onClick={() => deleteInquiry(item._id)}
@@ -229,6 +267,80 @@ const Inquiries = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-6 gap-4">
+            <p className="text-sm text-slate-500 font-medium text-center sm:text-left">
+              Showing <span className="font-bold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * itemsPerPage, filteredInquiries.length)}</span> of <span className="font-bold text-slate-900">{filteredInquiries.length}</span> inquiries
+            </p>
+            <div className="flex gap-2 flex-wrap justify-center sm:justify-end">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-1 flex-wrap justify-center">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                      currentPage === i + 1 
+                        ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' 
+                        : 'text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-500 mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Inquiry</h3>
+              <p className="text-sm text-slate-500 mb-6">
+                Are you sure you want to delete this inquiry? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setInquiryToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-rose-500/30"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

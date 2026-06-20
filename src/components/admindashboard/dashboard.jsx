@@ -10,6 +10,8 @@ import {
   LogIn, 
   LogOut, 
   UserPlus, 
+  Users,
+  UserCheck,
   Megaphone, 
   CreditCard, 
   Calendar,
@@ -41,7 +43,10 @@ const Dashboard = () => {
 
   const [quickStats, setQuickStats] = useState({
     pendingLeaves: 0,
-    pendingComplaints: 0
+    pendingComplaints: 0,
+    totalStudents: 0,
+    totalWorkers: 0,
+    totalParents: 0
   });
 
   const [agentData, setAgentData] = useState(null);
@@ -340,42 +345,54 @@ const Dashboard = () => {
         {loadingActivities ? (
           <div className="flex justify-center py-6 text-gray-500">Loading activities...</div>
         ) : activities.length > 0 ? (
-          activities
-            .filter((activity) => {
-              if (activeFilter === "All") return true;
-              
-              const desc = activity.description?.toLowerCase() || "";
-              const action = activity.action?.toLowerCase() || "";
-              
-              if (activeFilter === "Today's Check-In") {
-                return action.includes("check_in") || desc.includes("check in") || desc.includes("checked in");
-              }
-              if (activeFilter === "Today's Check-Outs") {
-                return action.includes("check_out") || desc.includes("check out") || desc.includes("checked out");
-              }
-              if (activeFilter === "Total Revenue" || activeFilter === "Pending Payments") {
-                return action.includes("payment") || action.includes("fee") || action.includes("invoice");
-              }
-              if (activeFilter === "Occupied Beds" || activeFilter === "Available Beds") {
-                return action.includes("bed") || action.includes("room") || action.includes("inventory");
-              }
-              
-              return true; // fallback
-            })
-            .map((activity) => (
-              <div key={activity._id} className="flex flex-col sm:flex-row justify-between p-3 hover:bg-gray-50 rounded-lg transition border-b border-gray-50 last:border-0">
-                <div>
-                  <p className="text-black font-medium">{activity.description || `${activity.action} by ${activity.user}`}</p>
-                  <p className="text-xs text-gray-400 mt-1">{activity.user} • {activity.target || "System"}</p>
+          <>
+            {activities
+              .filter((activity) => {
+                if (activeFilter === "All") return true;
+                
+                const desc = activity.description?.toLowerCase() || "";
+                const action = activity.action?.toLowerCase() || "";
+                
+                if (activeFilter === "Today's Check-In") {
+                  return action.includes("check_in") || desc.includes("check in") || desc.includes("checked in");
+                }
+                if (activeFilter === "Today's Check-Outs") {
+                  return action.includes("check_out") || desc.includes("check out") || desc.includes("checked out");
+                }
+                if (activeFilter === "Total Revenue" || activeFilter === "Pending Payments") {
+                  return action.includes("payment") || action.includes("fee") || action.includes("invoice");
+                }
+                if (activeFilter === "Occupied Beds" || activeFilter === "Available Beds") {
+                  return action.includes("bed") || action.includes("room") || action.includes("inventory");
+                }
+                
+                return true; // fallback
+              })
+              .map((activity) => (
+                <div key={activity._id} className="flex flex-col sm:flex-row justify-between p-3 hover:bg-gray-50 rounded-lg transition border-b border-gray-50 last:border-0">
+                  <div>
+                    <p className="text-black font-medium">{activity.description || `${activity.action} by ${activity.user}`}</p>
+                    <p className="text-xs text-gray-400 mt-1">{activity.user} • {activity.target || "System"}</p>
+                  </div>
+                  <p className="text-gray-500 mt-1 sm:mt-0 font-medium text-sm whitespace-nowrap">
+                    {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="block sm:inline sm:ml-2 text-xs text-gray-400">
+                      {new Date(activity.timestamp).toLocaleDateString()}
+                    </span>
+                  </p>
                 </div>
-                <p className="text-gray-500 mt-1 sm:mt-0 font-medium text-sm whitespace-nowrap">
-                  {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  <span className="block sm:inline sm:ml-2 text-xs text-gray-400">
-                    {new Date(activity.timestamp).toLocaleDateString()}
-                  </span>
-                </p>
+            ))}
+            {activeFilter === "All" && activities.length >= 10 && (
+              <div className="mt-4 pt-2 text-center border-t border-gray-100">
+                <a 
+                  href="/audit" 
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 text-[#4F8CCF] font-bold rounded-full transition-all border border-gray-200 hover:border-[#4F8CCF]/30"
+                >
+                  View more activity <ArrowRight size={16} />
+                </a>
               </div>
-          ))
+            )}
+          </>
         ) : (
           <div className="text-center py-8 text-gray-500 italic">
             No recent activities found in the system.

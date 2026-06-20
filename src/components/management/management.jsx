@@ -134,6 +134,7 @@ const StudentManagement = () => {
   const [availableRoomNumbers, setAvailableRoomNumbers] = useState([]);
   const [students, setStudents] = useState([]);
   const [studentsWithoutParents, setStudentsWithoutParents] = useState([]);
+  const [bedData, setBedData] = useState({ totalBeds: 0, occupiedBeds: 0, availableBeds: 0 });
   const [errors, setErrors] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -172,20 +173,13 @@ const StudentManagement = () => {
   const itemsPerPage = 8;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = {
-    total: students.length,
-    paid: students.filter((s) => s.feeStatus === "Paid").length,
-    pending: students.filter((s) => ["Pending", "Unpaid", "Partial"].includes(s.feeStatus)).length,
-    assigned: students.filter((s) => s.room && s.room !== "Not Assigned").length,
-    unassigned: students.filter((s) => !s.room || s.room === "Not Assigned").length,
-  };
-
   const STAT_CARDS = [
-    { key: "All",           label: "Total Students", value: stats.total,      accent: "#4F8CCF", icon: Icons.total },
-    { key: "Paid Fees",     label: "Paid Fees",       value: stats.paid,       accent: "#22C55E", icon: Icons.paid },
-    { key: "Pending Fees",  label: "Pending Fees",    value: stats.pending,    accent: "#FF9D00", icon: Icons.pending },
-    { key: "Room Assigned", label: "Room Assigned",   value: stats.assigned,   accent: "#8B5CF6", icon: Icons.assigned },
-    { key: "Not Assigned",  label: "Not Assigned",    value: stats.unassigned, accent: "#EF4444", icon: Icons.unassigned },
+    { key: "Total Students",  label: "Total Students", value: students.filter(s => !s.isWorking).length, accent: "#4F8CCF", icon: Icons.total, total: students.length },
+    { key: "Total Workers",   label: "Total Workers",  value: students.filter(s => s.isWorking).length, accent: "#FF9D00", icon: Icons.pending, total: students.length },
+    { key: "Total Parents",   label: "Total Parents",  value: parents.length, accent: "#22C55E", icon: Icons.paid, total: parents.length },
+    { key: "Total Beds",      label: "Total Beds",     value: bedData.totalBeds, accent: "#6366F1", icon: Icons.total, total: bedData.totalBeds },
+    { key: "Occupied Beds",   label: "Occupied Beds",  value: bedData.occupiedBeds, accent: "#8B5CF6", icon: Icons.assigned, total: bedData.totalBeds },
+    { key: "Available Beds",  label: "Available Beds", value: bedData.availableBeds, accent: "#EF4444", icon: Icons.unassigned, total: bedData.totalBeds },
   ];
 
   useEffect(() => {
@@ -251,6 +245,7 @@ const StudentManagement = () => {
   const fetchStudentsWithoutParentsAPI = async () => { try { return (await api.get(`/api/adminauth/students-without-parents`)).data; } catch(e) { throw e.response?.data; } };
   const fetchAvailableRoomsAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-beds`)).data; } catch(e) { throw e.response?.data; } };
   const fetchAvailableRoomsNumbersAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-rooms`)).data; } catch(e) { throw e.response?.data; } };
+  const fetchBedOccupancyAPI = async () => { try { return (await api.get(`/api/adminauth/bed-occupancy-status`)).data; } catch(e) { throw e.response?.data; } };
   const fetchRoomDetailsAPI = async (id) => { try { return (await api.get(`/api/adminauth/inventory/${id}`)).data; } catch(e) { return null; } };
   const fetchParentsAPI = async () => { try { return (await api.get(`/api/adminauth/parents`)).data; } catch(e) { throw e.response?.data; } };
   const deleteParentAPI = async (id) => { try { return (await api.delete(`/api/adminauth/delete-parent/${id}`)).data; } catch(e) { throw e.response?.data; } };
@@ -299,6 +294,8 @@ const StudentManagement = () => {
         setAvailableRooms((await fetchAvailableRoomsAPI()).availableBeds || []);
         setAvailableRoomNumbers((await fetchAvailableRoomsNumbersAPI()).availableRooms || []);
         setStudentsWithoutParents((await fetchStudentsWithoutParentsAPI()).students || []);
+        const occupancy = await fetchBedOccupancyAPI();
+        if (occupancy) setBedData(occupancy);
       } catch (e) { console.error(e); }
     })();
   }, [refreshTrigger, activeTab]);
@@ -565,11 +562,10 @@ const StudentManagement = () => {
     if (activeTab === "worker") { if (!s.isWorking) return false; }
     else if (activeTab === "student") { if (s.isWorking) return false; }
 
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Paid Fees") return s.feeStatus === "Paid";
-    if (activeFilter === "Pending Fees") return ["Pending","Unpaid","Partial"].includes(s.feeStatus);
-    if (activeFilter === "Room Assigned") return s.room && s.room !== "Not Assigned";
-    if (activeFilter === "Not Assigned") return !s.room || s.room === "Not Assigned";
+    if (activeFilter === "Total Students") return !s.isWorking;
+    if (activeFilter === "Total Workers") return s.isWorking;
+    if (activeFilter === "Occupied Beds") return s.room && s.room !== "Not Assigned";
+    // For "Total Parents" and "Available Beds", we don't have a direct student filter, so show all
     return true;
   });
 
@@ -779,19 +775,7 @@ const StudentManagement = () => {
           <input type="text" name="relation" value={formData.relation} onChange={handleInputChange} placeholder="e.g. Father, Mother" className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
         </div>
 
-        {/* Fee Status */}
-        <div className="w-full px-2">
-          <label className="block mb-2 text-black ml-2" style={labelStyle}>Fee Status</label>
-          <div className="relative w-[300px] max-w-full h-[40px]">
-            <select name="feeStatus" value={formData.feeStatus} onChange={handleInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: formData.feeStatus===""?"#0000008A":"#000" }}>
-              <option value="" disabled hidden>Select Fee Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
-              <option value="Partial">Partial</option>
-            </select>
-            <ChevronDown />
-          </div>
-        </div>
+
       </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -995,19 +979,7 @@ const StudentManagement = () => {
           <p className="text-xs text-gray-600 mt-1 ml-2">Automatically set to today's date</p>
         </div>
 
-        {/* Fee Status */}
-        <div className="w-full px-2">
-          <label className="block mb-2 text-black ml-2" style={labelStyle}>Fee Status</label>
-          <div className="relative w-[300px] max-w-full h-[40px]">
-            <select name="feeStatus" value={workerFormData.feeStatus} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance:"none", boxShadow:"0px 4px 10px 0px #00000040", color: workerFormData.feeStatus===""?"#0000008A":"#000" }}>
-              <option value="" disabled hidden>Select Fee Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
-              <option value="Partial">Partial</option>
-            </select>
-            <ChevronDown />
-          </div>
-        </div>
+
       </div>
 
       <div className="flex justify-center">
@@ -1150,7 +1122,7 @@ const StudentManagement = () => {
 
         {/* ── STATS CARDS (TOP) ── */}
         <div className="w-full max-w-7xl mx-auto mb-8 px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {STAT_CARDS.map(card => (
               <StatCard
                 key={card.key}
@@ -1160,7 +1132,7 @@ const StudentManagement = () => {
                 accent={card.accent}
                 isActive={activeFilter === card.key}
                 onClick={() => setActiveFilter(prev => prev === card.key ? "All" : card.key)}
-                total={stats.total}
+                total={card.total}
               />
             ))}
           </div>
