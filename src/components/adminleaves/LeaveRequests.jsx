@@ -563,10 +563,16 @@ const statusStyles = {
   approved: "bg-green-600 text-white",
   rejected: "bg-red-600 text-white",
   parent_approved: "bg-purple-600 text-white",
+  parent_rejected: "bg-pink-600 text-white",
+  warden_approved: "bg-blue-600 text-white",
+  warden_rejected: "bg-rose-600 text-white",
   Pending:  "bg-orange-500 text-white",
   Approved: "bg-green-600 text-white",
   Rejected: "bg-red-600 text-white",
   Parent_approved: "bg-purple-600 text-white",
+  Parent_rejected: "bg-pink-600 text-white",
+  Warden_approved: "bg-blue-600 text-white",
+  Warden_rejected: "bg-rose-600 text-white",
 };
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -658,6 +664,14 @@ export default function LeaveRequestsPage() {
   
   // ── Search & Filter ────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  
+  const clearFilters = () => {
+    setActiveFilter("All");
+    setSearchTerm("");
+    setDateFilter("");
+    setCurrentPage(1);
+  };
   
   // ── Pagination ─────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
@@ -701,7 +715,9 @@ export default function LeaveRequestsPage() {
                 (leave.studentId.studentId ? ` (${leave.studentId.studentId})` : "")
               : leave.studentId)
           : "Unknown Student",
-        type:          leave.leaveType,
+        type:          leave.leaveType === 'Others' && leave.otherLeaveType ? `Others (${leave.otherLeaveType})` : leave.leaveType,
+        startDate:     leave.startDate,
+        endDate:       leave.endDate,
         from:          new Date(leave.startDate).toLocaleDateString(),
         to:            new Date(leave.endDate).toLocaleDateString(),
         reason:        leave.reason,
@@ -762,13 +778,32 @@ export default function LeaveRequestsPage() {
 
   // ── Filtered list (client-side) ────────────────────────────────────────────
   const filteredRequests = leaveRequests.filter(r => {
-    const matchesFilter = activeFilter === "All" || r.status?.toLowerCase() === activeFilter.toLowerCase();
+    let matchesFilter = false;
+    if (activeFilter === "All") {
+      matchesFilter = true;
+    } else if (activeFilter === "Pending") {
+      matchesFilter = ["pending", "parent_approved", "warden_approved", "warden_rejected"].includes(r.status?.toLowerCase());
+    } else {
+      matchesFilter = r.status?.toLowerCase() === activeFilter.toLowerCase();
+    }
     const matchesSearch = 
       r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.reason?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+    let matchesDate = true;
+    if (dateFilter) {
+      const filterD = new Date(dateFilter);
+      const filterEnd = new Date(dateFilter);
+      filterEnd.setHours(23, 59, 59, 999);
+      
+      const reqStart = r.startDate ? new Date(r.startDate) : new Date(0);
+      const reqEnd = r.endDate ? new Date(r.endDate) : reqStart;
+      
+      matchesDate = (filterD <= reqEnd) && (filterEnd >= reqStart);
+    }
     
-    return matchesFilter && matchesSearch;
+    return matchesFilter && matchesSearch && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
@@ -858,7 +893,7 @@ export default function LeaveRequestsPage() {
           onClick={() => { setSelectedLeave(req); setShowViewModal(true); }} 
         />
         
-        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") && (
+        {(["pending", "parent_approved", "warden_approved", "warden_rejected"].includes(req.status?.toLowerCase())) && (
           <>
             <IconButton 
               icon={<CheckCircle size={compact ? 16 : 18} />} 
@@ -887,48 +922,6 @@ export default function LeaveRequestsPage() {
         <h2 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "Inter" }}>
           <span className="border-l-4 border-[#4F8CCF] pl-2">Leave Requests</span>
         </h2>
-
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* Status Dropdown */}
-          <div className="relative group">
-            <select
-              value={activeFilter}
-              onChange={(e) => setActiveFilter(e.target.value)}
-              className="appearance-none pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#4F8CCF]/20 focus:border-[#4F8CCF] transition-all cursor-pointer w-full sm:w-40"
-            >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative w-full md:w-80 group">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#4F8CCF] transition-colors">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </div>
-            <input 
-              type="text"
-              placeholder="Search student or type..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4F8CCF]/20 focus:border-[#4F8CCF] transition-all"
-            />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm("")}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-red-500 transition-colors"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* ── STAT CARDS (TOP) ── */}
@@ -947,32 +940,92 @@ export default function LeaveRequestsPage() {
             />
           ))}
         </div>
+      </div>
 
-        {/* Active filter badge */}
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          {activeFilter !== "All" && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Status:</span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4F8CCF]/10 text-[#4F8CCF] text-sm font-semibold rounded-full border border-[#4F8CCF]/30">
-                {activeFilter}
-                <button onClick={() => setActiveFilter("All")} className="ml-1 hover:text-red-500 transition-colors font-bold">×</button>
-              </span>
-            </div>
-          )}
-          
-          {searchTerm && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Search:</span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded-full border border-gray-300">
-                "{searchTerm}"
-                <button onClick={() => setSearchTerm("")} className="ml-1 hover:text-red-500 transition-colors font-bold">×</button>
-              </span>
-            </div>
-          )}
+      {/* ── FILTER BAR ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+          </svg>
+          <h2 className="text-sm font-semibold text-gray-600 tracking-wide uppercase">Filter Leave Requests</h2>
+        </div>
 
-          {(activeFilter !== "All" || searchTerm) && (
-            <span className="text-sm text-gray-500">({filteredRequests.length} result{filteredRequests.length !== 1 ? "s" : ""})</span>
-          )}
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Search</label>
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Name or Student ID"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F8CCF] focus:border-transparent transition"
+              />
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</label>
+            <div className="relative">
+              <select
+                value={activeFilter}
+                onChange={(e) => setActiveFilter(e.target.value)}
+                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4F8CCF] focus:border-transparent transition"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="parent_approved">Parent Approved</option>
+                <option value="parent_rejected">Parent Rejected</option>
+                <option value="warden_approved">Warden Approved</option>
+                <option value="warden_rejected">Warden Rejected</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</label>
+            <div className="relative">
+              <input
+                type="date"
+                value={dateFilter}
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4F8CCF] focus:border-transparent transition cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden"
+              />
+              <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+          </div>
+
+          {/* Clear */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-transparent uppercase tracking-wider select-none">Action</label>
+            <button
+              onClick={clearFilters}
+              className="flex items-center justify-center gap-2 w-full bg-red-50  text-red-500 border border-red-200 hover:border-red-500 text-sm font-semibold rounded-lg px-4 py-2.5 transition-all duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1063,7 +1116,7 @@ export default function LeaveRequestsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {(req.status?.toLowerCase() === "pending" || req.status?.toLowerCase() === "parent_approved") ? (
+                        {(["pending", "parent_approved", "warden_approved", "warden_rejected"].includes(req.status?.toLowerCase())) ? (
                           <ActionButtons req={req} compact />
                         ) : (
                           <ActionButtons req={req} compact />
@@ -1167,6 +1220,16 @@ export default function LeaveRequestsPage() {
                   <span className="text-[10px] text-red-400 uppercase tracking-[0.1em] font-bold">Admin Rejection Feedback</span>
                   <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-800 italic leading-relaxed break-words whitespace-pre-wrap">
                     "{selectedLeave.adminComments}"
+                  </div>
+                </div>
+              )}
+
+              {/* Warden Comments */}
+              {selectedLeave.wardenComments && (
+                <div className="space-y-2">
+                  <span className="text-[10px] text-blue-400 uppercase tracking-[0.1em] font-bold">Warden Feedback</span>
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 italic leading-relaxed break-words whitespace-pre-wrap">
+                    "{selectedLeave.wardenComments}"
                   </div>
                 </div>
               )}

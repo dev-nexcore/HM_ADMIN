@@ -57,7 +57,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         { label: "Leave Requests", icon: "/photos/leave.png", href: "/leave-requests" },
         { label: "Staff Allotment", icon: "/photos/staff.png", href: "/staffallotment" },
         { label: "Staff Salary & Deductions", icon: "/photos/salary.png", href: "/staffsalary" },
-        { label: "Calendar", icon: "/photos/calendar.png", href: "/calendar" },
+        { label: "Calendar", icon: "/photos/calendar.svg", href: "/calendar" },
       ],
     },
     { label: "Inventory Management", icon: "/photos/inventory.png", href: "/inventory" },
