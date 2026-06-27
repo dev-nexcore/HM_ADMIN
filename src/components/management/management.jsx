@@ -273,7 +273,7 @@ const StudentManagement = () => {
         const monthlyFee = isWorking
           ? (s.roomType === "5" ? "₹ 6,000" : s.roomType === "4" ? "₹ 6,500" : s.roomType === "3" ? "₹ 7,000" : "-")
           : (s.roomType === "5" ? "₹ 4,500" : s.roomType === "4" ? "₹ 5,000" : s.roomType === "3" ? "₹ 5,500" : "-");
-        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking };
+        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric };
       }));
       setStudents(transformed);
     } catch (e) { console.error(e); }
@@ -1373,11 +1373,11 @@ const StudentManagement = () => {
                 {/* Desktop Table */}
             <div className="hidden lg:block">
               <div className="border border-black rounded-[19.6px] overflow-hidden">
-                <div className="bg-white text-black grid grid-cols-9 text-center">
-                  {["Student ID","Name","Room/Bed","Type","Fee","Contact","Fees Status","Dues","Action"].map((h,i) => (
+                <div className="bg-white text-black grid grid-cols-10 text-center">
+                  {["Student ID","Name","Room/Bed","Type","Fee","Contact","Fees Status","Dues","Biometric","Action"].map((h,i) => (
                     <div key={h} className="px-2 py-3 relative flex justify-center items-center" style={{ fontFamily:"Poppins", fontWeight:"600", fontSize:"13px" }}>
                       <span className="w-full break-words">{h}</span>
-                      {i < 8 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
+                      {i < 9 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
                     </div>
                   ))}
                 </div>
@@ -1386,7 +1386,7 @@ const StudentManagement = () => {
                     <div className="py-8 text-center text-gray-600 font-medium">No {activeTab === "worker" ? "workers" : "students"} found for this filter.</div>
                   )}
                   {currentStudents.map((s, i) => (
-                    <div key={s.id} className="text-black grid grid-cols-9 items-center border-b border-black/10 last:border-0 pb-2">
+                    <div key={s.id} className="text-black grid grid-cols-10 items-center border-b border-black/10 last:border-0 pb-2">
                       <div className="px-2 py-2 break-words text-xs">{s.id}</div>
                       <div className="px-2 py-2 break-words text-xs font-bold">{s.name}</div>
                       <div className="px-2 py-2 break-words leading-tight text-[10px]">{s.room}</div>
@@ -1395,6 +1395,13 @@ const StudentManagement = () => {
                       <div className="px-2 py-2 text-[10px] break-words">{s.contact}</div>
                       <div className="px-2 py-2 flex justify-center"><span style={getFeeStatusStyle(s.feeStatus)}>{s.feeStatus}</span></div>
                       <div className="px-2 py-2">{s.dues}</div>
+                      <div className="px-2 py-2 flex justify-center">
+                        {s.isAddedToBiometric ? (
+                          <span className="text-green-600 font-bold" title="Added to Biometric">✅</span>
+                        ) : (
+                          <span className="text-red-500 font-bold" title="Not added to Biometric">❌</span>
+                        )}
+                      </div>
                       <div className="px-2 py-2 flex justify-center gap-3">
                         <button onClick={() => handleViewDetails(s.id)} className="hover:scale-110 transition-transform" title="View Details"><Eye size={22} strokeWidth={2.5}/></button>
                         <div className="w-px h-5 bg-black self-center"/>
@@ -1443,6 +1450,12 @@ const StudentManagement = () => {
                     <div className="flex justify-between items-center pt-1 border-t border-gray-100">
                       <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Fee Status</span>
                       <span style={getFeeStatusStyle(s.feeStatus)} className="text-[10px]">{s.feeStatus}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-gray-100">
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Biometric</span>
+                      <span className="text-[10px]">
+                        {s.isAddedToBiometric ? "✅ Added" : "❌ Pending"}
+                      </span>
                     </div>
                   </div>
                 </div>

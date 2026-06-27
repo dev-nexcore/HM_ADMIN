@@ -1343,6 +1343,13 @@ import {
   Sun,
   Moon,
   Filter,
+  User,
+  ShieldCheck,
+  CheckCircle,
+  AlertCircle,
+  Mail,
+  Phone,
+  CreditCard,
 } from "lucide-react";
 import axios from "axios";
 
@@ -1379,6 +1386,23 @@ const StaffAllotment = () => {
     shiftStart: "",
     shiftEnd: "",
     salary: "",
+    aadharCard: null,
+    panCard: null,
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    firstName: "",
+    lastName: "",
+    wardenId: "",
+    contactNumber: "",
+    emailId: "",
+    designation: "",
+    otherDesignation: "",
+    shiftStart: "",
+    shiftEnd: "",
+    salary: "",
+    aadharCard: null,
+    panCard: null,
   });
 
   const [wardens, setWardens] = useState([]);
@@ -1414,6 +1438,9 @@ const StaffAllotment = () => {
         contactNumber: warden.contactNumber,
         wardenId: warden.wardenId,
         salary: warden.salary || 0,
+        isAddedToBiometric: warden.isAddedToBiometric,
+        aadharCard: warden.aadharCard,
+        panCard: warden.panCard,
       }));
       setWardens(formattedData);
     } catch (error) {
@@ -1435,6 +1462,9 @@ const StaffAllotment = () => {
         shiftStart: staff.shiftStart,
         shiftEnd: staff.shiftEnd,
         salary: staff.salary || 0,
+        isAddedToBiometric: staff.isAddedToBiometric,
+        aadharCard: staff.aadharCard,
+        panCard: staff.panCard,
       }));
       setStaffs(formattedData);
     } catch (error) {
@@ -1447,9 +1477,38 @@ const StaffAllotment = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: files[0] }));
+  };
+
+  const handleEditFileChange = (e) => {
+    const { name, files } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: files[0] }));
+  };
+
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     setActiveFilter(null);
+    setFormData({
+      firstName: "",
+      lastName: "",
+      wardenId: "",
+      contactNumber: "",
+      emailId: "",
+      designation: "",
+      otherDesignation: "",
+      shiftStart: "",
+      shiftEnd: "",
+      salary: "",
+      aadharCard: null,
+      panCard: null,
+    });
   };
 
   const handleFilterClick = (key) => {
@@ -1586,58 +1645,72 @@ const staffStats = [
   // ── Register handlers ─────────────────────────────────────────
   const handleRegisterWarden = async () => {
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.emailId,
-        contactNumber: formData.contactNumber,
-        salary: Number(formData.salary),
-      };
+      const payload = new FormData();
+      payload.append("firstName", formData.firstName);
+      payload.append("lastName", formData.lastName);
+      payload.append("email", formData.emailId);
+      payload.append("contactNumber", formData.contactNumber);
+      payload.append("salary", Number(formData.salary));
+
+      if (formData.aadharCard) {
+        payload.append("aadharCard", formData.aadharCard);
+      }
+      if (formData.panCard) {
+        payload.append("panCard", formData.panCard);
+      }
+
       const response = await axios.post(
         `${BASE_URL}/api/adminauth/register-warden`,
-        payload
+        payload,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       setSuccessMsg(response.data.message);
       setRefresh((prev) => prev + 1);
       setFormData({
         firstName: "", lastName: "", wardenId: "", contactNumber: "",
         emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
+        aadharCard: null, panCard: null
       });
     } catch (error) {
       console.error(error);
-      setSuccessMsg("Error registering warden");
+      setSuccessMsg(error.response?.data?.message || "Error registering warden");
     }
   };
 
   const handleRegisterStaff = async () => {
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.emailId,
-        staffId: `S${Date.now().toString().slice(-4)}`,
-        contactNumber: formData.contactNumber,
-        designation:
-          formData.designation === "Other"
-            ? formData.otherDesignation
-            : formData.designation,
-        shiftStart: formData.shiftStart,
-        shiftEnd: formData.shiftEnd,
-        salary: Number(formData.salary),
-      };
+      const payload = new FormData();
+      payload.append("firstName", formData.firstName);
+      payload.append("lastName", formData.lastName);
+      payload.append("email", formData.emailId);
+      payload.append("contactNumber", formData.contactNumber);
+      payload.append("designation", formData.designation === "Other" ? formData.otherDesignation : formData.designation);
+      payload.append("shiftStart", formData.shiftStart);
+      payload.append("shiftEnd", formData.shiftEnd);
+      payload.append("salary", Number(formData.salary));
+      
+      if (formData.aadharCard) {
+        payload.append("aadharCard", formData.aadharCard);
+      }
+      if (formData.panCard) {
+        payload.append("panCard", formData.panCard);
+      }
+
       const response = await axios.post(
         `${BASE_URL}/api/adminauth/register-staff`,
-        payload
+        payload,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       setSuccessMsg(response.data.message);
       setRefresh((prev) => prev + 1);
       setFormData({
         firstName: "", lastName: "", wardenId: "", contactNumber: "",
         emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
+        aadharCard: null, panCard: null
       });
     } catch (error) {
       console.error(error);
-      setSuccessMsg("Error registering staff");
+      setSuccessMsg(error.response?.data?.message || "Error registering staff");
     }
   };
 
@@ -1649,7 +1722,7 @@ const staffStats = [
 
   const handleEditWarden = (warden) => {
     setSelectedId(warden.id);
-    setFormData({
+    setEditFormData({
       firstName: warden.firstName, lastName: warden.lastName,
       wardenId: warden.wardenId, contactNumber: warden.contactNumber, emailId: warden.email, salary: warden.salary,
     });
@@ -1658,7 +1731,7 @@ const staffStats = [
 
   const handleEditStaff = (staff) => {
     setSelectedId(staff.id);
-    setFormData({
+    setEditFormData({
       firstName: staff.firstName, lastName: staff.lastName,
       contactNumber: staff.contactNumber, emailId: staff.email,
       designation: staff.designation, shiftStart: staff.shiftStart, shiftEnd: staff.shiftEnd, salary: staff.salary,
@@ -1668,9 +1741,23 @@ const staffStats = [
 
   const handleUpdateWarden = async () => {
     try {
-      await axios.put(`${BASE_URL}/api/wardenauth/update/${selectedId}`, {
-        firstName: formData.firstName, lastName: formData.lastName,
-        email: formData.emailId, contactNumber: formData.contactNumber, wardenId: formData.wardenId, salary: Number(formData.salary),
+      const payload = new FormData();
+      payload.append("firstName", editFormData.firstName);
+      payload.append("lastName", editFormData.lastName);
+      payload.append("email", editFormData.emailId);
+      payload.append("contactNumber", editFormData.contactNumber);
+      payload.append("wardenId", editFormData.wardenId);
+      payload.append("salary", Number(editFormData.salary));
+
+      if (editFormData.aadharCard) {
+        payload.append("aadharCard", editFormData.aadharCard);
+      }
+      if (editFormData.panCard) {
+        payload.append("panCard", editFormData.panCard);
+      }
+
+      await axios.put(`${BASE_URL}/api/wardenauth/update/${selectedId}`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setSuccessMsg("Warden updated successfully");
       setRefresh((prev) => prev + 1);
@@ -1680,11 +1767,25 @@ const staffStats = [
 
   const handleUpdateStaff = async () => {
     try {
-      await axios.put(`${BASE_URL}/api/staffauth/update/${selectedId}`, {
-        firstName: formData.firstName, lastName: formData.lastName,
-        email: formData.emailId, contactNumber: formData.contactNumber,
-        designation: formData.designation === "Other" ? formData.otherDesignation : formData.designation,
-        shiftStart: formData.shiftStart, shiftEnd: formData.shiftEnd, salary: Number(formData.salary),
+      const payload = new FormData();
+      payload.append("firstName", editFormData.firstName);
+      payload.append("lastName", editFormData.lastName);
+      payload.append("email", editFormData.emailId);
+      payload.append("contactNumber", editFormData.contactNumber);
+      payload.append("designation", editFormData.designation === "Other" ? editFormData.otherDesignation : editFormData.designation);
+      payload.append("shiftStart", editFormData.shiftStart);
+      payload.append("shiftEnd", editFormData.shiftEnd);
+      payload.append("salary", Number(editFormData.salary));
+
+      if (editFormData.aadharCard) {
+        payload.append("aadharCard", editFormData.aadharCard);
+      }
+      if (editFormData.panCard) {
+        payload.append("panCard", editFormData.panCard);
+      }
+
+      await axios.put(`${BASE_URL}/api/staffauth/update/${selectedId}`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setSuccessMsg("Staff updated successfully");
       setRefresh((prev) => prev + 1);
@@ -1841,9 +1942,19 @@ const staffStats = [
                 placeholder="Email" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
               <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
                 placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] placeholder-gray-500" />
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">Aadhar Card</span>
+                <input type="file" name="aadharCard" onChange={handleFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">PAN Card</span>
+                <input type="file" name="panCard" onChange={handleFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
             </div>
             <div className="mt-6 text-center">
-              <button onClick={handleRegisterWarden} className="bg-white px-8 py-3 rounded-xl font-bold">
+              <button onClick={handleRegisterWarden} className="bg-white px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-sm hover:shadow-md active:scale-95">
                 Register Warden
               </button>
             </div>
@@ -1858,7 +1969,9 @@ const staffStats = [
                   <div className="flex-1 min-w-0 w-full">
                     <h3 className="font-bold text-lg truncate">{warden.name}</h3>
                     <p className="text-sm text-gray-500 truncate">{warden.email}</p>
-                    <p className="text-sm text-gray-500 truncate">Warden ID: {warden.wardenId} | Salary: ₹{warden.salary}</p>
+                    <p className="text-sm text-gray-500 truncate">
+                      Warden ID: {warden.wardenId} | Salary: ₹{warden.salary} | Biometric: {warden.isAddedToBiometric ? "✅" : "❌"}
+                    </p>
                   </div>
                   <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center">
                     <button onClick={() => handleViewWarden(warden)} className="text-gray-500 hover:text-gray-800 transition-colors">
@@ -1921,9 +2034,19 @@ const staffStats = [
                     className="w-full h-[45px] px-2 sm:px-3 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
                 </div>
               </div>
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">Aadhar Card</span>
+                <input type="file" name="aadharCard" onChange={handleFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-[#BEC5AD] px-1 text-[10px] text-gray-800 font-bold z-10">PAN Card</span>
+                <input type="file" name="panCard" onChange={handleFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-white rounded-[10px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border-0 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
             </div>
             <div className="mt-6 text-center">
-              <button onClick={handleRegisterStaff} className="bg-white px-8 py-3 rounded-xl font-bold">
+              <button onClick={handleRegisterStaff} className="bg-white px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-sm hover:shadow-md active:scale-95">
                 Register Staff
               </button>
             </div>
@@ -1951,10 +2074,13 @@ const staffStats = [
                       <h3 className="font-bold text-base truncate max-w-full">{staff.name}</h3>
                       <DesignationBadge designation={staff.designation} />
                     </div>
-                    <p className="text-sm text-gray-500 truncate">{staff.email} | Salary: ₹{staff.salary}</p>
+                    <p className="text-sm text-gray-500 truncate">{staff.email} | Salary: ₹{staff.salary} | Biometric: {staff.isAddedToBiometric ? "✅" : "❌"}</p>
                     <ShiftPill shiftStart={staff.shiftStart} shiftEnd={staff.shiftEnd} />
                   </div>
                   <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center">
+                    <button onClick={() => { setSelectedWarden(staff); setShowViewModal(true); }} className="text-gray-500 hover:text-gray-800 transition-colors">
+                      <Eye size={18} />
+                    </button>
                     <button onClick={() => handleEditStaff(staff)} className="text-gray-500 hover:text-gray-800 transition-colors">
                       <Edit2 size={18} />
                     </button>
@@ -1990,48 +2116,58 @@ const staffStats = [
               <button onClick={() => setShowEditModal(false)}><X size={20} /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
+              <input type="text" name="firstName" value={editFormData.firstName} onChange={handleEditInputChange}
                 placeholder="First Name" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
-              <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
+              <input type="text" name="lastName" value={editFormData.lastName} onChange={handleEditInputChange}
                 placeholder="Last Name" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               {activeTab === "warden" && (
-                <input type="text" name="wardenId" value={formData.wardenId} readOnly disabled
+                <input type="text" name="wardenId" value={editFormData.wardenId} readOnly disabled
                   placeholder="Warden ID (Auto)" className="w-full h-[45px] px-4 bg-gray-200 rounded-[10px] border border-gray-200 outline-none text-gray-500 font-medium text-[14px] cursor-not-allowed" />
               )}
-              <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange}
+              <input type="text" name="contactNumber" value={editFormData.contactNumber} onChange={handleEditInputChange}
                 placeholder="Contact Number" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
-              <input type="email" name="emailId" value={formData.emailId} onChange={handleInputChange}
+              <input type="email" name="emailId" value={editFormData.emailId} onChange={handleEditInputChange}
                 placeholder="Email" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
-              <input type="number" name="salary" value={formData.salary} onChange={handleInputChange}
+              <input type="number" name="salary" value={editFormData.salary} onChange={handleEditInputChange}
                 placeholder="Salary Amount (₹)" className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
               {activeTab === "staff" && (
                 <>
-                  <select name="designation" value={formData.designation} onChange={handleInputChange}
+                  <select name="designation" value={editFormData.designation} onChange={handleEditInputChange}
                     className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] appearance-none">
                     <option value="">Select</option>
                     <option value="Watchman">Watchman</option>
                     <option value="Cleaner">Cleaner</option>
                     <option value="Other">Other</option>
                   </select>
-                  {formData.designation === "Other" && (
-                    <input type="text" name="otherDesignation" value={formData.otherDesignation}
-                      onChange={handleInputChange} placeholder="Specify Designation"
+                  {editFormData.designation === "Other" && (
+                    <input type="text" name="otherDesignation" value={editFormData.otherDesignation}
+                      onChange={handleEditInputChange} placeholder="Specify Designation"
                       className="w-full h-[45px] px-4 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px]" />
                   )}
                   <div className="flex gap-3">
                     <div className="relative w-full">
                       <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">Start Time</span>
-                      <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                      <input type="time" name="shiftStart" value={editFormData.shiftStart} onChange={handleEditInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
                         className="w-full h-[45px] px-2 sm:px-3 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
                     </div>
                     <div className="relative w-full">
                       <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">End Time</span>
-                      <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                      <input type="time" name="shiftEnd" value={editFormData.shiftEnd} onChange={handleEditInputChange} onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
                         className="w-full h-[45px] px-2 sm:px-3 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[13px] sm:text-[14px] cursor-pointer relative z-0" />
                     </div>
                   </div>
                 </>
               )}
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">Update Aadhar Card</span>
+                <input type="file" name="aadharCard" onChange={handleEditFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
+              <div className="relative w-full">
+                <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-500 font-bold z-10">Update PAN Card</span>
+                <input type="file" name="panCard" onChange={handleEditFileChange}
+                  className="w-full h-[45px] px-4 py-2 bg-gray-50 rounded-[10px] border border-gray-200 outline-none focus:ring-2 focus:ring-[#4F8CCF]/50 transition-all text-black font-medium text-[14px] file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#4F8CCF]/10 file:text-[#4F8CCF] hover:file:bg-[#4F8CCF]/20 cursor-pointer" accept="image/*,.pdf" />
+              </div>
             </div>
             <div className="flex justify-end mt-6">
               <button
@@ -2070,19 +2206,101 @@ const staffStats = [
 
       {/* ── VIEW MODAL ───────────────────────────────────────── */}
       {showViewModal && selectedWarden && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-2xl font-bold">Warden Details</h2>
-              <button onClick={() => setShowViewModal(false)}><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#A0A88D] px-6 py-5 flex justify-between items-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
+                <User size={100} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2 relative z-10">
+                <ShieldCheck size={24} className="text-white" />
+                {activeTab === "warden" ? "Warden Details" : "Staff Details"}
+              </h2>
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-600 hover:text-white bg-white/30 hover:bg-black/20 p-1.5 rounded-full transition-all relative z-10"
+              >
+                <X size={20} />
+              </button>
             </div>
-            <div className="space-y-3">
-              <p><strong>First Name:</strong> {selectedWarden.firstName}</p>
-              <p><strong>Last Name:</strong> {selectedWarden.lastName}</p>
-              <p><strong>Email:</strong> {selectedWarden.email}</p>
-              <p><strong>Contact:</strong> {selectedWarden.contactNumber}</p>
-              <p><strong>Warden ID:</strong> {selectedWarden.wardenId}</p>
-              <p><strong>Salary:</strong> ₹{selectedWarden.salary}</p>
+            
+            {/* Body */}
+            <div className="px-6 py-6 bg-gray-50 flex-1">
+              {/* Profile Overview */}
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+                <div className="w-16 h-16 rounded-full bg-[#4F8CCF]/10 flex items-center justify-center text-[#4F8CCF] shadow-inner text-2xl font-bold">
+                  {selectedWarden.firstName?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {selectedWarden.firstName} {selectedWarden.lastName}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-1 bg-gray-200 text-gray-600 rounded-md">
+                      {activeTab === "warden" ? `ID: ${selectedWarden.wardenId}` : (selectedWarden.designation || 'Staff')}
+                    </span>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-md flex items-center gap-1 ${selectedWarden.isAddedToBiometric ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {selectedWarden.isAddedToBiometric ? <><CheckCircle size={12}/> Biometric Linked</> : <><AlertCircle size={12}/> Biometric Pending</>}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><Mail size={14}/> Email Address</div>
+                  <div className="text-sm font-semibold text-gray-900 break-all">{selectedWarden.email || 'N/A'}</div>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><Phone size={14}/> Contact Number</div>
+                  <div className="text-sm font-semibold text-gray-900">{selectedWarden.contactNumber || 'N/A'}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><CreditCard size={14}/> Salary</div>
+                  <div className="text-sm font-semibold text-green-600">₹{selectedWarden.salary ? selectedWarden.salary.toLocaleString('en-IN') : '0'}</div>
+                </div>
+
+                {activeTab === "staff" && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><Clock size={14}/> Shift Timing</div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {selectedWarden.shiftStart && selectedWarden.shiftEnd 
+                        ? `${selectedWarden.shiftStart} - ${selectedWarden.shiftEnd}` 
+                        : 'Not Assigned'}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><Shield size={14}/> Aadhar Card</div>
+                  {selectedWarden.aadharCard ? (
+                    <a href={`${BASE_URL}/${selectedWarden.aadharCard}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#4F8CCF] hover:underline">View Document</a>
+                  ) : (
+                    <div className="text-sm font-semibold text-gray-400 italic">Not Uploaded</div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5"><CreditCard size={14}/> PAN Card</div>
+                  {selectedWarden.panCard ? (
+                    <a href={`${BASE_URL}/${selectedWarden.panCard}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#4F8CCF] hover:underline">View Document</a>
+                  ) : (
+                    <div className="text-sm font-semibold text-gray-400 italic">Not Uploaded</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white px-6 py-4 border-t border-gray-100 flex justify-end">
+              <button 
+                onClick={() => setShowViewModal(false)}
+                className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
