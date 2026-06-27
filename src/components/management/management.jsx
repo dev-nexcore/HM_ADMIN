@@ -2,7 +2,7 @@
 // export default StudentManagement;
 "use client";
 import { useState, useEffect } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Check, X, ChevronDown } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
 import { ToastContainer, toast } from "react-toastify";
@@ -139,6 +139,10 @@ const StudentManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [studentDetailsData, setStudentDetailsData] = useState(null);
+  
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReqId, setRejectReqId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("student");
   const [parents, setParents] = useState([]);
@@ -270,10 +274,16 @@ const StudentManagement = () => {
           roomDisplay = s.roomBedNumber;
         }
         const isWorking = s.isWorking === true;
+        const capacityMap = {
+          "101": 5, "102": 5, "103": 5, "104": 5, "201": 5, "202": 5, "203": 5, "204": 5, "205": 5,
+          "301": 4, "302": 4, "303": 4, "304": 4, "305": 4, "401": 3, "402": 3, "403": 3, "404": 3, "405": 3,
+        };
+        const actualRoomNo = roomDetails?.inventory?.roomNo || roomDetails?.roomNo || "";
+        const rType = String(s.roomType || (actualRoomNo ? capacityMap[actualRoomNo] : ""));
         const monthlyFee = isWorking
-          ? (s.roomType === "5" ? "₹ 6,000" : s.roomType === "4" ? "₹ 6,500" : s.roomType === "3" ? "₹ 7,000" : "-")
-          : (s.roomType === "5" ? "₹ 4,500" : s.roomType === "4" ? "₹ 5,000" : s.roomType === "3" ? "₹ 5,500" : "-");
-        return { id: s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: s.roomType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric };
+          ? (rType === "5" ? "₹ 6,000" : rType === "4" ? "₹ 6,500" : rType === "3" ? "₹ 7,000" : "-")
+          : (rType === "5" ? "₹ 4,500" : rType === "4" ? "₹ 5,000" : rType === "3" ? "₹ 5,500" : "-");
+        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: rType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId };
       }));
       setStudents(transformed);
     } catch (e) { console.error(e); }
@@ -414,6 +424,40 @@ const StudentManagement = () => {
       toast.success(`Student registered! Password: ${res.student?.password}`, { autoClose: 6000 });
     } catch (e) { toast.error(e.message || "Error registering student."); }
     finally { setLoading(false); }
+  };
+
+  const handleApproveReq = async (reqId) => {
+    try {
+      await api.put(`/api/adminauth/requisitions/${reqId}/status`, {
+        status: 'approved',
+        adminNotes: 'Approved directly from Student Management'
+      });
+      toast.success("Student approved successfully!");
+      setRefreshTrigger(p => p + 1);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Failed to approve student");
+    }
+  };
+
+  const handleRejectReq = (reqId) => {
+    setRejectReqId(reqId);
+    setRejectionReason("");
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectionReason.trim()) return toast.error("Please provide a rejection reason.");
+    try {
+      await api.put(`/api/adminauth/requisitions/${rejectReqId}/status`, {
+        status: 'rejected',
+        adminNotes: rejectionReason
+      });
+      toast.success("Student rejected");
+      setShowRejectModal(false);
+      setRefreshTrigger(p => p + 1);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Failed to reject student");
+    }
   };
 
   const handleEdit = (studentId) => {
@@ -1187,7 +1231,7 @@ const StudentManagement = () => {
               <h2 className="text-xl font-bold text-black mb-6" style={{ fontFamily:"Inter" }}>Student Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
                 {[
-                  ["Student ID", studentDetailsData.id],
+                  ["Student ID", studentDetailsData.isPendingApproval ? "Pending" : studentDetailsData.id],
                   ["Student Name", studentDetailsData.name],
                   ["Contact Number", studentDetailsData.contact],
                   ["Email", studentDetailsData.email || "N/A"],
@@ -1373,11 +1417,11 @@ const StudentManagement = () => {
                 {/* Desktop Table */}
             <div className="hidden lg:block">
               <div className="border border-black rounded-[19.6px] overflow-hidden">
-                <div className="bg-white text-black grid grid-cols-10 text-center">
-                  {["Student ID","Name","Room/Bed","Type","Fee","Contact","Fees Status","Dues","Biometric","Action"].map((h,i) => (
+                <div className="bg-white text-black grid grid-cols-11 text-center">
+                  {["Student ID","Name","Room/Bed","Type","Fee","Contact","Fees Status","Dues","Biometric","Status","Action"].map((h,i) => (
                     <div key={h} className="px-2 py-3 relative flex justify-center items-center" style={{ fontFamily:"Poppins", fontWeight:"600", fontSize:"13px" }}>
                       <span className="w-full break-words">{h}</span>
-                      {i < 9 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
+                      {i < 10 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black"/>}
                     </div>
                   ))}
                 </div>
@@ -1386,8 +1430,8 @@ const StudentManagement = () => {
                     <div className="py-8 text-center text-gray-600 font-medium">No {activeTab === "worker" ? "workers" : "students"} found for this filter.</div>
                   )}
                   {currentStudents.map((s, i) => (
-                    <div key={s.id} className="text-black grid grid-cols-10 items-center border-b border-black/10 last:border-0 pb-2">
-                      <div className="px-2 py-2 break-words text-xs">{s.id}</div>
+                    <div key={s.id} className="text-black grid grid-cols-11 items-center border-b border-black/10 last:border-0 pb-2">
+                      <div className="px-2 py-2 break-words text-xs">{s.isPendingApproval ? "Pending" : s.id}</div>
                       <div className="px-2 py-2 break-words text-xs font-bold">{s.name}</div>
                       <div className="px-2 py-2 break-words leading-tight text-[10px]">{s.room}</div>
                       <div className="px-2 py-2 text-[10px] break-words">{s.roomType ? `${s.roomType} Bed` : "-"}</div>
@@ -1402,12 +1446,31 @@ const StudentManagement = () => {
                           <span className="text-red-500 font-bold" title="Not added to Biometric">❌</span>
                         )}
                       </div>
-                      <div className="px-2 py-2 flex justify-center gap-3">
-                        <button onClick={() => handleViewDetails(s.id)} className="hover:scale-110 transition-transform" title="View Details"><Eye size={22} strokeWidth={2.5}/></button>
-                        <div className="w-px h-5 bg-black self-center"/>
-                        <button onClick={() => handleEdit(s.id)} className="hover:scale-110 transition-transform" title="Edit Student">
-                          <svg width="22" height="22" viewBox="0 0 27 26" fill="none"><mask id={`m${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#m${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F"/></g></svg>
-                        </button>
+                      <div className="px-2 py-2 flex justify-center">
+                        {s.isPendingApproval ? (
+                          <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-md text-center w-full">Pending</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-1 rounded-md text-center w-full">Approved</span>
+                        )}
+                      </div>
+                      <div className="px-2 py-2 flex justify-center gap-2">
+                        {s.isPendingApproval ? (
+                          <>
+                            <button onClick={() => handleViewDetails(s.id)} title="View Details" className="hover:scale-110 transition-transform"><Eye size={18} strokeWidth={2.5}/></button>
+                            <div className="w-px h-4 bg-gray-400 self-center"/>
+                            <button onClick={() => handleApproveReq(s.requisitionId)} className="hover:scale-110 transition-transform text-green-600" title="Approve"><Check size={18} strokeWidth={3}/></button>
+                            <div className="w-px h-4 bg-gray-400 self-center"/>
+                            <button onClick={() => handleRejectReq(s.requisitionId)} className="hover:scale-110 transition-transform text-red-600" title="Reject"><X size={18} strokeWidth={3}/></button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => handleViewDetails(s.id)} className="hover:scale-110 transition-transform" title="View Details"><Eye size={22} strokeWidth={2.5}/></button>
+                            <div className="w-px h-5 bg-black self-center"/>
+                            <button onClick={() => handleEdit(s.id)} className="hover:scale-110 transition-transform" title="Edit Student">
+                              <svg width="22" height="22" viewBox="0 0 27 26" fill="none"><mask id={`m${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#m${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F"/></g></svg>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1423,13 +1486,23 @@ const StudentManagement = () => {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-bold text-base text-black">{s.name}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">ID: {s.id}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">ID: {s.isPendingApproval ? "Pending" : s.id}</p>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => handleViewDetails(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors"><Eye size={16}/></button>
-                      <button onClick={() => handleEdit(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors">
-                        <svg width="16" height="16" viewBox="0 0 27 26" fill="none"><mask id={`mm${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#mm${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F"/></g></svg>
-                      </button>
+                      {s.isPendingApproval ? (
+                        <>
+                          <button onClick={() => handleViewDetails(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors" title="View Details"><Eye size={16}/></button>
+                          <button onClick={() => handleApproveReq(s.requisitionId)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors" title="Approve"><Check size={16} strokeWidth={3}/></button>
+                          <button onClick={() => handleRejectReq(s.requisitionId)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors" title="Reject"><X size={16} strokeWidth={3}/></button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => handleViewDetails(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors"><Eye size={16}/></button>
+                          <button onClick={() => handleEdit(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 27 26" fill="none"><mask id={`mm${i}`} style={{maskType:"alpha"}} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9"/></mask><g mask={`url(#mm${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F"/></g></svg>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2 text-sm">
@@ -1479,6 +1552,41 @@ const StudentManagement = () => {
         )}
       </div>
     </div>
+
+        {/* ── Reject Modal ── */}
+        {showRejectModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100">
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Reject Request</h3>
+                <p className="text-sm text-gray-500 mb-4">Please provide a reason for rejecting this student's request. This reason will be visible to the Warden.</p>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter reason for rejection..."
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none text-sm text-black"
+                  rows={4}
+                  autoFocus
+                />
+              </div>
+              <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button
+                  onClick={() => setShowRejectModal(false)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmReject}
+                  disabled={!rejectionReason.trim()}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <X size={16} strokeWidth={3} /> Reject Request
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <ToastContainer />
     </div>
