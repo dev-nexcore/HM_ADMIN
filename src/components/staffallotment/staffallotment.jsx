@@ -1462,6 +1462,7 @@ const StaffAllotment = () => {
         shiftStart: staff.shiftStart,
         shiftEnd: staff.shiftEnd,
         salary: staff.salary || 0,
+        status: staff.status || 'Approved',
         isAddedToBiometric: staff.isAddedToBiometric,
         aadharCard: staff.aadharCard,
         panCard: staff.panCard,
@@ -1469,6 +1470,19 @@ const StaffAllotment = () => {
       setStaffs(formattedData);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleUpdateStaffStatus = async (staffId, status) => {
+    try {
+      const response = await axios.put(`${BASE_URL}/api/adminauth/staff-status/${staffId}`, { status }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
+      });
+      setSuccessMsg(response.data.message);
+      setRefresh(prev => prev + 1);
+    } catch (error) {
+      console.error(error);
+      setSuccessMsg(error.response?.data?.message || `Error updating staff status to ${status}`);
     }
   };
 
@@ -2073,11 +2087,24 @@ const staffStats = [
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-base truncate max-w-full">{staff.name}</h3>
                       <DesignationBadge designation={staff.designation} />
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${staff.status === 'Pending' ? 'bg-orange-100 text-orange-600' : staff.status === 'Rejected' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                        {staff.status}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-500 truncate">{staff.email} | Salary: ₹{staff.salary} | Biometric: {staff.isAddedToBiometric ? "✅" : "❌"}</p>
                     <ShiftPill shiftStart={staff.shiftStart} shiftEnd={staff.shiftEnd} />
                   </div>
-                  <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center">
+                  <div className="flex gap-4 shrink-0 mt-2 sm:mt-0 self-end sm:self-center items-center">
+                    {staff.status === 'Pending' && (
+                      <div className="flex gap-2 mr-2 border-r pr-4 border-gray-200">
+                        <button onClick={() => handleUpdateStaffStatus(staff.id, 'Approved')} className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded hover:bg-green-600 transition-colors">
+                          Approve
+                        </button>
+                        <button onClick={() => handleUpdateStaffStatus(staff.id, 'Rejected')} className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600 transition-colors">
+                          Reject
+                        </button>
+                      </div>
+                    )}
                     <button onClick={() => { setSelectedWarden(staff); setShowViewModal(true); }} className="text-gray-500 hover:text-gray-800 transition-colors">
                       <Eye size={18} />
                     </button>
