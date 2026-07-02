@@ -333,7 +333,9 @@ const StudentManagement = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (["firstName", "lastName", "emergencyContactName", "relation"].includes(name)) value = value.replace(/[^A-Za-z\s]/g, "");
+    if (["contactNumber", "emergencyContactNumber"].includes(name)) value = value.replace(/\D/g, "").slice(0, 10);
     setFormData((p) => ({ ...p, [name]: value }));
     if (errors[name]) setErrors((p) => { const n = { ...p }; delete n[name]; return n; });
   };
@@ -341,11 +343,23 @@ const StudentManagement = () => {
   const validateForm = (data, isEdit = false) => {
     const e = {};
     if (!data.firstName.trim()) e.firstName = "First Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.firstName)) e.firstName = "First Name can only contain letters.";
     if (!data.lastName.trim()) e.lastName = "Last Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.lastName)) e.lastName = "Last Name can only contain letters.";
     if (!data.contactNumber.trim()) e.contactNumber = "Contact Number is required.";
+    else if (!/^\d{10}$/.test(data.contactNumber)) e.contactNumber = "Contact Number must be exactly 10 digits.";
     if (!isEdit && !data.email.trim()) e.email = "Email is required.";
     else if (data.email.trim() && !/\S+@\S+\.\S+/.test(data.email)) e.email = "Email is invalid.";
     if (!data.roomType) e.roomType = "Room Type is required.";
+    if (data.emergencyContactNumber && !/^\d{10}$/.test(data.emergencyContactNumber)) {
+      e.emergencyContactNumber = "Emergency Contact Number must be exactly 10 digits.";
+    }
+    if (data.emergencyContactName && !/^[A-Za-z\s]+$/.test(data.emergencyContactName)) {
+      e.emergencyContactName = "Emergency Contact Name can only contain letters.";
+    }
+    if (data.relation && !/^[A-Za-z\s]+$/.test(data.relation)) {
+      e.relation = "Relation can only contain letters.";
+    }
     return e;
   };
 
@@ -518,7 +532,9 @@ const StudentManagement = () => {
   };
 
   const handleParentInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (["firstName", "lastName", "relation"].includes(name)) value = value.replace(/[^A-Za-z\s]/g, "");
+    if (["contactNumber"].includes(name)) value = value.replace(/\D/g, "").slice(0, 10);
     setParentFormData(p => ({ ...p, [name]: value }));
     if (parentErrors[name]) setParentErrors(p => { const n={...p}; delete n[name]; return n; });
   };
@@ -526,11 +542,15 @@ const StudentManagement = () => {
   const validateParentForm = (data) => {
     const e = {};
     if (!data.firstName.trim()) e.firstName = "First Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.firstName)) e.firstName = "First Name can only contain letters.";
     if (!data.lastName.trim()) e.lastName = "Last Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.lastName)) e.lastName = "Last Name can only contain letters.";
     if (!data.email.trim()) e.email = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(data.email)) e.email = "Email is invalid.";
     if (!data.contactNumber.trim()) e.contactNumber = "Contact Number is required.";
+    else if (!/^\d{10}$/.test(data.contactNumber)) e.contactNumber = "Contact Number must be exactly 10 digits.";
     if (!data.relation.trim()) e.relation = "Relation is required";
+    else if (!/^[A-Za-z\s]+$/.test(data.relation)) e.relation = "Relation can only contain letters.";
     if (!data.studentId.trim()) e.studentId = "Student ID is required.";
     return e;
   };
@@ -565,17 +585,29 @@ const StudentManagement = () => {
   };
 
   const handleWorkerInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (["firstName", "lastName", "emergencyContactName"].includes(name)) value = value.replace(/[^A-Za-z\s]/g, "");
+    if (["contactNumber", "emergencyContactNumber"].includes(name)) value = value.replace(/\D/g, "").slice(0, 10);
     setWorkerFormData(p => ({ ...p, [name]: value }));
   };
 
   const validateWorkerForm = (data) => {
     const e = {};
     if (!data.firstName.trim()) e.firstName = "First Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.firstName)) e.firstName = "First Name can only contain letters.";
     if (!data.lastName.trim()) e.lastName = "Last Name is required.";
+    else if (!/^[A-Za-z\s]+$/.test(data.lastName)) e.lastName = "Last Name can only contain letters.";
     if (!data.contactNumber.trim()) e.contactNumber = "Contact Number is required.";
+    else if (!/^\d{10}$/.test(data.contactNumber)) e.contactNumber = "Contact Number must be exactly 10 digits.";
     if (!data.email.trim()) e.email = "Email is required.";
+    else if (data.email.trim() && !/\S+@\S+\.\S+/.test(data.email)) e.email = "Email is invalid.";
     if (!data.roomType) e.roomType = "Room Type is required.";
+    if (data.emergencyContactNumber && !/^\d{10}$/.test(data.emergencyContactNumber)) {
+      e.emergencyContactNumber = "Emergency Contact Number must be exactly 10 digits.";
+    }
+    if (data.emergencyContactName && !/^[A-Za-z\s]+$/.test(data.emergencyContactName)) {
+      e.emergencyContactName = "Emergency Contact Name can only contain letters.";
+    }
     return e;
   };
 
@@ -1452,24 +1484,24 @@ const StudentManagement = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>First Name</label>
-                  <input type="text" name="firstName" value={parentFormData.firstName} onChange={(e) => setParentFormData({...parentFormData, firstName: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                  <input type="text" name="firstName" value={parentFormData.firstName} onChange={handleParentInputChange} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>Last Name</label>
-                  <input type="text" name="lastName" value={parentFormData.lastName} onChange={(e) => setParentFormData({...parentFormData, lastName: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                  <input type="text" name="lastName" value={parentFormData.lastName} onChange={handleParentInputChange} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>E-Mail</label>
-                  <input type="email" name="email" value={parentFormData.email} onChange={handleInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
+                  <input type="email" name="email" value={parentFormData.email} onChange={handleParentInputChange} placeholder="Enter E-Mail" className="w-full h-[40px] px-4 bg-white rounded-[10px] border-0 outline-none text-black font-semibold text-[12px] font-[Poppins]" style={inputStyle} />
                   {errors.email && <p className="text-red-500 text-xs mt-1 ml-2">{errors.email}</p>}
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>Contact Number</label>
-                  <input type="text" name="contactNumber" value={parentFormData.contactNumber} onChange={(e) => setParentFormData({...parentFormData, contactNumber: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                  <input type="text" name="contactNumber" value={parentFormData.contactNumber} onChange={handleParentInputChange} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>Relation</label>
-                  <input type="text" name="relation" value={parentFormData.relation} onChange={(e) => setParentFormData({...parentFormData, relation: e.target.value})} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
+                  <input type="text" name="relation" value={parentFormData.relation} onChange={handleParentInputChange} className="w-full px-4 text-black font-semibold text-[12px]" style={inputStyle} />
                 </div>
                 <div className="w-full px-2">
                   <label className="block mb-1 text-black ml-2" style={labelStyle}>Aadhar Card</label>

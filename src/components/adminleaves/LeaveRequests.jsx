@@ -661,6 +661,7 @@ export default function LeaveRequestsPage() {
   const [rejectReason, setRejectReason]         = useState("");
   const [showViewModal, setShowViewModal]       = useState(false);
   const [selectedLeave, setSelectedLeave]       = useState(null);
+  const [isProcessing, setIsProcessing]         = useState(false);
   
   // ── Search & Filter ────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
@@ -737,6 +738,8 @@ export default function LeaveRequestsPage() {
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const confirmApprove = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     try {
       await api.put(
         `/api/adminauth/leaves/${selectedLeaveId}/status`,
@@ -747,10 +750,13 @@ export default function LeaveRequestsPage() {
       setShowApproveModal(false); setSelectedLeaveId(null);
       fetchLeaves();
     } catch { toast.error("Failed to approve leave"); }
+    finally { setIsProcessing(false); }
   };
 
   const confirmReject = async () => {
     if (!rejectReason.trim()) { toast.error("Rejection reason is required ❗"); return; }
+    if (isProcessing) return;
+    setIsProcessing(true);
     try {
       await api.put(
         `/api/adminauth/leaves/${selectedLeaveId}/status`,
@@ -761,6 +767,7 @@ export default function LeaveRequestsPage() {
       setShowRejectModal(false); setRejectReason(""); setSelectedLeaveId(null);
       fetchLeaves();
     } catch { toast.error("Failed to reject leave"); }
+    finally { setIsProcessing(false); }
   };
 
   const handleMessage = async (id) => {
@@ -1139,8 +1146,20 @@ export default function LeaveRequestsPage() {
             <h3 className="text-lg font-bold text-gray-800 mb-2">Confirm Approval</h3>
             <p className="text-sm text-gray-600 mb-6">Are you sure you want to approve this leave request?</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowApproveModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
-              <button onClick={confirmApprove} className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium">Approve</button>
+              <button 
+                onClick={() => !isProcessing && setShowApproveModal(false)} 
+                disabled={isProcessing}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition ${isProcessing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmApprove} 
+                disabled={isProcessing}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition text-white ${isProcessing ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+              >
+                {isProcessing ? "Processing..." : "Approve"}
+              </button>
             </div>
           </div>
         </div>
@@ -1159,8 +1178,20 @@ export default function LeaveRequestsPage() {
               rows={4}
             />
             <div className="flex justify-end gap-3">
-              <button onClick={() => { setShowRejectModal(false); setRejectReason(""); }} className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">Cancel</button>
-              <button onClick={confirmReject} className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium">Reject</button>
+              <button 
+                onClick={() => { if(!isProcessing) { setShowRejectModal(false); setRejectReason(""); } }} 
+                disabled={isProcessing}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition ${isProcessing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300'}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmReject} 
+                disabled={isProcessing}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition text-white ${isProcessing ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+              >
+                {isProcessing ? "Processing..." : "Reject"}
+              </button>
             </div>
           </div>
         </div>
