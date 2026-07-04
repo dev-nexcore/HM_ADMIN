@@ -346,11 +346,11 @@ const WardenRequisitions = () => {
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         
         {/* Header */}
-        <header className="page-header" style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <header className="page-header mb-8">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
             <div>
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: T.text, margin: 0 }}>Warden Requisitions</h1>
-              <p style={{ color: T.textMuted, fontSize: 14, marginTop: 4 }}>Review and approve registration requests from wardens</p>
+              <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Warden Requisitions</h1>
+              <p className="text-[#6B7280] text-sm mt-1">Review and approve registration requests from wardens</p>
             </div>
           </div>
 
@@ -370,45 +370,47 @@ const WardenRequisitions = () => {
           </div>
 
           {/* Filters */}
-          <div className="header-actions" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <div className="search-container" style={{ position: "relative", flex: "1 1 300px" }}>
+          <div className="header-actions flex flex-col md:flex-row gap-3 flex-wrap">
+            <div className="search-container relative flex-1 w-full md:w-auto">
               <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
               <input 
                 placeholder="Search by warden or registrant name..." 
-                className="search-input"
+                className="search-input w-full"
                 style={{ ...css.input, paddingLeft: 40 }} 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
             
-            <select 
-              className="status-select"
-              style={{ ...css.input, minWidth: 140 }}
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <select 
+                className="status-select flex-1 w-full sm:min-w-[140px]"
+                style={css.input}
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
 
-            <select 
-              className="type-select"
-              style={{ ...css.input, minWidth: 140 }}
-              value={typeFilter}
-              onChange={e => setTypeFilter(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              <option value="student">Student</option>
-              <option value="parent">Parent</option>
-              <option value="worker">Worker</option>
-              <option value="staff">Staff</option>
-              <option value="notice">Notice</option>
-              <option value="inventory_replacement">Replacement</option>
-              <option value="complaint_resolution">Complaint</option>
-            </select>
+              <select 
+                className="type-select flex-1 w-full sm:min-w-[140px]"
+                style={css.input}
+                value={typeFilter}
+                onChange={e => setTypeFilter(e.target.value)}
+              >
+                <option value="all">All Types</option>
+                <option value="student">Student</option>
+                <option value="parent">Parent</option>
+                <option value="worker">Worker</option>
+                <option value="staff">Staff</option>
+                <option value="notice">Notice</option>
+                <option value="inventory_replacement">Replacement</option>
+                <option value="complaint_resolution">Complaint</option>
+              </select>
+            </div>
           </div>
         </header>
 
@@ -425,7 +427,7 @@ const WardenRequisitions = () => {
               <div style={{ fontSize: 14, marginTop: 4 }}>Try adjusting your filters</div>
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
+            <div className="w-full overflow-x-auto pb-4">
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${T.border}` }}>

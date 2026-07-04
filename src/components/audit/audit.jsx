@@ -363,9 +363,9 @@ icon: <FileText size={18} />,
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button 
-                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300"
+                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none"
                   onClick={() => setIsFilterModalOpen(true)}
                 >
                   <Filter size={16} />
@@ -373,7 +373,7 @@ icon: <FileText size={18} />,
                 </button>
 
                 <button 
-                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none"
                   onClick={handleExport}
                   disabled={exporting}
                 >
@@ -382,7 +382,7 @@ icon: <FileText size={18} />,
                 </button>
 
                 <button 
-                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 shadow-md transition-all duration-300 ${
+                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none ${
                     autoRefresh 
                       ? 'bg-purple-600 hover:bg-purple-700 text-white' 
                       : 'bg-gray-500 hover:bg-gray-600 text-white'

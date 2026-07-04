@@ -218,13 +218,13 @@ export default function AdminCalendar() {
     <div style={css.page}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+        <header className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8">
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: T.text, margin: 0 }}>Holiday Calendar</h1>
-            <p style={{ color: T.textMuted, fontSize: 14 }}>Manage public holidays and off-days for staff salary calculation.</p>
+            <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Holiday Calendar</h1>
+            <p className="text-[#6B7280] text-sm mt-1">Manage public holidays and off-days for staff salary calculation.</p>
           </div>
           
-          <button onClick={() => setShowAddModal(true)} style={css.btnPrimary}>
+          <button onClick={() => setShowAddModal(true)} style={css.btnPrimary} className="w-full md:w-auto justify-center">
             <HiOutlinePlus size={18} /> Add Holiday
           </button>
         </header>
@@ -250,14 +250,16 @@ export default function AdminCalendar() {
           {loading ? (
             <div className="py-20 text-center text-gray-500">Loading calendar...</div>
           ) : (
-            <div>
-              <div className="grid grid-cols-7 gap-4 mb-4">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center text-xs font-black text-gray-400 uppercase tracking-widest">{day}</div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-4">
-                {renderCalendarGrid()}
+            <div className="w-full overflow-x-auto pb-4">
+              <div className="min-w-[700px]">
+                <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center text-xs font-black text-gray-400 uppercase tracking-widest">{day}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-2 md:gap-4">
+                  {renderCalendarGrid()}
+                </div>
               </div>
             </div>
           )}

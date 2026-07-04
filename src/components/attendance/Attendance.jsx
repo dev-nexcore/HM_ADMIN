@@ -229,19 +229,19 @@ const Attendance = () => {
     <div style={css.page}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         
-        <header className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+        <header className="page-header flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: T.text, margin: 0 }}>Attendance Dashboard</h1>
-            <p style={{ color: T.textMuted, fontSize: 14 }}>Real-time student and staff check-in/out monitoring</p>
+            <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Attendance Dashboard</h1>
+            <p className="text-[#6B7280] text-sm mt-1">Real-time student and staff check-in/out monitoring</p>
           </div>
           
-          <div className="header-actions" style={{ display: "flex", gap: 12 }}>
+          <div className="header-actions flex flex-col sm:flex-row flex-wrap w-full md:w-auto gap-3">
              <div className="date-container" style={{ position: "relative" }}>
               <HiOutlineCalendar size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
               <input 
                 type="date" 
-                className="date-input"
-                style={{ ...css.input, paddingLeft: 40, width: 180, cursor: "pointer" }} 
+                className="date-input w-full sm:w-auto"
+                style={{ ...css.input, paddingLeft: 40, minWidth: 180, cursor: "pointer" }} 
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
                 onClick={e => {
@@ -251,10 +251,10 @@ const Attendance = () => {
                 }}
               />
             </div>
-            <button style={css.btnSecondary} className="action-btn" onClick={() => window.print()}>
+            <button style={{...css.btnSecondary, flex: "1 1 auto", justifyContent: "center"}} className="action-btn" onClick={() => window.print()}>
               <HiOutlinePrinter size={18} /> Print
             </button>
-            <button style={css.btnPrimary} className="action-btn">
+            <button style={{...css.btnPrimary, flex: "1 1 auto", justifyContent: "center"}} className="action-btn">
                <HiOutlineDownload size={18} /> Export
             </button>
           </div>
@@ -303,22 +303,22 @@ const Attendance = () => {
             </div>
           </div>
 
-          <div className="filter-row" style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-            <div style={{ position: "relative", flex: 1 }}>
-              <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+          <div className="filter-row flex flex-col md:flex-row gap-3 mb-5">
+            <div className="relative flex-1 w-full">
+              <HiOutlineSearch size={18} color={T.textMuted} className="absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 placeholder="Search by name or ID..." 
-                className="search-input"
-                style={{ ...css.input, paddingLeft: 40, width: "100%" }} 
+                className="search-input w-full pl-10"
+                style={css.input} 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div style={{ position: "relative" }}>
-              <HiOutlineFilter size={18} color={T.accent} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+            <div className="relative w-full md:w-auto">
+              <HiOutlineFilter size={18} color={T.accent} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <select 
-                style={{ ...css.btnSecondary, paddingLeft: 38, appearance: "none", paddingRight: 24 }} 
-                className="filter-btn"
+                style={{ ...css.btnSecondary, paddingLeft: 38, paddingRight: 24 }} 
+                className="filter-btn w-full md:w-auto appearance-none"
                 value={filterDirection}
                 onChange={e => setFilterDirection(e.target.value)}
               >
@@ -334,7 +334,7 @@ const Attendance = () => {
           ) : groupedFilteredLogs.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>No logs for this date</div>
           ) : (
-            <div className="table-container">
+            <div className="table-container w-full overflow-x-auto pb-4">
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${T.border}` }}>
@@ -493,41 +493,6 @@ const Attendance = () => {
         </div>
       )}
 
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .page-header {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 16px;
-          }
-          .header-actions {
-            width: 100%;
-            flex-direction: column;
-          }
-          .date-container, .date-input, .action-btn {
-            width: 100% !important;
-            justify-content: center;
-          }
-          .stats-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .filter-row {
-            flex-direction: column;
-          }
-          .filter-btn {
-            width: 100% !important;
-            justify-content: center;
-          }
-          .table-container {
-            overflow-x: auto;
-            margin: 0 -24px;
-            padding: 0 24px;
-          }
-          .tabs-container {
-            white-space: nowrap;
-          }
-        }
-      `}</style>
     </div>
 
   );
