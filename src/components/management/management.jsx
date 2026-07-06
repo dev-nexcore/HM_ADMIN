@@ -441,7 +441,7 @@ const StudentManagement = () => {
     try {
       const res = await registerStudentAPI({ ...formData, roomBedNumber: formData.bedNumber || "Not Assigned", aadharCard: studentDocuments.aadharCard, panCard: studentDocuments.panCard, studentIdCard: studentDocuments.studentIdCard, feesReceipt: studentDocuments.feesReceipt, relation: formData.relation });
       setRefreshTrigger(p => p + 1); resetForm();
-      toast.success(`Student registered! Password: ${res.student?.password}`, { autoClose: 6000 });
+      toast.success(`Student registered successfully!`, { autoClose: 3000 });
     } catch (e) { toast.error(e.message || "Error registering student."); }
     finally { setLoading(false); }
   };
@@ -633,7 +633,7 @@ const StudentManagement = () => {
       const res = await registerWorkerAPI({ ...workerFormData, roomBedNumber: workerFormData.bedNumber || "Not Assigned" });
       setRefreshTrigger(p => p + 1);
       resetWorkerForm();
-      toast.success(`Worker student registered! Password: ${res.student?.password}`, { autoClose: 6000 });
+      toast.success(`Worker registered successfully!`, { autoClose: 3000 });
     } catch (e) { toast.error(e.message || "Error registering worker."); }
     finally { setWorkerLoading(false); }
   };

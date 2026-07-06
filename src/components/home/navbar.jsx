@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Menu } from "lucide-react";
+import { User, Menu, Bell } from "lucide-react";
 
 export default function Navbar({ subtitle = "- have a great day", onSidebarToggle }) {
   const [showPopup, setShowPopup] = useState(false);
@@ -40,12 +40,15 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
         <Menu size={24} />
       </button>
 
+      {/* Left Menu Spacer (for layout symmetry) */}
+      <div className="w-12 sm:w-14 md:hidden"></div>
+
       {/* Welcome Text */}
-      <div className="flex-1 text-center md:text-left md:ml-5">
-        <div className="font-semibold leading-tight text-sm sm:text-lg md:text-xl lg:text-2xl text-black">
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center justify-center min-w-0 w-full max-w-[calc(100%-180px)] sm:max-w-[calc(100%-220px)] md:max-w-[50%] md:ml-20">
+        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-black leading-tight text-center truncate w-full">
           Welcome Back, {adminFullName}
-        </div>
-        <p className="italic text-black text-xs sm:text-sm md:text-base mt-0.5 sm:mt-1">
+        </h1>
+        <p className="italic text-black text-[10px] sm:text-xs md:text-sm mt-0.5">
           {subtitle}
         </p>
       </div>
@@ -58,20 +61,14 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
           className="relative"
           aria-label="View Notifications"
         >
-          <Image
-            src="/photos/bell1.png"
-            alt="Notifications"
-            width={24}
-            height={24}
-            className="w-5 h-5 sm:w-6 sm:h-6"
-          />
+          <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
         </button>
 
         {/* Notification Popup */}
         {showPopup && (
           <div
             ref={popupRef}
-            className="absolute right-0 top-12 sm:top-16 w-72 sm:w-80 bg-white rounded-xl shadow-xl z-50 p-4"
+            className="absolute right-[-10px] sm:right-0 top-12 sm:top-16 w-[300px] sm:w-80 bg-white rounded-xl shadow-xl z-50 p-4"
           >
             <div className="bg-[#A4B494] text-black px-4 py-3 rounded-t-xl flex justify-between items-center">
               <div>

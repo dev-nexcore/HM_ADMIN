@@ -121,37 +121,39 @@ const Inquiries = () => {
           <p className="text-sm text-slate-500 font-medium">Manage leads from the landing page</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Search by name, email..."
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all w-full sm:w-64"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <select 
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="contacted">Contacted</option>
-            <option value="converted">Converted</option>
-            <option value="rejected">Rejected</option>
-          </select>
+          <div className="flex gap-2">
+            <select 
+              className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="contacted">Contacted</option>
+              <option value="converted">Converted</option>
+              <option value="rejected">Rejected</option>
+            </select>
 
-          <button 
-            onClick={fetchInquiries}
-            className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
-            title="Refresh Inquiries"
-          >
-            <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+            <button 
+              onClick={fetchInquiries}
+              className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all flex-shrink-0"
+              title="Refresh Inquiries"
+            >
+              <RefreshCw className={`w-5 h-5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -168,11 +170,11 @@ const Inquiries = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
             {currentInquiries.map((item) => (
-              <div key={item._id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 flex flex-col min-h-[500px]">
+              <div key={item._id} className="group relative bg-white border border-slate-100 rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-8 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 flex flex-col min-h-0 sm:min-h-[500px]">
               {/* Status Badge */}
-              <div className={`absolute top-8 right-8 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(item.status)}`}>
+              <div className={`absolute top-5 right-5 sm:top-8 sm:right-8 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(item.status)}`}>
                 {item.status}
               </div>
 

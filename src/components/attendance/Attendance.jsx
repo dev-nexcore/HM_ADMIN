@@ -86,13 +86,14 @@ const css = {
     transition: "all 0.2s ease",
   },
   tab: {
-    padding: "12px 24px",
+    padding: "12px 16px",
     fontSize: "14px",
     fontWeight: 700,
     cursor: "pointer",
     transition: "all 0.2s ease",
     borderBottom: "3px solid transparent",
     color: T.textMuted,
+    whiteSpace: "nowrap",
   },
   activeTab: {
     color: T.accent,
@@ -282,7 +283,22 @@ const Attendance = () => {
         )}
 
         <div style={css.glassCard} className="table-card">
-          <div className="tabs-container" style={{ display: "flex", borderBottom: `1px solid ${T.border}`, marginBottom: 24, overflowX: "auto" }}>
+          {/* Mobile Dropdown */}
+          <div className="md:hidden mb-6">
+            <select 
+              className="w-full"
+              style={{ ...css.input, cursor: "pointer", fontWeight: 700, color: T.text, paddingRight: 32 }}
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+            >
+              <option value="students">Student Attendance</option>
+              <option value="workers">Worker Attendance</option>
+              <option value="staff">Staff Attendance</option>
+            </select>
+          </div>
+
+          {/* Desktop Tabs */}
+          <div className="tabs-container hidden md:flex" style={{ borderBottom: `1px solid ${T.border}`, marginBottom: 24, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div 
               style={{ ...css.tab, ...(activeTab === "students" ? css.activeTab : {}) }}
               onClick={() => setActiveTab("students")}
@@ -309,7 +325,7 @@ const Attendance = () => {
               <input 
                 placeholder="Search by name or ID..." 
                 className="search-input w-full pl-10"
-                style={css.input} 
+                style={{ ...css.input, paddingLeft: 40 }} 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />

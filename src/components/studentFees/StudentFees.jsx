@@ -732,7 +732,7 @@ const StudentFees = () => {
         <header style={{
           display: "flex", justifyContent: "space-between", alignItems: "flex-end",
           marginBottom: 40, flexWrap: "wrap", gap: 20,
-          position: "relative", zIndex: 100
+          position: "relative", zIndex: 10
         }} className="sf-fade-up sf-header-flex">
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
@@ -787,7 +787,7 @@ const StudentFees = () => {
         {/* ── Student Table ── */}
         <div style={css.glassCard} className="sf-fade-up">
           <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap", background: "#F9FAFB", padding: 16, borderRadius: 20, border: `1px solid ${T.border}` }} className="sf-search-row">
-            <div style={{ position: "relative", flex: "1 1 250px", minWidth: 250 }} className="sf-search-box">
+            <div style={{ position: "relative", flex: "1 1 auto", minWidth: 250 }} className="sf-search-box">
               <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
               <input
                 placeholder="Search students by name, ID or room..."
