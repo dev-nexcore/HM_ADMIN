@@ -73,7 +73,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const [otherEditFloor, setOtherEditFloor] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const itemsPerPage = 10;
 
   const fileInputRef = useRef(null);
 
@@ -818,14 +818,15 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                       type="checkbox"
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedItems(paginatedInventory.map((item) => item._id));
+                          setSelectedItems(filteredInventory.map((item) => item._id));
                         } else {
                           setSelectedItems([]);
                         }
                       }}
                       checked={
                         selectedItems.length > 0 &&
-                        paginatedInventory.every(item => selectedItems.includes(item._id))
+                        filteredInventory.length > 0 &&
+                        filteredInventory.every(item => selectedItems.includes(item._id))
                       }
                     />
                   </th>
@@ -854,7 +855,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                 </tr>
               </thead>
               <tbody className="bg-white text-sm">
-                {paginatedInventory.map((item, index) => (
+                {filteredInventory.map((item, index) => (
                   <tr key={item.barcodeId} className="hover:bg-gray-100">
                     <td className="px-2 py-2">
                       <input
@@ -873,7 +874,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                     </td>
 
                     <td className="font-semibold">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
+                      {index + 1}
                     </td>
                     <td className="px-4 py-2">{item.itemName}</td>
                     <td className="px-4 py-2">{item.barcodeId}</td>
@@ -1064,7 +1065,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div className="mt-6 flex flex-col sm:hidden items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
             <div className="text-sm text-gray-600 font-medium">
               Showing <span className="text-black font-bold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
               <span className="text-black font-bold">{Math.min(currentPage * itemsPerPage, filteredInventory.length)}</span> of{" "}

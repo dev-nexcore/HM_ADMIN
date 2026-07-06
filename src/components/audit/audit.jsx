@@ -54,9 +54,10 @@ export default function AuditLogsSection() {
   const fetchAuditLogs = async (page = 1, search = '', filtersObj = activeFilters) => {
     try {
       setLoading(true);
+      const limit = (typeof window !== 'undefined' && window.innerWidth >= 768) ? 500 : 10;
       const params = {
         page,
-        limit: 20,
+        limit,
         ...(search && { search }),
         ...(filtersObj.actionType !== 'all' && { actionType: filtersObj.actionType }),
         ...(filtersObj.adminId !== 'all' && { adminId: filtersObj.adminId }),
@@ -494,7 +495,7 @@ icon: <FileText size={18} />,
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-6">
+                <div className="flex justify-center items-center gap-4 mt-6 md:hidden">
                   <button
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                     disabled={!pagination.hasPreviousPage}
@@ -543,7 +544,7 @@ icon: <FileText size={18} />,
               )}
               
               {/* Total logs info */}
-              <div className="text-center mt-4 text-sm text-gray-600">
+              <div className="text-center mt-4 text-sm text-gray-600 md:hidden">
                 Showing {logs.length} of {pagination.totalLogs} logs
               </div>
             </>

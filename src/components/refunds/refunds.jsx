@@ -42,6 +42,10 @@ const Refunds = () => {
   const [refundHistory, setRefundHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const fetchRefunds = async () => {
     try {
       setLoading(true);
@@ -329,6 +333,19 @@ icon: <XCircle size={18} />,
       matchesAmountMax
     );
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRefunds.length / itemsPerPage);
+  const paginatedRefunds = filteredRefunds.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const getActiveCardId = () => {
     if (filters.status === "Completed") return "completed";
@@ -708,8 +725,8 @@ icon: <XCircle size={18} />,
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="animate-spin text-gray-500" size={32} />
               </div>
-            ) : filteredRefunds.length > 0 ? (
-              filteredRefunds.map((refund, idx) => (
+            ) : paginatedRefunds.length > 0 ? (
+              paginatedRefunds.map((refund, idx) => (
                 <div key={idx} className="bg-white rounded-xl p-4 shadow-md">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -776,9 +793,59 @@ icon: <XCircle size={18} />,
             )}
           </div>
           
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-6 md:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-white text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-2">
+                {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 rounded-lg transition-colors shadow-sm ${
+                        currentPage === pageNum
+                          ? 'bg-[#A4B494] text-white font-bold'
+                          : 'bg-white text-black hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-white text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                Next
+              </button>
+            </div>
+          )}
+          
           {/* Total results info */}
-          <div className="text-center mt-4 text-sm text-gray-600">
-            Showing {filteredRefunds.length} of {refundHistory.length} refunds
+          <div className="text-center mt-4 text-sm text-gray-600 md:hidden">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredRefunds.length)} of {filteredRefunds.length} refunds
           </div>
         </div>
 

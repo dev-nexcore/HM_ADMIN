@@ -35,7 +35,6 @@ const css = {
   page: {
     minHeight: "100vh",
     backgroundColor: "#F1F3EE",
-    padding: "24px",
     fontFamily: "'Outfit', 'Inter', system-ui, sans-serif",
   },
   glassCard: {
@@ -43,8 +42,7 @@ const css = {
     backdropFilter: "blur(12px)",
     borderRadius: "24px",
     border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: `0 10px 40px ${T.shadow}`,
-    padding: "24px",
+    boxShadow: `0 10px 40px ${T.shadow}`
   },
   btnPrimary: {
     background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
@@ -161,7 +159,7 @@ export default function AdminCalendar() {
 
     // Empty slots before first day
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24 rounded-xl border border-transparent"></div>);
+      days.push(<div key={`empty-${i}`} className="min-h-[80px] md:h-24 rounded-xl border border-transparent"></div>);
     }
 
     // Days in month
@@ -180,8 +178,8 @@ export default function AdminCalendar() {
       const isToday = new Date().toDateString() === dateObj.toDateString();
 
       days.push(
-        <div key={d} className={`h-24 p-2 rounded-xl border ${isToday ? 'border-[#5A6E3A] bg-[#F8FAF5]' : 'border-gray-100 bg-white'} relative group hover:border-[#5A6E3A] transition-all`}>
-          <span className={`font-bold ${isToday ? 'text-[#5A6E3A]' : 'text-gray-700'}`}>{d}</span>
+        <div key={d} className={`min-h-[80px] md:h-24 p-1 md:p-2 rounded-xl border ${isToday ? 'border-[#5A6E3A] bg-[#F8FAF5]' : 'border-gray-100 bg-white'} relative group hover:border-[#5A6E3A] transition-all`}>
+          <span className={`font-bold text-xs md:text-sm ${isToday ? 'text-[#5A6E3A]' : 'text-gray-700'}`}>{d}</span>
           
           <div className="mt-1 space-y-1 overflow-y-auto max-h-[60px]">
             {dayHolidays.map(h => (
@@ -215,7 +213,7 @@ export default function AdminCalendar() {
   };
 
   return (
-    <div style={css.page}>
+    <div style={css.page} className="p-3 sm:p-4 md:p-6">
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         
         <header className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8">
@@ -229,7 +227,7 @@ export default function AdminCalendar() {
           </button>
         </header>
 
-        <div style={css.glassCard}>
+        <div style={css.glassCard} className="p-3 sm:p-4 md:p-6 overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-[#1A1F16]">
               {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
@@ -251,13 +249,13 @@ export default function AdminCalendar() {
             <div className="py-20 text-center text-gray-500">Loading calendar...</div>
           ) : (
             <div className="w-full overflow-x-auto pb-4">
-              <div className="min-w-[700px]">
-                <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
+              <div className="min-w-full md:min-w-[700px]">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4 mb-2 md:mb-4">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-xs font-black text-gray-400 uppercase tracking-widest">{day}</div>
+                    <div key={day} className="text-center text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest truncate">{day}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-2 md:gap-4">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4">
                   {renderCalendarGrid()}
                 </div>
               </div>
