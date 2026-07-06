@@ -1310,7 +1310,16 @@ const StudentManagement = () => {
         {/* ── Registration Tabs ── */}
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto mb-10">
-            <div className="mb-4 relative h-[45px] w-full sm:w-[300px]">
+            {/* Desktop Tabs */}
+            <div className="hidden sm:flex mb-4 gap-3 overflow-x-auto pb-2 custom-scrollbar whitespace-nowrap">
+              {["student","parent","worker"].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
+                  {tab === "student" ? "Register Student" : tab === "parent" ? "Register Parent" : "Register Worker"}
+                </button>
+              ))}
+            </div>
+            {/* Mobile Dropdown */}
+            <div className="sm:hidden mb-4 relative h-[45px] w-full">
               <select 
                 value={activeTab} 
                 onChange={(e) => setActiveTab(e.target.value)}
