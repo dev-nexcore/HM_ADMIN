@@ -13,26 +13,19 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
 
-  // Scroll & Touch Lock on Sidebar Open
+  // Scroll Lock on Sidebar Open
   useEffect(() => {
-    const preventScroll = (e) => {
-      e.preventDefault();
-    };
-
     if (sidebarOpen) {
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
-      document.addEventListener("touchmove", preventScroll, { passive: false });
     } else {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
-      document.removeEventListener("touchmove", preventScroll);
     }
 
     return () => {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
-      document.removeEventListener("touchmove", preventScroll);
     };
   }, [sidebarOpen]);
 
