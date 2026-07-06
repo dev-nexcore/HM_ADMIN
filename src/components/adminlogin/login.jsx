@@ -314,85 +314,54 @@ const AdminLogin = () => {
       </div>
 
       {/* Mobile Layout */}
-      <div className="lg:hidden flex flex-col items-center w-full h-full relative overflow-hidden">
-        {/* Top white section with logo */}
+      <div className="lg:hidden flex flex-col w-full min-h-screen bg-white">
+        {/* Top Section (Green) */}
         <div
-          className={`w-full flex flex-col items-center justify-center bg-white pt-2 pb-10 sm:pb-8 md:pb-10 rounded-b-[20px] relative z-0 transition-all duration-1000 ease-out ${
-            mounted
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-full opacity-0"
+          className={`flex flex-col items-center justify-center bg-[#A4B494] px-6 py-12 text-center transition-all duration-1000 ease-out ${
+            mounted ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
           }`}
         >
-          <div
-            className={`transition-all duration-700 delay-500 ease-out transform ${
-              mounted
-                ? "scale-100 opacity-100 rotate-0"
-                : "scale-75 opacity-0 rotate-12"
-            }`}
-          >
+          <h2 className="text-3xl font-bold text-black mb-6">Welcome Back!</h2>
+          <div className="bg-white p-4 rounded-2xl mb-6 shadow-md">
             <img
               src="/photos/logo1.svg"
               alt="Logo"
-              className="w-[200px] h-[180px] xs:w-[220px] xs:h-[200px] sm:w-[260px] sm:h-[240px] md:w-[300px] md:h-[280px] bg-white p-3 sm:p-4 rounded-lg object-contain hover:scale-105 transition-transform duration-300 ease-in-out shadow-md"
+              className="w-[140px] h-[140px] object-contain"
             />
           </div>
+          <p className="text-black text-[15px] font-semibold max-w-[280px] leading-snug">
+            "Manage Your Hostel Smarter – Everything You Need in One Platform."
+          </p>
         </div>
 
-        {/* Login Form Card */}
+        {/* Bottom Section (White) */}
         <div
-          className={`absolute top-[200px] xs:top-[220px] sm:top-[260px] md:top-[300px] w-[85%] xs:w-[80%] sm:w-[75%] md:w-9/12 max-w-[400px] bg-white rounded-t-[20px] rounded-b-xl z-20 p-0 min-h-[350px] xs:min-h-[380px] sm:min-h-[400px] overflow-hidden transition-all duration-1000 ease-out ${
-            mounted ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+          className={`flex flex-col items-center justify-start bg-white px-6 py-10 transition-all duration-1000 ease-out flex-grow ${
+            mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
           }`}
-          style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
         >
-          {/* Header */}
-          <div
-            className={`w-full transition-all duration-700 delay-200 ease-out ${
-              mounted ? "translate-y-0 opacity-100" : "-translate-y-8 opacity-0"
-            }`}
-          >
-            <h2
-              className="text-lg xs:text-xl sm:text-xl font-bold text-black bg-white text-center py-3 xs:py-4 m-0 rounded-t-[20px] rounded-b-[20px]"
-              style={{
-                border: "0.5px solid #000000",
-                fontFamily: "Poppins",
-                fontWeight: "600",
-              }}
-            >
-              Admin Login
-            </h2>
-          </div>
+          <h2 className="text-2xl font-bold text-black mb-8">Admin Login</h2>
 
-          {/* Login Form */}
-          <div
-            className={`p-4 xs:p-5 sm:p-6 md:p-8 transition-all duration-700 delay-400 ease-out ${
-              mounted ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-            }`}
-          >
+          <div className="w-full max-w-sm">
             {step === 1 ? (
               // Step 1: Enter Admin ID (Mobile)
-              <form onSubmit={handleSendOTP} className="space-y-4 xs:space-y-5 sm:space-y-6 w-full">
+              <form onSubmit={handleSendOTP} className="space-y-6 w-full">
                 <div>
-                  <label className="block text-base xs:text-lg font-bold mb-2">
+                  <label className="block text-[15px] font-bold mb-2 text-black">
                     Admin ID
                   </label>
                   <input
                     type="text"
                     value={adminId}
                     onChange={(e) => setAdminId(e.target.value)}
-                    placeholder="Enter Admin ID"
+                    placeholder="Enter Your Admin ID"
                     required
-                    className="w-full px-3 xs:px-4 sm:px-5 py-2.5 xs:py-3 text-sm xs:text-base text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium transition-all duration-300 ease-in-out transform focus:scale-[1.02] hover:shadow-lg"
-                    style={{
-                      boxShadow: "0px 4px 10px 0px #00000040",
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: "500",
-                    }}
+                    className="w-full px-4 py-3 text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#A4B494] focus:ring-1 focus:ring-[#A4B494] placeholder:text-gray-400 transition-all shadow-sm"
                   />
                 </div>
 
                 {errorMsg && (
-                  <div className="text-red-600 text-xs xs:text-sm font-semibold text-center animate-fadeInUp">
+                  <div className="text-red-600 text-sm font-semibold text-center animate-fadeInUp">
                     {errorMsg}
                   </div>
                 )}
@@ -401,12 +370,11 @@ const AdminLogin = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-[160px] xs:w-[180px] sm:w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-2.5 xs:py-3 text-sm xs:text-base rounded-xl hover:bg-[#9AAA87] transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg active:scale-95 disabled:scale-100 disabled:opacity-70"
-                    style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+                    className="w-full bg-[#BEC5AD] text-black font-bold py-3.5 rounded-xl hover:bg-[#A4B494] transition-all disabled:opacity-70 shadow-sm"
                   >
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">
-                        <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                         <span>Sending...</span>
                       </div>
                     ) : (
@@ -417,49 +385,43 @@ const AdminLogin = () => {
               </form>
             ) : (
               // Step 2: Enter OTP (Mobile)
-              <form onSubmit={handleVerifyOTP} className="space-y-4 xs:space-y-5 sm:space-y-6 w-full">
+              <form onSubmit={handleVerifyOTP} className="space-y-6 w-full">
                 <div className="text-center mb-2">
-                  <p className="text-xs xs:text-sm text-gray-600">
-                    OTP sent to Registered Email: <span className="font-semibold">{maskedNumber}</span>
+                  <p className="text-sm text-gray-600">
+                    OTP sent to Registered Email: <br /><span className="font-semibold text-black">{maskedNumber}</span>
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-base xs:text-lg font-bold mb-2">
+                  <label className="block text-[15px] font-bold mb-2 text-black">
                     Enter OTP
                   </label>
                   <input
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="6-digit OTP"
+                    placeholder="Enter 6-digit OTP"
                     required
                     maxLength={6}
-                    className="w-full px-3 xs:px-4 sm:px-5 py-2.5 xs:py-3 text-base xs:text-lg text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9AAA87] placeholder:font-medium text-center tracking-widest transition-all duration-300 ease-in-out transform focus:scale-[1.02] hover:shadow-lg"
-                    style={{
-                      boxShadow: "0px 4px 10px 0px #00000040",
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: "500",
-                    }}
+                    className="w-full px-4 py-3 text-xl text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#A4B494] focus:ring-1 focus:ring-[#A4B494] text-center tracking-widest transition-all shadow-sm"
                   />
                 </div>
 
                 {errorMsg && (
-                  <div className="text-red-600 text-xs xs:text-sm font-semibold text-center animate-fadeInUp">
+                  <div className="text-red-600 text-sm font-semibold text-center animate-fadeInUp">
                     {errorMsg}
                   </div>
                 )}
 
-                <div className="flex flex-col items-center space-y-3">
+                <div className="flex flex-col items-center space-y-4 pt-2">
                   <button
                     type="submit"
                     disabled={loading || otp.length !== 6}
-                    className="w-[160px] xs:w-[180px] sm:w-[200px] cursor-pointer bg-[#A4B494] text-black font-bold py-2.5 xs:py-3 text-sm xs:text-base rounded-xl hover:bg-[#9AAA87] transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg active:scale-95 disabled:scale-100 disabled:opacity-70"
-                    style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
+                    className="w-full bg-[#BEC5AD] text-black font-bold py-3.5 rounded-xl hover:bg-[#A4B494] transition-all disabled:opacity-70 shadow-sm"
                   >
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">
-                        <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                         <span>Verifying...</span>
                       </div>
                     ) : (
@@ -467,11 +429,11 @@ const AdminLogin = () => {
                     )}
                   </button>
 
-                  <div className="flex items-center space-x-4 text-xs xs:text-sm">
+                  <div className="flex items-center justify-between w-full text-sm mt-4 px-1">
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="text-gray-600 font-medium hover:underline transition-colors duration-200"
+                      className="text-gray-600 font-medium hover:underline"
                     >
                       ← Back
                     </button>
@@ -480,26 +442,15 @@ const AdminLogin = () => {
                       type="button"
                       onClick={handleResendOTP}
                       disabled={resendTimer > 0 || loading}
-                      className="text-blue-600 font-medium hover:underline transition-colors duration-200 disabled:text-gray-400 disabled:no-underline"
+                      className="text-black font-bold hover:underline disabled:text-gray-400"
                     >
-                      {resendTimer > 0 ? `Resend ${resendTimer}s` : "Resend OTP"}
+                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
                     </button>
                   </div>
                 </div>
               </form>
             )}
           </div>
-        </div>
-
-        {/* Bottom quote section */}
-        <div
-          className={`w-full flex flex-col items-center justify-center text-center px-4 xs:px-5 sm:px-6 py-4 xs:py-5 sm:py-6 mt-[320px] xs:mt-[360px] sm:mt-[380px] md:mt-[400px] transition-all duration-700 delay-600 ease-out ${
-            mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-          }`}
-        >
-          <p className="text-black text-sm xs:text-base sm:text-lg font-semibold max-w-xs xs:max-w-sm sm:max-w-lg leading-relaxed">
-            "Manage Your Hostel Smarter – Everything You Need in One Platform."
-          </p>
         </div>
       </div>
 
