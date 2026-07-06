@@ -1310,12 +1310,22 @@ const StudentManagement = () => {
         {/* ── Registration Tabs ── */}
         {!editingStudent && (
           <div className="w-full max-w-7xl mx-auto mb-10">
-            <div className="flex mb-4 gap-3 overflow-x-auto pb-2 custom-scrollbar whitespace-nowrap">
-              {["student","parent","worker"].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab===tab?"bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50":"bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily:"Poppins" }}>
-                  {tab === "student" ? "Register Student" : tab === "parent" ? "Register Parent" : "Register Worker"}
-                </button>
-              ))}
+            <div className="mb-4 relative h-[45px] w-full sm:w-[300px]">
+              <select 
+                value={activeTab} 
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full h-full px-4 bg-[#BEC5AD] rounded-[12px] outline-none cursor-pointer appearance-none text-[14px] font-semibold text-black shadow-md border border-[#4F8CCF]/50"
+                style={{ WebkitAppearance: "none", fontFamily: "Poppins" }}
+              >
+                <option value="student">Register Student</option>
+                <option value="parent">Register Parent</option>
+                <option value="worker">Register Worker</option>
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd"/>
+                </svg>
+              </div>
             </div>
             <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow:"0px 4px 20px 0px #00000040 inset" }}>
               {activeTab === "student" ? formContent(false) : activeTab === "parent" ? parentFormContent() : workerFormContent()}
