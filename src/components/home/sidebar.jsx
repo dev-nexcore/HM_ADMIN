@@ -94,11 +94,11 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
         {/* Logo */}
         <div className="flex justify-center items-center mb-6 -mt-3">
-  <img src="/photos/logo1.svg" alt="Logo" className="w-31 h-auto" />
-</div>
+          <img src="/photos/logo1.svg" alt="Logo" className="w-31 h-auto" />
+        </div>
 
         {/* Nav Items */}
-        <div className="flex-1 w-full overflow-y-auto px-2 scrollbar-hidden">
+        <div className="w-full md:flex-1 md:overflow-y-auto px-2 scrollbar-hidden">
           <ul className="flex flex-col gap-1">
             {navItems.map((item) => {
               const isParent = !!item.children;
@@ -164,7 +164,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         </div>
 
         {/* Logout */}
-        <div className="mt-auto mb-6 px-5 w-full">
+        <div className="md:mt-auto mt-6 mb-12 md:mb-6 px-5 w-full">
           <hr className="border-t border-black mb-3" />
           <button
             onClick={() => setShowLogoutConfirm(true)}
