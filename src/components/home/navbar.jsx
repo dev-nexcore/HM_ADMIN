@@ -44,17 +44,17 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
       <div className="w-12 sm:w-14 md:hidden"></div>
 
       {/* Welcome Text */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center justify-center min-w-0 w-full max-w-[calc(100%-180px)] sm:max-w-[calc(100%-220px)] md:max-w-[50%] md:ml-20">
-        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-black leading-tight text-center truncate w-full">
+      <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex flex-col items-center justify-center md:items-start md:justify-start min-w-0 w-full max-w-[calc(100%-180px)] sm:max-w-[calc(100%-220px)] md:max-w-none md:ml-0">
+        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-black leading-tight text-center md:text-left truncate w-full">
           Welcome Back, {adminFullName}
         </h1>
-        <p className="italic text-black text-[10px] sm:text-xs md:text-sm mt-0.5">
+        <p className="italic text-black text-[10px] sm:text-xs md:text-sm mt-0.5 text-center md:text-left">
           {subtitle}
         </p>
       </div>
 
       {/* Right Side Actions */}
-      <div className="relative flex items-center gap-3 sm:gap-4 flex-shrink-0">
+      <div className="relative flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
         {/* Notification Bell */}
         <button
           onClick={() => setShowPopup(!showPopup)}
