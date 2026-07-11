@@ -421,7 +421,7 @@ const WardenRequisitions = () => {
               </select>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Table */}
         <div style={css.glassCard} className="table-container">
