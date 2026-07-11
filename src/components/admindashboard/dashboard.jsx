@@ -2,18 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { FaRupeeSign } from "react-icons/fa";
-import { 
-  TrendingUp, 
-  Clock, 
-  Bed, 
-  CheckCircle, 
-  LogIn, 
-  LogOut, 
-  UserPlus, 
+import {
+  TrendingUp,
+  Clock,
+  Bed,
+  CheckCircle,
+  LogIn,
+  LogOut,
+  UserPlus,
   Users,
   UserCheck,
-  Megaphone, 
-  CreditCard, 
+  Megaphone,
+  CreditCard,
   Calendar,
   AlertCircle,
   Wrench,
@@ -154,7 +154,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-10">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
         <div className="flex items-center">
@@ -163,25 +163,21 @@ const Dashboard = () => {
             Dashboard
             {agentData && (
               <div className="flex gap-2 ml-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                  agentData.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${
-                    agentData.status === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                  }`}></span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${agentData.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                  <span className={`w-2 h-2 rounded-full ${agentData.status === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                    }`}></span>
                   Agent: {agentData.status}
                 </span>
 
                 {agentData.devices && agentData.devices.length > 0 && (
                   <>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                      agentData.devices[0].softwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${agentData.devices[0].softwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
                       Software: {agentData.devices[0].softwareStatus || 'Offline'}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                      agentData.devices[0].hardwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${agentData.devices[0].hardwareStatus === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
                       Device: {agentData.devices[0].hardwareStatus || 'Offline'}
                     </span>
                   </>
@@ -191,7 +187,7 @@ const Dashboard = () => {
           </h2>
         </div>
         {activeFilter !== "All" && (
-          <button 
+          <button
             onClick={() => setActiveFilter("All")}
             className="mt-2 sm:mt-0 px-4 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
           >
@@ -249,31 +245,40 @@ const Dashboard = () => {
           <button
             key={i}
             onClick={() => setActiveFilter(card.title)}
-            className={`bg-white shadow-lg rounded-2xl overflow-hidden border-2 hover:shadow-2xl transition text-center relative min-h-[140px] flex flex-col justify-between ${
+            className={`bg-white rounded-xl border transition-all duration-300 min-h-[140px] flex flex-col justify-between p-5 w-full text-left relative overflow-hidden group ${
               activeFilter === card.title 
-                ? "border-[#4F8CCF] ring-4 ring-[#4F8CCF]/10 scale-[1.02]" 
-                : "border-transparent hover:border-gray-200"
+                ? "border-[#4F8CCF] shadow-md ring-1 ring-[#4F8CCF]" 
+                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5"
             }`}
           >
-            <div className={`relative w-full px-4 py-3 rounded-t-2xl flex justify-between items-center transition-colors ${
-              activeFilter === card.title ? "bg-[#4F8CCF] text-white" : "bg-[#c2c9b0] text-black"
-            }`}>
-              <span className="font-bold text-sm tracking-tight uppercase">{card.title}</span>
-              <div className={activeFilter === card.title ? "text-white/80" : "text-black/40"}>
+            <div className="flex justify-between items-start w-full z-10">
+              <div>
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{card.title}</p>
+                <h3 className={`text-3xl font-extrabold flex items-center gap-1 ${activeFilter === card.title ? 'text-gray-900' : 'text-gray-800'}`}>
+                  {card.isCurrency ? (
+                    <>
+                      <FaRupeeSign className="text-xl" />
+                      {card.value}
+                    </>
+                  ) : (
+                    card.value
+                  )}
+                </h3>
+              </div>
+              <div 
+                className={`p-3 rounded-xl transition-all duration-300 ${activeFilter === card.title ? 'bg-[#4F8CCF] text-white' : 'bg-gray-50 text-gray-500 group-hover:bg-gray-100'}`}
+                style={{ 
+                  color: activeFilter === card.title ? '#fff' : undefined, 
+                  backgroundColor: activeFilter === card.title ? undefined : undefined 
+                }}
+              >
                 {card.icon}
               </div>
             </div>
-            <div
-              className={`py-6 font-bold text-3xl flex justify-center items-center gap-2 ${card.color}`}
-            >
-              {card.isCurrency ? (
-                <>
-                  <FaRupeeSign className="text-2xl" />
-                  {card.value}
-                </>
-              ) : (
-                card.value
-              )}
+            
+            {/* Decorative subtle background accent */}
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] transform group-hover:scale-125 transition-transform duration-500 pointer-events-none text-gray-400">
+              <div style={{ width: '100px', height: '100px' }}>{card.icon}</div>
             </div>
           </button>
         ))}
@@ -349,10 +354,10 @@ const Dashboard = () => {
             {activities
               .filter((activity) => {
                 if (activeFilter === "All") return true;
-                
+
                 const desc = activity.description?.toLowerCase() || "";
                 const action = activity.action?.toLowerCase() || "";
-                
+
                 if (activeFilter === "Today's Check-In") {
                   return action.includes("check_in") || desc.includes("check in") || desc.includes("checked in");
                 }
@@ -365,7 +370,7 @@ const Dashboard = () => {
                 if (activeFilter === "Occupied Beds" || activeFilter === "Available Beds") {
                   return action.includes("bed") || action.includes("room") || action.includes("inventory");
                 }
-                
+
                 return true; // fallback
               })
               .map((activity) => (
@@ -381,11 +386,11 @@ const Dashboard = () => {
                     </span>
                   </p>
                 </div>
-            ))}
+              ))}
             {activeFilter === "All" && activities.length >= 10 && (
               <div className="mt-4 pt-2 text-center border-t border-gray-100">
-                <a 
-                  href="/audit" 
+                <a
+                  href="/audit"
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 text-[#4F8CCF] font-bold rounded-full transition-all border border-gray-200 hover:border-[#4F8CCF]/30"
                 >
                   View more activity <ArrowRight size={16} />
@@ -401,19 +406,19 @@ const Dashboard = () => {
 
         {/* Show empty state if filtering results in no matches */}
         {!loadingActivities && activities.length > 0 && activities.filter((activity) => {
-              if (activeFilter === "All") return true;
-              const desc = activity.description?.toLowerCase() || "";
-              const action = activity.action?.toLowerCase() || "";
-              if (activeFilter === "Today's Check-In") return action.includes("check_in") || desc.includes("check in") || desc.includes("checked in");
-              if (activeFilter === "Today's Check-Outs") return action.includes("check_out") || desc.includes("check out") || desc.includes("checked out");
-              if (activeFilter === "Total Revenue" || activeFilter === "Pending Payments") return action.includes("payment") || action.includes("fee") || action.includes("invoice");
-              if (activeFilter === "Occupied Beds" || activeFilter === "Available Beds") return action.includes("bed") || action.includes("room") || action.includes("inventory");
-              return true;
+          if (activeFilter === "All") return true;
+          const desc = activity.description?.toLowerCase() || "";
+          const action = activity.action?.toLowerCase() || "";
+          if (activeFilter === "Today's Check-In") return action.includes("check_in") || desc.includes("check in") || desc.includes("checked in");
+          if (activeFilter === "Today's Check-Outs") return action.includes("check_out") || desc.includes("check out") || desc.includes("checked out");
+          if (activeFilter === "Total Revenue" || activeFilter === "Pending Payments") return action.includes("payment") || action.includes("fee") || action.includes("invoice");
+          if (activeFilter === "Occupied Beds" || activeFilter === "Available Beds") return action.includes("bed") || action.includes("room") || action.includes("inventory");
+          return true;
         }).length === 0 && (
-          <div className="text-center py-8 text-gray-500 italic">
-            No recent activities found matching the filter "{activeFilter}".
-          </div>
-        )}
+            <div className="text-center py-8 text-gray-500 italic">
+              No recent activities found matching the filter "{activeFilter}".
+            </div>
+          )}
       </div>
     </div>
   );

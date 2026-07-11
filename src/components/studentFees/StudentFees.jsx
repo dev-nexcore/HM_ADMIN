@@ -33,20 +33,20 @@ import { toast } from "react-hot-toast";
 
 // ── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg: "#7A8B5E",
-  bgLight: "#F8FAF5",
-  accent: "#5A6E3A",
-  accentDark: "#3E4B28",
-  accentLight: "#E8EDDF",
-  gold: "#C5A059",
-  goldLight: "#F4EDE1",
-  text: "#1A1F16",
+  bg: "#4F8CCF",
+  bgLight: "#F0F6FC",
+  accent: "#4F8CCF",
+  accentDark: "#3A6FA6",
+  accentLight: "#E1EDF8",
+  gold: "#F59E0B",
+  goldLight: "#FEF3C7",
+  text: "#1F2937",
   textMuted: "#6B7280",
-  border: "rgba(90,110,58,0.08)",
-  glass: "rgba(255, 255, 255, 0.7)",
-  shadow: "rgba(40, 50, 30, 0.08)",
-  shadowHover: "rgba(40, 50, 30, 0.15)",
-  green: "#10B981",
+  border: "#E5E7EB",
+  glass: "rgba(255, 255, 255, 0.95)",
+  shadow: "rgba(0, 0, 0, 0.05)",
+  shadowHover: "rgba(0, 0, 0, 0.1)",
+  green: "#22C55E",
   red: "#EF4444",
   orange: "#F59E0B",
 };
@@ -54,76 +54,75 @@ const T = {
 const css = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#F1F3EE",
+    backgroundColor: "#F3F4F6",
     padding: "24px",
-    fontFamily: "'Outfit', 'Inter', system-ui, sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
   },
   glassCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "24px",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: `0 10px 40px ${T.shadow}`,
+    background: "#FFFFFF",
+    borderRadius: "16px",
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     padding: "24px",
   },
   statCard: {
     background: "#FFFFFF",
-    borderRadius: "24px",
+    borderRadius: "16px",
     padding: "24px",
-    border: `1px solid ${T.border}`,
-    boxShadow: `0 4px 20px ${T.shadow}`,
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+    transition: "all 0.2s ease-in-out",
     display: "flex",
     flexDirection: "column",
     gap: "16px",
     cursor: "pointer",
   },
   btnPrimary: {
-    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+    background: "#4F8CCF",
     color: "#fff",
-    borderRadius: "16px",
-    padding: "12px 24px",
+    borderRadius: "8px",
+    padding: "10px 20px",
     fontSize: "13px",
-    fontWeight: 700,
+    fontWeight: 600,
     border: "none",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    boxShadow: `0 8px 20px rgba(90,110,58,0.25)`,
+    gap: "8px",
+    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     transition: "all 0.2s ease",
   },
   btnSecondary: {
-    background: "#fff",
-    color: T.accent,
-    borderRadius: "16px",
-    padding: "12px 24px",
+    background: "#FFFFFF",
+    color: "#4F8CCF",
+    borderRadius: "8px",
+    padding: "10px 20px",
     fontSize: "13px",
-    fontWeight: 700,
-    border: `1.5px solid ${T.accent}20`,
+    fontWeight: 600,
+    border: "1px solid #E5E7EB",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: "8px",
+    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     transition: "all 0.2s ease",
   },
   input: {
-    background: "#FFFFFF",
-    border: `1.5px solid #E5E7EB`,
-    borderRadius: "16px",
-    padding: "12px 18px",
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
+    padding: "10px 16px",
     fontSize: "14px",
-    color: T.text,
+    color: "#1F2937",
     outline: "none",
     width: "100%",
     transition: "all 0.2s ease",
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)",
   },
   badge: {
-    padding: "6px 12px",
-    borderRadius: "99px",
+    padding: "4px 10px",
+    borderRadius: "6px",
     fontSize: "11px",
-    fontWeight: 800,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
   },
@@ -679,7 +678,7 @@ const StudentFees = () => {
   ];
 
   return (
-    <div style={css.page} className="sf-page-container">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans sf-page-container">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -687,8 +686,8 @@ const StudentFees = () => {
         .sf-row:hover { background: #F9FAFB !important; }
         .sf-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
         .inv-row:hover { background: #F9FAFB !important; }
-        .inv-number-link { color: #3E4B28; font-weight: 800; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-        .inv-number-link:hover { color: #5A6E3A; }
+        .inv-number-link { color: #3A6FA6; font-weight: 800; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+        .inv-number-link:hover { color: #4F8CCF; }
         @media (max-width: 1100px) {
           .sf-hide-mobile { display: none !important; }
           .sf-show-mobile { display: flex !important; }
@@ -726,32 +725,25 @@ const StudentFees = () => {
           min-width: 1000px;
         }
       `}</style>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div className="w-full">
 
         {/* ── Header ── */}
-        <header style={{
-          display: "flex", justifyContent: "space-between", alignItems: "flex-end",
-          marginBottom: 40, flexWrap: "wrap", gap: 20,
-          position: "relative", zIndex: 10
-        }} className="sf-fade-up sf-header-flex">
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 20, background: T.accent,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 8px 16px ${T.accent}40`
-              }}>
-                <FaGraduationCap size={28} color="#fff" />
-              </div>
-              <h1 style={{ fontSize: 32, fontWeight: 900, color: T.text, margin: 0, letterSpacing: "-0.03em" }}>
-                Financial Overview
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: "Inter" }}>
+                Student Fees
               </h1>
             </div>
-            <p style={{ color: T.textMuted, fontWeight: 500, fontSize: 15, margin: 0 }}>
-              KGF Hostel Management • {selectedYear} Academic Session
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: "Poppins" }}>
+              Financial Overview • {selectedYear} Academic Session
             </p>
           </div>
-        </header>
+        </div>
+
+        {/* Main Content Box matching Admin Panel */}
+        <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow: "0px 4px 20px 0px #00000040 inset", fontFamily: "Poppins" }}>
 
 
         {/* ── Stat Cards ── */}
@@ -939,6 +931,7 @@ const StudentFees = () => {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </div>
 

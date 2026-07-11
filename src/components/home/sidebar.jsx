@@ -69,11 +69,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   };
 
   const getLinkClass = (href, label) =>
-    `flex items-center gap-3 px-4 py-2 transition-all duration-200 text-sm font-semibold cursor-pointer
-    ${
-      pathname === href || (href !== "/" && pathname.startsWith(href))
-        ? "bg-white text-black rounded-lg mx-2 shadow-sm mb-1"
-        : "hover:bg-white/30 text-black pl-6"
+    `flex items-center gap-2 px-3 py-2 transition-all duration-200 text-[13px] font-semibold cursor-pointer whitespace-nowrap
+    ${pathname === href || (href !== "/" && pathname.startsWith(href))
+      ? "bg-white text-black rounded-lg mx-2 shadow-sm mb-1"
+      : "hover:bg-white/30 text-black pl-4"
     }`;
 
   return (
@@ -108,18 +107,17 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                   {isParent ? (
                     <>
                       <div
-                        className={`flex items-center justify-between gap-3 px-4 py-2 cursor-pointer font-semibold text-black hover:bg-white/30 rounded-lg transition-all duration-200 ${
-                          openMenus[item.label] ? "bg-white/40" : ""
-                        }`}
+                        className={`flex items-center justify-between gap-3 px-4 py-2 cursor-pointer font-semibold text-black hover:bg-white/30 rounded-lg transition-all duration-200 ${openMenus[item.label] ? "bg-white/40" : ""
+                          }`}
                         onClick={() => toggleMenu(item.label)}
                       >
                         <div className="flex items-center gap-3">
                           {item.icon === "react-icon" ? (
-                            <Users size={20} />
+                            <Users size={18} className="shrink-0" />
                           ) : (
-                            <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
+                            <Image src={item.icon} alt={`${item.label} icon`} width={18} height={18} className="shrink-0" />
                           )}
-                          <span className="text-sm">{item.label}</span>
+                          <span className="text-[13px] whitespace-nowrap">{item.label}</span>
                         </div>
                         <span>{openMenus[item.label] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
                       </div>
@@ -135,8 +133,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                                   setSidebarOpen(false); // Close sidebar on mobile after selection
                                 }}
                               >
-                                <Image src={child.icon} alt={`${child.label} icon`} width={20} height={20} />
-                                <span className="text-sm">{child.label}</span>
+                                <Image src={child.icon} alt={`${child.label} icon`} width={18} height={18} className="shrink-0" />
+                                <span className="text-[13px] whitespace-nowrap">{child.label}</span>
                               </div>
                             </Link>
                           ))}
@@ -152,8 +150,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                           setSidebarOpen(false); // Close sidebar on mobile after selection
                         }}
                       >
-                        <Image src={item.icon} alt={`${item.label} icon`} width={20} height={20} />
-                        <span className="text-sm">{item.label}</span>
+                        <Image src={item.icon} alt={`${item.label} icon`} width={18} height={18} className="shrink-0" />
+                        <span className="text-[13px] whitespace-nowrap">{item.label}</span>
                       </div>
                     </Link>
                   )}

@@ -44,7 +44,7 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
       <div className="w-12 sm:w-14 md:hidden"></div>
 
       {/* Welcome Text */}
-      <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex flex-col items-center justify-center md:items-start md:justify-start min-w-0 w-full max-w-[calc(100%-180px)] sm:max-w-[calc(100%-220px)] md:max-w-none md:ml-0">
+      <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex flex-col items-center justify-center md:items-start md:justify-start min-w-0 w-full max-w-[calc(100%-180px)] sm:max-w-[calc(100%-220px)] md:max-w-none md:ml-6 lg:ml-8">
         <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-black leading-tight text-center md:text-left truncate w-full">
           Welcome Back, {adminFullName}
         </h1>
@@ -104,15 +104,15 @@ export default function Navbar({ subtitle = "- have a great day", onSidebarToggl
         )}
 
         {/* Profile Button */}
-         <button
+        <button
           onClick={handleProfileClick}
           className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-white rounded-full border border-gray-300 flex-shrink-0 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 overflow-hidden group cursor-pointer"
           aria-label="View Profile"
         >
           {!loading && profileImage ? (
-            <img 
-              src={profileImage} 
-              alt="Profile" 
+            <img
+              src={profileImage}
+              alt="Profile"
               className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-200"
             />
           ) : (

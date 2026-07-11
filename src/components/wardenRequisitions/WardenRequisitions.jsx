@@ -18,19 +18,19 @@ import { toast } from "react-hot-toast";
 
 // ── Theme tokens (Luxury Sage & Gold Palette) ─────────────────────
 const T = {
-  bg: "#7A8B5E",
-  bgLight: "#F8FAF5",
-  accent: "#5A6E3A",
-  accentDark: "#3E4B28",
-  accentLight: "#E8EDDF",
-  gold: "#C5A059",
-  goldLight: "#F4EDE1",
-  text: "#1A1F16",
+  bg: "#4F8CCF",
+  bgLight: "#F0F6FC",
+  accent: "#4F8CCF",
+  accentDark: "#3A6FA6",
+  accentLight: "#E1EDF8",
+  gold: "#F59E0B",
+  goldLight: "#FEF3C7",
+  text: "#1F2937",
   textMuted: "#6B7280",
-  border: "rgba(90,110,58,0.08)",
-  glass: "rgba(255, 255, 255, 0.7)",
-  shadow: "rgba(40, 50, 30, 0.08)",
-  green: "#10B981",
+  border: "#E5E7EB",
+  glass: "rgba(255, 255, 255, 0.95)",
+  shadow: "rgba(0, 0, 0, 0.05)",
+  green: "#22C55E",
   red: "#EF4444",
   orange: "#F59E0B",
   blue: "#3B82F6",
@@ -39,25 +39,24 @@ const T = {
 const css = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#F1F3EE",
+    backgroundColor: "#F3F4F6",
     padding: "24px",
-    fontFamily: "'Outfit', 'Inter', system-ui, sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
   },
   glassCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "24px",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: `0 10px 40px ${T.shadow}`,
+    background: "#FFFFFF",
+    borderRadius: "16px",
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     padding: "24px",
   },
   btnPrimary: {
-    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+    background: "#4F8CCF",
     color: "#fff",
-    borderRadius: "14px",
+    borderRadius: "8px",
     padding: "10px 20px",
     fontSize: "13px",
-    fontWeight: 700,
+    fontWeight: 600,
     border: "none",
     cursor: "pointer",
     display: "flex",
@@ -66,13 +65,13 @@ const css = {
     transition: "all 0.2s ease",
   },
   btnSecondary: {
-    background: "#fff",
-    color: T.accent,
-    borderRadius: "14px",
+    background: "#FFFFFF",
+    color: "#4F8CCF",
+    borderRadius: "8px",
     padding: "10px 20px",
     fontSize: "13px",
-    fontWeight: 700,
-    border: `1.5px solid ${T.accent}20`,
+    fontWeight: 600,
+    border: "1px solid #E5E7EB",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -80,12 +79,12 @@ const css = {
     transition: "all 0.2s ease",
   },
   input: {
-    background: "#FFFFFF",
-    border: `1.5px solid #E5E7EB`,
-    borderRadius: "14px",
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
     padding: "10px 16px",
     fontSize: "14px",
-    color: T.text,
+    color: "#1F2937",
     outline: "none",
     width: "100%",
   },
@@ -342,18 +341,28 @@ const WardenRequisitions = () => {
   }, [requisitions, searchTerm, statusFilter, typeFilter]);
 
   return (
-    <div style={css.page}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans sf-page-container">
+      <div className="w-full">
         
         {/* Header */}
-        <header className="page-header mb-8">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Warden Requisitions</h1>
-              <p className="text-[#6B7280] text-sm mt-1">Review and approve registration requests from wardens</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: "Inter" }}>
+                Warden Requisitions
+              </h1>
             </div>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: "Poppins" }}>
+              Review and approve registration requests from wardens
+            </p>
           </div>
+        </div>
 
+        {/* Main Content Box matching Admin Panel */}
+        <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow: "0px 4px 20px 0px #00000040 inset", fontFamily: "Poppins" }}>
+          
+          <div className="page-header mb-8">
           {/* Stats Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
             {[
@@ -499,6 +508,7 @@ const WardenRequisitions = () => {
               </table>
             </div>
           )}
+        </div>
         </div>
       </div>
 
