@@ -2,7 +2,7 @@
 // export default StudentManagement;
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, Check, X, ChevronDown, Info } from "lucide-react";
+import { Eye, Check, X, ChevronDown, Info, Pencil } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
 import { ToastContainer, toast } from "react-toastify";
@@ -30,28 +30,27 @@ const StatCard = ({ icon, label, value, accent, isActive, onClick, total }) => {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-xl border transition-all duration-300 min-h-[140px] flex flex-col justify-between p-5 w-full text-left relative overflow-hidden group ${
-        isActive 
-          ? "border-[#4F8CCF] shadow-md ring-1 ring-[#4F8CCF]" 
+      className={`bg-white rounded-xl border transition-all duration-300 min-h-[140px] flex flex-col justify-between p-5 w-full text-left relative overflow-hidden group ${isActive
+          ? "border-[#4F8CCF] shadow-md ring-1 ring-[#4F8CCF]"
           : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-start w-full z-10">
         <div>
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</p>
           <h3 className="text-3xl font-extrabold text-gray-800">{value}</h3>
         </div>
-        <div 
+        <div
           className="p-3 rounded-xl transition-all duration-300"
-          style={{ 
-            color: isActive ? '#fff' : accent, 
-            backgroundColor: isActive ? accent : `${accent}15` 
+          style={{
+            color: isActive ? '#fff' : accent,
+            backgroundColor: isActive ? accent : `${accent}15`
           }}
         >
           {icon}
         </div>
       </div>
-      
+
       {/* Decorative subtle background accent */}
       <div className="absolute -right-4 -bottom-4 opacity-[0.04] transform group-hover:scale-125 transition-transform duration-500 pointer-events-none">
         <div style={{ width: '100px', height: '100px', color: accent }}>{icon}</div>
@@ -173,7 +172,7 @@ const StudentManagement = () => {
   const [reqLoading, setReqLoading] = useState(false);
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reasonText, setReasonText] = useState("");
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const STAT_CARDS = [
@@ -279,10 +278,13 @@ const StudentManagement = () => {
         };
         const actualRoomNo = roomDetails?.inventory?.roomNo || roomDetails?.roomNo || "";
         const rType = String(s.roomType || (actualRoomNo ? capacityMap[actualRoomNo] : ""));
-        const monthlyFee = isWorking
+        const monthlyFeeStr = isWorking
           ? (rType === "5" ? "₹ 6,000" : rType === "4" ? "₹ 6,500" : rType === "3" ? "₹ 7,000" : "-")
           : (rType === "5" ? "₹ 4,500" : rType === "4" ? "₹ 5,000" : rType === "3" ? "₹ 5,500" : "-");
-        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${s.dues || 0}/-`, roomType: rType, monthlyFee, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
+
+        let calculatedDues = Number(s.dueAmount || s.dues || 0);
+
+        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${calculatedDues}/-`, dueAmount: calculatedDues, roomType: rType, monthlyFee: monthlyFeeStr, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
       }));
       setStudents(transformed);
     } catch (e) { console.error(e); }
@@ -682,27 +684,27 @@ const StudentManagement = () => {
     if (!fileData || (!hasDocument(fileData) && !(fileData instanceof File))) return null;
     const isFile = fileData instanceof File;
     const objectId = studentIdOverride || (isParent ? editingParent?._id : editingStudent);
-    const url = isFile 
-      ? URL.createObjectURL(fileData) 
-      : (isParent 
-         ? `${getParentDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`
-         : `${getDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`);
+    const url = isFile
+      ? URL.createObjectURL(fileData)
+      : (isParent
+        ? `${getParentDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`
+        : `${getDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`);
     const name = isFile ? fileData.name : getDocumentName(fileData);
 
     return (
       <div className="mt-2 flex items-start gap-3 bg-white/50 p-2 rounded-lg border border-gray-100 shadow-sm">
-        <div 
+        <div
           className="w-16 h-12 bg-white rounded border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors flex-shrink-0"
           onClick={() => window.open(url, "_blank")}
         >
-          <img 
-            src={url} 
-            alt={`${label} Preview`} 
+          <img
+            src={url}
+            alt={`${label} Preview`}
             className="w-full h-full object-contain"
-            onError={(e) => { 
-              e.target.onerror = null; 
-              e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-auto text-gray-400 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[9px] text-gray-500 font-medium leading-tight block">File</span></div>'; 
-            }} 
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-auto text-gray-400 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[9px] text-gray-500 font-medium leading-tight block">File</span></div>';
+            }}
           />
         </div>
         <div className="flex flex-col justify-center h-12 min-w-0">
@@ -716,9 +718,11 @@ const StudentManagement = () => {
 
   const formContent = (isEditMode) => (
     <>
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6" style={{ fontFamily: "Inter", fontWeight: "700" }}>
-        {isEditMode ? (formData.isWorking ? "Edit Worker Details" : "Edit Student & Allot Bed") : "Register New Student & Allot Bed"}
-      </h2>
+      {isEditMode && (
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6" style={{ fontFamily: "Inter", fontWeight: "700" }}>
+          {formData.isWorking ? "Edit Worker Details" : "Edit Student & Allot Bed"}
+        </h2>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 
         {/* First Name */}
@@ -928,7 +932,7 @@ const StudentManagement = () => {
 
   const parentFormContent = () => (
     <>
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6" style={{ fontFamily: "Inter", fontWeight: "700" }}>Register Parent Account</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {[
           { name: "firstName", label: "First Name", type: "text", placeholder: "Enter First Name", error: parentErrors.firstName },
@@ -946,7 +950,7 @@ const StudentManagement = () => {
 
         {/* Parent docs */}
         <div className="w-full px-2 md:col-span-2">
-          <div className="bg-white/50 rounded-lg p-4 space-y-4">
+          <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 space-y-4">
             <h3 className="font-semibold text-black mb-2">Upload Documents (Optional — Auto-fill with OCR)</h3>
             {["aadhar", "pan"].map(type => {
               const docKey = type === "aadhar" ? "aadharCard" : "panCard";
@@ -988,9 +992,7 @@ const StudentManagement = () => {
 
   const workerFormContent = () => (
     <>
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-black mb-4 sm:mb-6" style={{ fontFamily: "Inter", fontWeight: "700" }}>
-        Register New Worker
-      </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 
         {/* First Name */}
@@ -1391,8 +1393,17 @@ const StudentManagement = () => {
                 </svg>
               </div>
             </div>
-            <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow: "0px 4px 20px 0px #00000040 inset" }}>
-              {activeTab === "student" ? formContent(false) : activeTab === "parent" ? parentFormContent() : workerFormContent()}
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30">
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">
+                    {activeTab === "student" ? "Register New Student & Allot Bed" : activeTab === "parent" ? "Register Parent Account" : "Register New Worker"}
+                  </h2>
+                </div>
+              </div>
+              <div className="p-4 sm:p-6 lg:p-8">
+                {activeTab === "student" ? formContent(false) : activeTab === "parent" ? parentFormContent() : workerFormContent()}
+              </div>
             </div>
           </div>
         )}
@@ -1454,21 +1465,21 @@ const StudentManagement = () => {
                       <p className="font-semibold text-black text-sm mb-2">{label}</p>
                       {hasDocument(studentDetailsData.documents?.[key]) ? (
                         <div className="flex flex-col gap-2">
-                          <div 
+                          <div
                             className="w-full h-24 bg-white rounded border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors"
                             onClick={() => {
                               const token = localStorage.getItem('adminToken');
                               window.open(`${getDocumentUrl(studentDetailsData.id, key)}?token=${token}`, '_blank');
                             }}
                           >
-                            <img 
-                              src={`${getDocumentUrl(studentDetailsData.id, key)}?token=${localStorage.getItem('adminToken')}`} 
-                              alt={label} 
-                              className="w-full h-full object-contain" 
-                              onError={(e) => { 
-                                e.target.onerror = null; 
-                                e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[10px] text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>'; 
-                              }} 
+                            <img
+                              src={`${getDocumentUrl(studentDetailsData.id, key)}?token=${localStorage.getItem('adminToken')}`}
+                              alt={label}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[10px] text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>';
+                              }}
                             />
                           </div>
                           <button onClick={() => {
@@ -1523,21 +1534,21 @@ const StudentManagement = () => {
                       <p className="font-semibold text-black text-sm mb-2">{label}</p>
                       {hasDocument(parentDetailsData.documents?.[key]) ? (
                         <div className="flex flex-col gap-2">
-                          <div 
+                          <div
                             className="w-full h-24 bg-white rounded border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors"
                             onClick={() => {
                               const token = localStorage.getItem('adminToken');
                               window.open(`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${token}`, '_blank');
                             }}
                           >
-                            <img 
-                              src={`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${localStorage.getItem('adminToken')}`} 
-                              alt={label} 
-                              className="w-full h-full object-contain" 
-                              onError={(e) => { 
-                                e.target.onerror = null; 
-                                e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[10px] text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>'; 
-                              }} 
+                            <img
+                              src={`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${localStorage.getItem('adminToken')}`}
+                              alt={label}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[10px] text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>';
+                              }}
                             />
                           </div>
                           <button onClick={() => {
@@ -1614,174 +1625,213 @@ const StudentManagement = () => {
 
         {/* ── Student List ── */}
         <div id="student-list-section" className="w-full">
-          <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 px-4 sm:px-0" style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}>
-            {activeTab === "parent" ? (
-              parentTable()
-            ) : (
-              <>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 px-4 sm:px-0">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black" style={{ fontFamily: "Inter" }}>
+          {activeTab === "parent" ? (
+            <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8 px-4 sm:px-0" style={{ boxShadow: "0px 4px 4px 0px #00000040 inset" }}>
+              {parentTable()}
+            </div>
+          ) : (
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30">
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">
                     {activeTab === "worker" ? "Worker List" : "Student List"}
-                    {activeFilter !== "All" && <span className="text-[#4F8CCF] text-lg ml-2 font-semibold">— {activeFilter}</span>}
+                    {activeFilter !== "All" && <span className="text-gray-800 text-sm ml-2 font-medium">— {activeFilter}</span>}
                   </h2>
+                  <p className="text-sm text-gray-700 mt-1">Total: {filteredStudents.length} records</p>
                 </div>
+              </div>
 
-                {/* Desktop Table */}
-                <div className="hidden lg:block">
-                  <div className="border border-black rounded-[19.6px] overflow-hidden">
-                    <div className="bg-white text-black grid grid-cols-11 text-center">
-                      {["Student ID", "Name", "Room/Bed", "Type", "Fee", "Contact", "Fees Status", "Dues", "Biometric", "Status", "Action"].map((h, i) => (
-                        <div key={h} className="px-2 py-3 relative flex justify-center items-center" style={{ fontFamily: "Poppins", fontWeight: "600", fontSize: "13px" }}>
-                          <span className="w-full break-words">{h}</span>
-                          {i < 10 && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-5 border border-black" />}
-                        </div>
+              {/* Desktop Table */}
+              <div className="hidden lg:block overflow-x-auto p-4">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      {["Student ID", "Name", "Room/Bed", "Type", "Fee", "Contact", "Fees Status", "Dues", "Biometric", "Status", "Action"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-sm font-semibold text-gray-700">
+                          {h}
+                        </th>
                       ))}
-                    </div>
-                    <div className="bg-[#BEC5AD] text-center text-sm flex flex-col gap-y-2 p-2 font-[Poppins] font-medium">
-                      {currentStudents.length === 0 && (
-                        <div className="py-8 text-center text-gray-600 font-medium">No {activeTab === "worker" ? "workers" : "students"} found for this filter.</div>
-                      )}
-                      {currentStudents.map((s, i) => (
-                        <div key={s.id} className="text-black grid grid-cols-11 items-center border-b border-black/10 last:border-0 pb-2">
-                          <div className="px-2 py-2 break-words text-xs">{s.isPendingApproval ? "Pending" : s.id}</div>
-                          <div className="px-2 py-2 break-words text-xs font-bold">{s.name}</div>
-                          <div className="px-2 py-2 break-words leading-tight text-[10px]">{s.room}</div>
-                          <div className="px-2 py-2 text-[10px] break-words">{s.roomType ? `${s.roomType} Bed` : "-"}</div>
-                          <div className="px-2 py-2 text-[10px] font-bold text-blue-700">{s.monthlyFee}</div>
-                          <div className="px-2 py-2 text-[10px] break-words">{s.contact}</div>
-                          <div className="px-2 py-2 flex justify-center"><span style={getFeeStatusStyle(s.feeStatus)}>{s.feeStatus}</span></div>
-                          <div className="px-2 py-2">{s.dues}</div>
-                          <div className="px-2 py-2 flex justify-center">
-                            {s.isAddedToBiometric ? (
-                              <span className="text-green-600 font-bold" title="Added to Biometric">✅</span>
-                            ) : (
-                              <span className="text-red-500 font-bold" title="Not added to Biometric">❌</span>
-                            )}
-                          </div>
-                          <div className="px-2 py-2 flex justify-center">
-                            {s.isPendingApproval ? (
-                              <span className={`text-[10px] font-bold px-2 py-1 rounded-md text-center w-full ${s.reqStatus === 'rejected' ? 'text-red-600 bg-red-100' : 'text-orange-600 bg-orange-100'}`}>
-                                {s.reqStatus === 'rejected' ? 'Rejected' : 'Pending'}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-1 rounded-md text-center w-full">Approved</span>
-                            )}
-                          </div>
-                          <div className="px-2 py-2 flex justify-center items-center gap-2">
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentStudents.length === 0 && (
+                      <tr>
+                        <td colSpan="11" className="text-center py-12 text-gray-500 text-lg">
+                          No {activeTab === "worker" ? "workers" : "students"} found.
+                        </td>
+                      </tr>
+                    )}
+                    {currentStudents.map((s) => (
+                      <tr key={s.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-gray-600 font-medium whitespace-nowrap">{s.isPendingApproval ? "Pending" : s.id}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{s.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{s.room}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{s.roomType ? `${s.roomType} Bed` : "-"}</td>
+                        <td className="px-4 py-3 text-sm font-bold text-blue-700 whitespace-nowrap">{s.monthlyFee}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{s.contact}</td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.feeStatus === 'Paid' ? 'bg-green-100 text-green-800' :
+                              s.feeStatus === 'Unpaid' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                            }`}>
+                            {s.feeStatus}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-red-500 whitespace-nowrap">{s.dues && s.dues !== "₹ 0/-" ? s.dues : "-"}</td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          <span className="flex items-center gap-1 font-medium text-gray-700">
+                            {s.isAddedToBiometric ? "✅ Added" : "❌ Pending"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.isPendingApproval
+                              ? (s.reqStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800')
+                              : 'bg-green-100 text-green-800'
+                            }`}>
+                            {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : "Approved"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          <div className="flex items-center gap-3">
                             {s.isPendingApproval ? (
                               <>
-                                <button onClick={() => handleViewDetails(s.id)} title="View Details" className="hover:scale-110 transition-transform"><Eye size={18} strokeWidth={2.5} /></button>
+                                <button onClick={() => handleViewDetails(s.id)} title="View Details" className="text-blue-600 hover:text-blue-800 transition-colors"><Eye size={18} /></button>
                                 {s.reqStatus === 'rejected' && s.rejectionReason && (
                                   <>
-                                    <div className="w-px h-4 bg-gray-400 self-center" />
-                                    <button onClick={() => handleViewReason(s.rejectionReason)} title="View Reason" className="hover:scale-110 transition-transform text-red-500"><Info size={18} strokeWidth={2.5} /></button>
+                                    <div className="w-px h-4 bg-gray-300" />
+                                    <button onClick={() => handleViewReason(s.rejectionReason)} title="View Reason" className="text-red-600 hover:text-red-800 transition-colors"><Info size={18} /></button>
                                   </>
                                 )}
                                 {s.reqStatus !== 'rejected' && (
                                   <>
-                                    <div className="w-px h-4 bg-gray-400 self-center" />
-                                    <button onClick={() => handleApproveReq(s.requisitionId)} className="hover:scale-110 transition-transform text-green-600" title="Approve"><Check size={18} strokeWidth={3} /></button>
-                                    <div className="w-px h-4 bg-gray-400 self-center" />
-                                    <button onClick={() => handleRejectReq(s.requisitionId)} className="hover:scale-110 transition-transform text-red-600" title="Reject"><X size={18} strokeWidth={3} /></button>
+                                    <div className="w-px h-4 bg-gray-300" />
+                                    <button onClick={() => handleApproveReq(s.requisitionId)} title="Approve" className="text-green-600 hover:text-green-800 transition-colors"><Check size={18} strokeWidth={3} /></button>
+                                    <div className="w-px h-4 bg-gray-300" />
+                                    <button onClick={() => handleRejectReq(s.requisitionId)} title="Reject" className="text-red-600 hover:text-red-800 transition-colors"><X size={18} strokeWidth={3} /></button>
                                   </>
                                 )}
                               </>
                             ) : (
                               <>
-                                <button onClick={() => handleViewDetails(s.id)} className="hover:scale-110 transition-transform" title="View Details"><Eye size={22} strokeWidth={2.5} /></button>
-                                <div className="w-px h-5 bg-black self-center" />
-                                <button onClick={() => handleEdit(s.id)} className="hover:scale-110 transition-transform" title="Edit Student">
-                                  <svg width="22" height="22" viewBox="0 0 27 26" fill="none"><mask id={`m${i}`} style={{ maskType: "alpha" }} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9" /></mask><g mask={`url(#m${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F" /></g></svg>
-                                </button>
+                                <button onClick={() => handleViewDetails(s.id)} title="View Details" className="text-blue-600 hover:text-blue-800 transition-colors"><Eye size={18} /></button>
+                                <button onClick={() => handleEdit(s.id)} title="Edit Student" className="text-blue-600 hover:text-blue-800 transition-colors"><Pencil size={18} /></button>
                               </>
                             )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                {/* Mobile Cards */}
-                <div className="lg:hidden space-y-3">
-                  {currentStudents.length === 0 && <p className="text-center text-gray-600 py-8">No {activeTab === "worker" ? "workers" : "students"} found.</p>}
-                  {currentStudents.map((s, i) => (
-                    <div key={s.id} className="bg-white rounded-xl p-4 border border-black/10 shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold text-base text-black">{s.name}</h3>
-                          <p className="text-xs text-gray-500 mt-0.5">ID: {s.isPendingApproval ? "Pending" : s.id}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          {s.isPendingApproval ? (
+              {/* Mobile view logic */}
+              <div className="lg:hidden p-4 space-y-4">
+                {currentStudents.length === 0 && <p className="text-center text-gray-500 py-8">No {activeTab === "worker" ? "workers" : "students"} found.</p>}
+                {currentStudents.map((s) => (
+                  <div key={s.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 relative">
+                    <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${s.isPendingApproval
+                          ? (s.reqStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800')
+                          : 'bg-green-100 text-green-800'
+                        }`}>
+                        {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : "Approved"}
+                      </span>
+                      <span className="text-[10px] font-medium text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200 shadow-sm">
+                        {s.isAddedToBiometric ? "✅ Bio" : "❌ Bio"}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-500">ID:</span>
+                      <span className="ml-2 text-sm text-gray-800 font-medium">{s.isPendingApproval ? "Pending" : s.id}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-500">Name:</span>
+                      <span className="ml-2 text-sm text-gray-700 font-bold">{s.name}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-500">Room/Bed:</span>
+                      <span className="ml-2 text-sm text-gray-700">{s.room} {s.roomType ? `${s.roomType} Bed` : ""}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-500">Contact:</span>
+                      <span className="ml-2 text-sm text-gray-700">{s.contact}</span>
+                    </div>
+                    <div className="mb-2 flex items-center">
+                      <span className="text-xs font-semibold text-gray-500">Fees Status:</span>
+                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${s.feeStatus === 'Paid' ? 'bg-green-100 text-green-800' : s.feeStatus === 'Unpaid' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {s.feeStatus}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 mt-3 pt-2 border-t border-gray-200">
+                      {s.isPendingApproval ? (
+                        <>
+                          <button onClick={() => handleViewDetails(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"><Eye size={16} /> View</button>
+                          {s.reqStatus === 'rejected' && s.rejectionReason && (
+                            <button onClick={() => handleViewReason(s.rejectionReason)} className="flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors text-sm"><Info size={16} /> Reason</button>
+                          )}
+                          {s.reqStatus !== 'rejected' && (
                             <>
-                              <button onClick={() => handleViewDetails(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors" title="View Details"><Eye size={16} /></button>
-                              {s.reqStatus === 'rejected' && s.rejectionReason && (
-                                <button onClick={() => handleViewReason(s.rejectionReason)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors" title="View Reason"><Info size={16} strokeWidth={3} /></button>
-                              )}
-                              {s.reqStatus !== 'rejected' && (
-                                <>
-                                  <button onClick={() => handleApproveReq(s.requisitionId)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors" title="Approve"><Check size={16} strokeWidth={3} /></button>
-                                  <button onClick={() => handleRejectReq(s.requisitionId)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors" title="Reject"><X size={16} strokeWidth={3} /></button>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => handleViewDetails(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors"><Eye size={16} /></button>
-                              <button onClick={() => handleEdit(s.id)} className="p-2 bg-[#BEC5AD] rounded-lg hover:bg-[#A4B494] transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 27 26" fill="none"><mask id={`mm${i}`} style={{ maskType: "alpha" }} maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="26"><rect x=".678" y=".025" width="25.736" height="25.736" fill="#D9D9D9" /></mask><g mask={`url(#mm${i})`}><path d="M2.824 25.761V21.472h21.446v4.289H2.824ZM7.113 17.182h1.501l8.364-8.337-1.528-1.528-8.337 8.365v1.5ZM4.968 19.327V14.77l12.01-11.983c.197-.197.425-.348.683-.462.26-.113.532-.17.818-.17.286 0 .563.057.831.17.268.107.51.268.725.482l1.474 1.501c.215.197.371.429.469.697.098.268.147.545.147.831 0 .268-.049.504-.147.763-.098.26-.254.497-.469.712L9.526 19.327H4.968Z" fill="#1C1B1F" /></g></svg>
-                              </button>
+                              <button onClick={() => handleApproveReq(s.requisitionId)} className="flex items-center gap-1 text-green-600 hover:text-green-800 transition-colors text-sm"><Check size={16} strokeWidth={3} /> Approve</button>
+                              <button onClick={() => handleRejectReq(s.requisitionId)} className="flex items-center gap-1 text-red-600 hover:text-red-800 transition-colors text-sm"><X size={16} strokeWidth={3} /> Reject</button>
                             </>
                           )}
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="bg-gray-50 rounded-lg px-3 py-2">
-                          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Room / Bed</span>
-                          <p className="text-black font-semibold text-xs mt-0.5">{s.room}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Contact</span>
-                            <p className="text-black text-xs font-medium">{s.contact}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Dues</span>
-                            <p className="text-black font-bold text-sm">{s.dues}</p>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center pt-1 border-t border-gray-100">
-                          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Fee Status</span>
-                          <span style={getFeeStatusStyle(s.feeStatus)} className="text-[10px]">{s.feeStatus}</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-1 border-t border-gray-100">
-                          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Biometric</span>
-                          <span className="text-[10px]">
-                            {s.isAddedToBiometric ? "✅ Added" : "❌ Pending"}
-                          </span>
-                        </div>
-                      </div>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => handleViewDetails(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"><Eye size={16} /> View</button>
+                          <button onClick={() => handleEdit(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"><Pencil size={16} /> Edit</button>
+                        </>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Pagination */}
-                {filteredStudents.length > itemsPerPage && (
-                  <div className="mt-6 flex flex-wrap justify-center items-center gap-2">
-                    <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className={`px-4 py-2 rounded-lg border border-black font-semibold text-sm transition-colors ${currentPage === 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-white"}`}>← Prev</button>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="hidden md:flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <div className="text-sm text-gray-500">
+                    Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to <span className="font-medium">{Math.min(indexOfLastItem, filteredStudents.length)}</span> of <span className="font-medium">{filteredStudents.length}</span> results
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => paginate(currentPage - 1)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      Previous
+                    </button>
                     <div className="flex gap-1">
                       {[...Array(totalPages)].map((_, i) => (
-                        <button key={i + 1} onClick={() => paginate(i + 1)} className={`w-9 h-9 rounded-lg border border-black font-semibold text-sm transition-colors ${currentPage === i + 1 ? "bg-white shadow-md" : "hover:bg-white/50"}`}>{i + 1}</button>
+                        <button
+                          key={i}
+                          onClick={() => paginate(i + 1)}
+                          className={`w-10 h-10 flex items-center justify-center text-sm font-bold rounded-xl transition-all ${currentPage === i + 1 ? 'bg-[#4F8DCF] text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'}`}
+                        >
+                          {i + 1}
+                        </button>
                       ))}
                     </div>
-                    <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className={`px-4 py-2 rounded-lg border border-black font-semibold text-sm transition-colors ${currentPage === totalPages ? "opacity-30 cursor-not-allowed" : "hover:bg-white"}`}>Next →</button>
-                    <span className="text-sm text-black font-medium ml-2">{currentPage}/{totalPages || 1} · {filteredStudents.length} students</span>
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => paginate(currentPage + 1)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      Next
+                    </button>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                </div>
+              )}
+
+              {/* Mobile Pagination */}
+              <div className="md:hidden flex justify-between items-center px-4 py-4 border-t border-gray-100 bg-gray-50">
+                <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className={`px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium shadow-sm transition-all ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>Prev</button>
+                <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages || 1}</span>
+                <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className={`px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium shadow-sm transition-all ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>Next</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Reject Modal ── */}
