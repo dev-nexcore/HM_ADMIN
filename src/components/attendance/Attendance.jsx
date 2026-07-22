@@ -1,114 +1,26 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { io } from "socket.io-client";
+import React, { useState, useEffect, useMemo } from 'react';
+import { io } from 'socket.io-client';
 import {
-  HiOutlineSearch,
-  HiOutlineFilter,
-  HiOutlineCalendar,
-  HiOutlineUserGroup,
-  HiOutlineIdentification,
-  HiOutlineArrowNarrowRight,
-  HiOutlineArrowNarrowLeft,
-  HiOutlineChartBar,
-  HiOutlinePrinter,
-  HiOutlineDownload,
-  HiOutlineLocationMarker,
-  HiOutlineClock,
-  HiOutlineCheckCircle,
-  HiOutlineXCircle,
-  HiOutlinePlus,
-} from "react-icons/hi";
-import api from "@/lib/api";
-import { toast } from "react-hot-toast";
-
-// ── Theme tokens (Luxury Sage & Gold Palette) ─────────────────────
-const T = {
-  bg: "#7A8B5E",
-  bgLight: "#F8FAF5",
-  accent: "#5A6E3A",
-  accentDark: "#3E4B28",
-  accentLight: "#E8EDDF",
-  gold: "#C5A059",
-  goldLight: "#F4EDE1",
-  text: "#1A1F16",
-  textMuted: "#6B7280",
-  border: "rgba(90,110,58,0.1)",
-  glass: "rgba(255, 255, 255, 0.7)",
-  shadow: "rgba(40, 50, 30, 0.08)",
-  green: "#10B981",
-  red: "#EF4444",
-  orange: "#F59E0B",
-  blue: "#3B82F6",
-};
-
-const css = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#F1F3EE",
-    padding: "24px",
-    fontFamily: "'Outfit', 'Inter', system-ui, sans-serif",
-  },
-  glassCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "24px",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: `0 10px 40px ${T.shadow}`,
-    padding: "24px",
-  },
-  btnPrimary: {
-    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
-    color: "#fff",
-    borderRadius: "14px",
-    padding: "10px 20px",
-    fontSize: "13px",
-    fontWeight: 700,
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  btnSecondary: {
-    background: "#fff",
-    color: T.accent,
-    borderRadius: "14px",
-    padding: "10px 20px",
-    fontSize: "13px",
-    fontWeight: 700,
-    border: `1.5px solid ${T.accent}20`,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  tab: {
-    padding: "12px 16px",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    borderBottom: "3px solid transparent",
-    color: T.textMuted,
-    whiteSpace: "nowrap",
-  },
-  activeTab: {
-    color: T.accent,
-    borderBottom: `3px solid ${T.accent}`,
-  },
-  input: {
-    background: "#fff",
-    border: `1.5px solid ${T.accent}20`,
-    borderRadius: "14px",
-    padding: "10px 16px",
-    fontSize: "13px",
-    outline: "none",
-    transition: "all 0.2s ease",
-  },
-};
+  Search,
+  Filter,
+  Calendar,
+  Users,
+  ArrowRight,
+  ArrowLeft,
+  Printer,
+  Download,
+  MapPin,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  MessageSquare,
+  RefreshCw
+} from 'lucide-react';
+import api from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 const Attendance = () => {
   const [activeTab, setActiveTab] = useState("students");
@@ -153,7 +65,6 @@ const Attendance = () => {
       ]);
       
       if (logsRes.data.success) {
-        // Deduplicate logs that happen within the same minute for the same user and direction
         const uniqueLogs = [];
         const seenLogs = new Set();
         logsRes.data.logs.forEach(l => {
@@ -180,7 +91,6 @@ const Attendance = () => {
       const student = log.studentId;
       const staff = log.staffId;
       
-      // Determine category: "students", "workers", "staff"
       let category = "unknown";
       if (student) {
          category = student.isWorking ? "workers" : "students";
@@ -191,13 +101,11 @@ const Attendance = () => {
          if (code.startsWith("STUW")) category = "workers";
          else if (code.startsWith("EMP") || code.startsWith("STAFF")) category = "staff";
          else if (code.startsWith("STU")) category = "students";
-         else category = "staff"; // fallback
+         else category = "staff"; 
       }
       
-      // Filter by active tab
       if (activeTab !== category) return false;
 
-      // Filter by direction
       if (filterDirection !== "ALL" && log.direction !== filterDirection) return false;
 
       const name = student ? `${student.firstName} ${student.lastName}` : (staff ? `${staff.firstName} ${staff.lastName}` : (log.employeeCode || "Unknown"));
@@ -226,115 +134,164 @@ const Attendance = () => {
     return uniqueLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [filteredLogs]);
 
-  return (
-    <div style={css.page}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+  const handleExport = () => {
+    if (groupedFilteredLogs.length === 0) {
+      toast.error('No records to export');
+      return;
+    }
+    const headers = ['Name', 'ID', 'Category', 'Room/Designation', 'Direction', 'Date', 'Time', 'Device', 'Method'];
+    const csvContent = [
+      headers.join(','),
+      ...groupedFilteredLogs.map(log => {
+        const student = log.studentId;
+        const staff = log.staffId;
+        const warden = log.wardenId;
+        const name = student ? `${student.firstName} ${student.lastName}` : (staff ? `${staff.firstName} ${staff.lastName}` : (warden ? `${warden.firstName} ${warden.lastName}` : (log.employeeCode || "Unknown")));
+        const id = student?.studentId || staff?.staffId || warden?.wardenId || log.employeeCode || '';
+        const room = activeTab === "staff" ? (staff?.designation || (warden ? "Warden" : "Staff")) : (student?.roomBedNumber?.roomNo || "-");
+        const date = new Date(log.timestamp).toLocaleDateString('en-IN');
+        const time = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
-        <header className="page-header flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Attendance Dashboard</h1>
-            <p className="text-[#6B7280] text-sm mt-1">Real-time student and staff check-in/out monitoring</p>
+        return `"${name}","${id}","${activeTab}","${room}","${log.direction}","${date}","${time}","${log.deviceName}","${log.verificationType}"`;
+      })
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Attendance_${selectedDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
+      <div className="w-full">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-7">
+          <div className="flex flex-col mb-4 md:mb-0">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: 'Inter' }}>
+                Attendance Dashboard
+              </h1>
+            </div>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: 'Poppins' }}>
+              Real-time student and staff check-in/out monitoring
+            </p>
           </div>
           
-          <div className="header-actions flex flex-col sm:flex-row flex-wrap w-full md:w-auto gap-3">
-             <div className="date-container" style={{ position: "relative" }}>
-              <HiOutlineCalendar size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap w-full md:w-auto">
+            <div className="relative flex-1 md:flex-none">
+              <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
               <input 
                 type="date" 
-                className="date-input w-full sm:w-auto"
-                style={{ ...css.input, paddingLeft: 40, minWidth: 180, cursor: "pointer" }} 
+                className="pl-10 pr-4 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm font-semibold text-black shadow-sm cursor-pointer w-full"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
-                onClick={e => {
-                  try {
-                    e.target.showPicker();
-                  } catch (err) {}
-                }}
+                onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
               />
             </div>
-            <button style={{...css.btnSecondary, flex: "1 1 auto", justifyContent: "center"}} className="action-btn" onClick={() => window.print()}>
-              <HiOutlinePrinter size={18} /> Print
+            <button 
+              className="px-4 py-2 bg-white shadow-sm border border-gray-200 rounded-xl text-black hover:bg-gray-50 transition-all font-semibold text-sm flex items-center justify-center gap-2 flex-1 md:flex-none" 
+              onClick={() => window.print()}
+            >
+              <Printer size={16} /> Print
             </button>
-            <button style={{...css.btnPrimary, flex: "1 1 auto", justifyContent: "center"}} className="action-btn">
-               <HiOutlineDownload size={18} /> Export
+            <button 
+              onClick={handleExport}
+              className="px-4 py-2 bg-[#4F8CCF] shadow-sm rounded-xl text-white hover:bg-[#3A6FA6] transition-all font-semibold text-sm flex items-center justify-center gap-2 flex-1 md:flex-none"
+            >
+              <Download size={16} /> Export
             </button>
           </div>
-        </header>
+        </div>
 
+        {/* Stats Cards */}
         {stats && (
-          <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
-            {[
-              { label: "Total Strength", value: activeTab === "students" ? stats.studentStats?.totalStudents : (activeTab === "workers" ? stats.workerStats?.totalWorkers : stats.staffStats?.totalStaff), icon: <HiOutlineUserGroup />, color: T.blue, bg: "#EBF5FF" },
-              { label: "Present Today", value: activeTab === "students" ? stats.studentStats?.presentToday : (activeTab === "workers" ? stats.workerStats?.presentToday : stats.staffStats?.presentToday), icon: <HiOutlineCheckCircle />, color: T.green, bg: "#F0FDF4" },
-              { label: "Absent / Leave", value: activeTab === "students" ? stats.studentStats?.absentToday : (activeTab === "workers" ? stats.workerStats?.absentToday : stats.staffStats?.absentToday), icon: <HiOutlineXCircle />, color: T.red, bg: "#FEF2F2" },
-              { label: "Check-ins Today", value: filteredLogs.filter(l => l.direction === 'IN').length, icon: <HiOutlineClock />, color: T.purple, bg: "#F3E8FF" },
-            ].map((stat, i) => (
-              <div key={i} style={{ ...css.glassCard, padding: "20px", display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: "14px", background: stat.bg, color: stat.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <div style={{ fontSize: "11px", fontWeight: 800, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{stat.label}</div>
-                  <div style={{ fontSize: "24px", fontWeight: 900, color: T.text }}>{stat.value}</div>
-                </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-200">
+              <div className="flex items-center gap-3 mb-1">
+                <Users className="text-blue-600" size={20} />
+                <p className="text-blue-600 text-sm font-bold uppercase tracking-wider">Total Strength</p>
               </div>
-            ))}
+              <p className="text-2xl font-bold text-blue-700 mt-1">
+                {activeTab === "students" ? stats.studentStats?.totalStudents : (activeTab === "workers" ? stats.workerStats?.totalWorkers : stats.staffStats?.totalStaff) || 0}
+              </p>
+            </div>
+            <div className="bg-emerald-50 p-4 rounded-xl shadow-sm border border-emerald-200">
+              <div className="flex items-center gap-3 mb-1">
+                <CheckCircle className="text-emerald-600" size={20} />
+                <p className="text-emerald-600 text-sm font-bold uppercase tracking-wider">Present Today</p>
+              </div>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">
+                {activeTab === "students" ? stats.studentStats?.presentToday : (activeTab === "workers" ? stats.workerStats?.presentToday : stats.staffStats?.presentToday) || 0}
+              </p>
+            </div>
+            <div className="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200">
+              <div className="flex items-center gap-3 mb-1">
+                <XCircle className="text-rose-600" size={20} />
+                <p className="text-rose-600 text-sm font-bold uppercase tracking-wider">Absent / Leave</p>
+              </div>
+              <p className="text-2xl font-bold text-rose-700 mt-1">
+                {activeTab === "students" ? stats.studentStats?.absentToday : (activeTab === "workers" ? stats.workerStats?.absentToday : stats.staffStats?.absentToday) || 0}
+              </p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-xl shadow-sm border border-purple-200">
+              <div className="flex items-center gap-3 mb-1">
+                <Clock className="text-purple-600" size={20} />
+                <p className="text-purple-600 text-sm font-bold uppercase tracking-wider">Check-ins</p>
+              </div>
+              <p className="text-2xl font-bold text-purple-700 mt-1">
+                {filteredLogs.filter(l => l.direction === 'IN').length}
+              </p>
+            </div>
           </div>
         )}
 
-        <div style={css.glassCard} className="table-card">
-          {/* Mobile Dropdown */}
-          <div className="md:hidden mb-6">
-            <select 
-              className="w-full"
-              style={{ ...css.input, cursor: "pointer", fontWeight: 700, color: T.text, paddingRight: 32 }}
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
-            >
-              <option value="students">Student Attendance</option>
-              <option value="workers">Worker Attendance</option>
-              <option value="staff">Staff Attendance</option>
-            </select>
-          </div>
-
-          {/* Desktop Tabs */}
-          <div className="tabs-container hidden md:flex" style={{ borderBottom: `1px solid ${T.border}`, marginBottom: 24, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div 
-              style={{ ...css.tab, ...(activeTab === "students" ? css.activeTab : {}) }}
-              onClick={() => setActiveTab("students")}
-            >
-              Student Attendance
-            </div>
-            <div 
-              style={{ ...css.tab, ...(activeTab === "workers" ? css.activeTab : {}) }}
-              onClick={() => setActiveTab("workers")}
-            >
-              Worker Attendance
-            </div>
-            <div 
-              style={{ ...css.tab, ...(activeTab === "staff" ? css.activeTab : {}) }}
-              onClick={() => setActiveTab("staff")}
-            >
-              Staff Attendance
+        {/* Table Container */}
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-black">
+                Attendance Logs
+              </h2>
+              <p className="text-sm text-gray-700 mt-1">Total: {groupedFilteredLogs.length} records</p>
             </div>
           </div>
 
-          <div className="filter-row flex flex-col md:flex-row gap-3 mb-5">
-            <div className="relative flex-1 w-full">
-              <HiOutlineSearch size={18} color={T.textMuted} className="absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="bg-white border-b border-gray-200 px-4 flex overflow-x-auto hide-scrollbar">
+            <button 
+              className={`px-4 py-3 font-semibold text-sm border-b-2 whitespace-nowrap outline-none transition-colors ${activeTab === 'students' ? 'border-[#4F8CCF] text-[#4F8CCF]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('students')}
+            >Student Attendance</button>
+            <button 
+              className={`px-4 py-3 font-semibold text-sm border-b-2 whitespace-nowrap outline-none transition-colors ${activeTab === 'workers' ? 'border-[#4F8CCF] text-[#4F8CCF]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('workers')}
+            >Worker Attendance</button>
+            <button 
+              className={`px-4 py-3 font-semibold text-sm border-b-2 whitespace-nowrap outline-none transition-colors ${activeTab === 'staff' ? 'border-[#4F8CCF] text-[#4F8CCF]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('staff')}
+            >Staff Attendance</button>
+          </div>
+          
+          <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input 
-                placeholder="Search by name or ID..." 
-                className="search-input w-full pl-10"
-                style={{ ...css.input, paddingLeft: 40 }} 
+                type="text"
+                placeholder="Search by name or ID..."
+                className="pl-10 pr-4 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm font-semibold text-black shadow-sm w-full"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="relative w-full md:w-auto">
-              <HiOutlineFilter size={18} color={T.accent} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="flex gap-2">
               <select 
-                style={{ ...css.btnSecondary, paddingLeft: 38, paddingRight: 24 }} 
-                className="filter-btn w-full md:w-auto appearance-none"
+                className="w-full sm:w-auto px-4 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm font-semibold text-black shadow-sm flex-1 sm:flex-none"
                 value={filterDirection}
                 onChange={e => setFilterDirection(e.target.value)}
               >
@@ -342,78 +299,85 @@ const Attendance = () => {
                 <option value="IN">Check In (IN)</option>
                 <option value="OUT">Check Out (OUT)</option>
               </select>
+              <button
+                onClick={fetchAttendance}
+                className="p-2 bg-white shadow-sm border border-gray-200 rounded-xl text-black hover:bg-gray-50 transition-all flex-shrink-0"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
 
           {loading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>Loading attendance logs...</div>
+            <div className="p-12 flex justify-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
           ) : groupedFilteredLogs.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>No logs for this date</div>
+            <div className="text-center py-16 bg-white/40">
+              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 font-bold text-sm uppercase tracking-widest">No logs for this date.</p>
+            </div>
           ) : (
-            <div className="table-container w-full overflow-x-auto pb-4">
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+            <div className="overflow-x-auto p-4">
+              <table className="w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                    <th style={css.th}>Name / ID</th>
-                    <th style={css.th}>{activeTab === "staff" ? "Designation" : "Room"}</th>
-                    <th style={css.th}>Direction</th>
-                    <th style={css.th}>Time</th>
-                    <th style={css.th}>Device</th>
-                    <th style={css.th}>Method</th>
-                    <th style={css.th}>Action</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Name / ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">{activeTab === "staff" ? "Designation" : "Room"}</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Direction</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Time</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Device</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Method</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {groupedFilteredLogs.map((log, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: "8px", background: T.accentLight, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, overflow: "hidden" }}>
+                    <tr key={i} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-800 font-bold whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#4F8CCF]/10 text-[#4F8CCF] flex items-center justify-center font-bold text-sm overflow-hidden border border-[#4F8CCF]/20">
                             {log.originalLog?.selfie ? (
-                              <img src={log.originalLog.selfie} alt="selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <img src={log.originalLog.selfie} alt="selfie" className="w-full h-full object-cover" />
                             ) : (
                               (log.studentId?.firstName?.charAt(0) || log.staffId?.firstName?.charAt(0) || log.wardenId?.firstName?.charAt(0) || "?")
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 500, color: T.text }}>
+                            <div className="font-bold text-gray-800 text-sm">
                               {log.studentId ? `${log.studentId.firstName} ${log.studentId.lastName}` : (log.staffId ? `${log.staffId.firstName} ${log.staffId.lastName}` : (log.wardenId ? `${log.wardenId.firstName} ${log.wardenId.lastName}` : (log.employeeCode || "Unknown")))}
                             </div>
-                            <div style={{ fontSize: 12, color: T.textLight }}>
+                            <div className="text-xs text-gray-500 font-medium mt-0.5">
                               ID: {log.studentId?.studentId || log.staffId?.staffId || log.wardenId?.wardenId || log.employeeCode}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td style={css.td}>
-                        <span style={css.roomBadge}>
+                      <td className="px-4 py-3 text-sm text-gray-600 font-medium whitespace-nowrap">
+                        <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-bold border border-gray-200">
                           {activeTab === "staff" ? (log.staffId?.designation || (log.wardenId ? "Warden" : "Staff")) : (log.studentId?.roomBedNumber?.roomNo || "-")}
                         </span>
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <span style={{ 
-                          display: "inline-flex", alignItems: "center", gap: 4, 
-                          padding: "4px 10px", borderRadius: "99px", fontSize: "11px", fontWeight: 800,
-                          background: log.direction === 'IN' ? "#ECFDF5" : "#FEF2F2",
-                          color: log.direction === 'IN' ? "#059669" : "#DC2626"
-                        }}>
-                          {log.direction === 'IN' ? <HiOutlineArrowNarrowRight /> : <HiOutlineArrowNarrowLeft />}
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${log.direction === 'IN' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                          {log.direction === 'IN' ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
                           {log.direction}
                         </span>
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        <div style={{ fontSize: 11, color: T.textMuted }}>{new Date(log.timestamp).toLocaleDateString()}</div>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="font-bold text-sm text-gray-800">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{new Date(log.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                       </td>
-                      <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <HiOutlineLocationMarker /> {log.deviceName}
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <MapPin size={16} className="text-gray-400" /> {log.deviceName}
                         </div>
                       </td>
-                      <td style={{ padding: "16px", fontSize: 12, fontWeight: 600 }}>
+                      <td className="px-4 py-3 text-xs font-bold text-gray-600 whitespace-nowrap uppercase tracking-wide">
                         {log.verificationType}
                       </td>
-                      <td style={{ padding: "16px" }}>
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
                         {(() => {
                            const id = log.studentId?.studentId || log.staffId?.staffId || log.wardenId?.wardenId || log.employeeCode;
                            if (!id) return null;
@@ -426,13 +390,9 @@ const Attendance = () => {
                                    setSelectedUserLogs(sorted);
                                    setShowModal(true);
                                  }}
-                                 style={{ 
-                                   background: "transparent", color: T.accent, border: `1px solid ${T.accent}`,
-                                   borderRadius: "8px", padding: "6px 12px", fontSize: "12px", cursor: "pointer",
-                                   fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "4px"
-                                 }}
+                                 className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-[#4F8CCF] bg-[#4F8CCF]/10 border border-[#4F8CCF]/20 rounded-lg hover:bg-[#4F8CCF]/20 transition-colors"
                                >
-                                 View All <span style={{ background: T.accentLight, padding: "2px 6px", borderRadius: "4px", fontSize: "10px" }}>{userLogs.length}</span>
+                                 View All <span className="bg-[#4F8CCF] text-white px-1.5 py-0.5 rounded text-[10px]">{userLogs.length}</span>
                                </button>
                              );
                            }
@@ -449,68 +409,61 @@ const Attendance = () => {
       </div>
 
       {showModal && selectedUserLogs && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
-          backgroundColor: "rgba(0,0,0,0.4)", zIndex: 9999,
-          display: "flex", justifyContent: "center", alignItems: "center",
-          backdropFilter: "blur(4px)"
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: "24px", padding: "32px", width: "90%", maxWidth: "600px",
-            maxHeight: "80vh", overflowY: "auto",
-            boxShadow: `0 20px 40px ${T.shadow}`
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-xl relative flex flex-col border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter', maxHeight: '90vh' }}>
+            
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0">
               <div>
-                <h3 style={{ margin: 0, fontSize: "20px", color: T.text, fontWeight: 800 }}>Check-in History</h3>
-                <p style={{ margin: "4px 0 0", fontSize: "14px", color: T.textMuted }}>
+                <h2 className="text-xl font-semibold text-black">Check-in History</h2>
+                <p className="text-sm text-gray-800 mt-1 font-medium">
                   {selectedUserLogs[0].studentId ? `${selectedUserLogs[0].studentId.firstName} ${selectedUserLogs[0].studentId.lastName}` : 
                   (selectedUserLogs[0].staffId ? `${selectedUserLogs[0].staffId.firstName} ${selectedUserLogs[0].staffId.lastName}` : 
                   (selectedUserLogs[0].employeeCode || "Unknown"))}
                 </p>
               </div>
-              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0 }}>
-                <HiOutlineXCircle size={28} />
+              <button onClick={() => setShowModal(false)} className="text-black/70 hover:text-black transition-colors">
+                <XCircle size={24} />
               </button>
             </div>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {selectedUserLogs.map((l, idx) => (
-                <div key={idx} style={{ 
-                  display: "flex", justifyContent: "space-between", alignItems: "center", 
-                  padding: "16px", borderRadius: "16px", border: `1px solid ${T.border}`,
-                  background: l.direction === 'IN' ? "#F8FAF5" : "#FEF2F2"
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <span style={{ 
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      width: "40px", height: "40px", borderRadius: "12px",
-                      background: l.direction === 'IN' ? "#D1FAE5" : "#FEE2E2",
-                      color: l.direction === 'IN' ? "#059669" : "#DC2626"
-                    }}>
-                      {l.direction === 'IN' ? <HiOutlineArrowNarrowRight size={20} /> : <HiOutlineArrowNarrowLeft size={20} />}
-                    </span>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: "15px", color: T.text }}>
-                        {new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className="p-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex flex-col gap-3">
+                {selectedUserLogs.map((l, idx) => (
+                  <div key={idx} className={`flex justify-between items-center p-4 rounded-xl border ${l.direction === 'IN' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${l.direction === 'IN' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                        {l.direction === 'IN' ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
                       </div>
-                      <div style={{ fontSize: "12px", color: T.textMuted, display: "flex", alignItems: "center", gap: "4px", marginTop: "4px" }}>
-                        <HiOutlineLocationMarker size={14} /> {l.deviceName}
+                      <div>
+                        <div className="font-bold text-gray-800 text-[15px]">
+                          {new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-1 font-medium">
+                          <MapPin size={14} /> {l.deviceName}
+                        </div>
                       </div>
                     </div>
+                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wide bg-white/60 px-3 py-1.5 rounded-lg border border-gray-200">
+                      {l.verificationType}
+                    </div>
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: T.textMuted }}>
-                    {l.verificationType}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
-
   );
 };
 

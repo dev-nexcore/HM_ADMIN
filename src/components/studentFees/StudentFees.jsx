@@ -167,6 +167,8 @@ const StudentFees = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -316,6 +318,12 @@ const StudentFees = () => {
     const matchesStatus = statusFilter === "all" || s.status === statusFilter;
     return matchesSearch && matchesStatus;
   }), [studentFeeStats, searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const currentStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // ── Generate Invoice ──────────────────────────────────────────────────────
   const handleGenerateInvoice = async (e) => {
@@ -743,14 +751,10 @@ const StudentFees = () => {
         </div>
 
         {/* Main Content Box matching Admin Panel */}
-        <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow: "0px 4px 20px 0px #00000040 inset", fontFamily: "Poppins" }}>
 
 
         {/* ── Stat Cards ── */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 24, marginBottom: 40
-        }} className="sf-fade-up sf-stat-grid">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 sf-fade-up">
           {statsData.map((stat, i) => (
             <div key={i} className="sf-stat-card" style={css.statCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -777,21 +781,30 @@ const StudentFees = () => {
         </div>
 
         {/* ── Student Table ── */}
-        <div style={css.glassCard} className="sf-fade-up">
-          <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap", background: "#F9FAFB", padding: 16, borderRadius: 20, border: `1px solid ${T.border}` }} className="sf-search-row">
-            <div style={{ position: "relative", flex: "1 1 auto", minWidth: 250 }} className="sf-search-box">
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30 sf-fade-up" style={{ fontFamily: "Inter" }}>
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-black">
+                Fee Records
+              </h2>
+            </div>
+          </div>
+          
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div style={{ display: "flex", gap: 16, marginBottom: 32, alignItems: "center", flexWrap: "wrap", background: "#FFFFFF", padding: 16, borderRadius: 20, border: `1px solid ${T.border}` }} className="sf-search-row">
+              <div style={{ position: "relative", flex: "1 1 auto", minWidth: 250 }} className="sf-search-box">
               <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
               <input
                 placeholder="Search students by name, ID or room..."
                 style={{ ...css.input, paddingLeft: 48, background: "#fff", border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               />
             </div>
             <select 
               style={{ ...css.input, flex: "0 1 auto", width: "auto", minWidth: 140, cursor: "pointer", background: "#fff", border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", fontWeight: 700, color: T.textMuted, textTransform: "uppercase", fontSize: 12, letterSpacing: "0.05em" }}
               value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
+              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -815,7 +828,7 @@ const StudentFees = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((s, i) => (
+                {currentStudents.map((s, i) => (
                   <tr key={s._id || i} className="sf-row" style={{ transition: "all 0.2s ease" }}>
                     <td style={{ padding: "16px 20px", background: "#fff", borderRadius: "16px 0 0 16px", border: `1px solid ${T.border}`, borderRight: "none" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -892,7 +905,7 @@ const StudentFees = () => {
 
           {/* Mobile Cards */}
           <div className="sf-show-mobile" style={{ flexDirection: "column", gap: 16 }}>
-            {filteredStudents.map((s, i) => (
+            {currentStudents.map((s, i) => (
               <div key={i} style={{ background: "#fff", borderRadius: 20, padding: 20, border: `1px solid ${T.border}`, boxShadow: `0 4px 12px ${T.shadow}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", gap: 12 }}>
@@ -931,6 +944,52 @@ const StudentFees = () => {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <>
+              <div className="hidden md:flex items-center justify-between mt-6 px-6 py-4 bg-[#f4f6f0] border-t border-[#BEC5AD]/30 rounded-xl">
+                <div className="text-sm text-gray-500">
+                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredStudents.length)}</span> of <span className="font-medium">{filteredStudents.length}</span> results
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-1">
+                    {[...Array(totalPages)].map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPage(idx + 1)}
+                        className={`w-10 h-10 flex items-center justify-center text-sm font-bold rounded-xl transition-all ${currentPage === idx + 1 ? 'bg-[#4F8DCF] text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 shadow-sm'}`}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Pagination */}
+              <div className="md:hidden flex justify-between items-center mt-6 px-4 py-4 border-t border-[#BEC5AD]/30 bg-[#f4f6f0] rounded-xl">
+                <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} className={`px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium shadow-sm transition-all ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>Prev</button>
+                <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages || 1}</span>
+                <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} className={`px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium shadow-sm transition-all ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>Next</button>
+              </div>
+            </>
+          )}
+
         </div>
         </div>
       </div>
@@ -940,13 +999,13 @@ const StudentFees = () => {
       {/* ── Generate Invoice Modal ── */}
       {showGenerateModal && activeStudent && (
         <ModalOverlay onClose={() => setShowGenerateModal(false)}>
-          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 500, padding: 0, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-            <div style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, padding: "40px 32px", color: "#fff", position: "relative", flexShrink: 0 }} className="sf-modal-header-top">
-              <button onClick={() => setShowGenerateModal(false)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 12, padding: 8, cursor: "pointer" }}>
-                <HiOutlineX size={20} color="#fff" />
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-xl relative flex flex-col border border-[#BEC5AD]/30 sf-fade-up" style={{ fontFamily: "Inter", maxHeight: '90vh' }}>
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-6 flex flex-col justify-center relative shrink-0">
+              <button onClick={() => setShowGenerateModal(false)} className="absolute top-4 right-4 text-black/70 hover:text-black transition-colors" style={{ background: "transparent", border: "none", cursor: "pointer" }}>
+                <HiOutlineX size={24} />
               </button>
-              <h3 style={{ fontSize: 24, fontWeight: 900, margin: "0 0 4px" }}>Create Demand</h3>
-              <p style={{ opacity: 0.8, fontSize: 13, margin: 0 }}>Generating invoice for {activeStudent.studentName}</p>
+              <h3 className="text-xl font-bold text-black m-0">Create Demand</h3>
+              <p className="text-sm text-gray-800 m-0 mt-1 font-medium">Generating invoice for {activeStudent.studentName}</p>
               {/* ── Show fee summary in header ── */}
               <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }} className="sf-modal-header-summary">
                 {[
@@ -955,14 +1014,14 @@ const StudentFees = () => {
                   { label: "Already Paid", val: activeStudent.paidFees },
                   { label: "Outstanding", val: activeStudent.pendingFees },
                 ].map((item, i) => (
-                  <div key={i} style={{ background: item.isDeposit ? "rgba(197,160,89,0.2)" : "rgba(255,255,255,0.12)", borderRadius: 12, padding: "8px 14px", border: item.isDeposit ? `1px solid ${T.gold}40` : "none" }} className="sf-modal-summary-item">
-                    <p style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.7, margin: "0 0 2px" }}>{item.label}</p>
-                    <p style={{ fontSize: 14, fontWeight: 900, margin: 0, color: item.isDeposit ? T.goldLight : "#fff" }}>{formatCurrency(item.val)}</p>
+                  <div key={i} style={{ background: item.isDeposit ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.4)", borderRadius: 12, padding: "8px 14px", border: item.isDeposit ? `1px solid ${T.gold}40` : "none" }} className="sf-modal-summary-item">
+                    <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8, margin: "0 0 2px", color: "#1F2937" }}>{item.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 900, margin: 0, color: item.isDeposit ? "#92400E" : "#1F2937" }}>{formatCurrency(item.val)}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1 }} className="sf-modal-content">
+            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1, background: "#f4f6f0" }} className="sf-modal-content">
               {/* ── Security Deposit Status ── */}
               {(() => {
                 const depositInv = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit");
@@ -1050,37 +1109,28 @@ const StudentFees = () => {
       {/* ── Ledger Modal ── */}
       {showLedgerModal && activeStudent && (
         <ModalOverlay onClose={() => { setShowLedgerModal(false); setSelectedInvoice(null); }}>
-          <div className="sf-fade-up" style={{
-            ...css.glassCard, width: "100%", maxWidth: 820, padding: 0,
-            overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column"
-          }}>
-            {/* Ledger Header */}
-            <div style={{ padding: 32, borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: 20,
-                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", fontWeight: 900, fontSize: 24,
-                  boxShadow: `0 10px 20px ${T.accent}30`
-                }}>
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-4xl relative flex flex-col border border-[#BEC5AD]/30 sf-fade-up" style={{ fontFamily: "Inter", maxHeight: '90vh' }}>
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-black/10 flex items-center justify-center text-black font-bold text-2xl">
                   {activeStudent.studentName?.charAt(0)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 22, fontWeight: 900, color: T.text, margin: 0 }}>{activeStudent.studentName}</h3>
-                  <p style={{ color: T.textMuted, fontSize: 13, fontWeight: 600, margin: 0 }}>
+                  <h3 className="text-2xl font-bold text-black m-0">{activeStudent.studentName}</h3>
+                  <p className="text-sm text-gray-800 m-0 font-semibold mt-1">
                     {activeStudent.studentId} • Room {activeStudent.roomBedNumber || "N/A"}
                   </p>
                 </div>
               </div>
-              <button onClick={() => { setShowLedgerModal(false); setSelectedInvoice(null); }}
-                style={{ background: "#F3F4F6", border: "none", borderRadius: 12, padding: 10, cursor: "pointer" }}>
-                <HiOutlineX size={20} color={T.textMuted} />
+              <button onClick={() => { setShowLedgerModal(false); setSelectedInvoice(null); }} className="text-black/70 hover:text-black transition-colors bg-transparent border-none cursor-pointer">
+                <HiOutlineX size={24} />
               </button>
             </div>
 
             {/* Ledger Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#F9FAFB" }} className="sf-modal-content">
+            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#f4f6f0" }} className="sf-modal-content">
               {/* Summary Cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 40 }} className="sf-ledger-stats">
                 {[

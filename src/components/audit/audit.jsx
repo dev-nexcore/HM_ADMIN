@@ -14,7 +14,8 @@ import {
   TrendingUp,
   FileText,
   RefreshCw,
-  X
+  X,
+  XCircle
 } from "lucide-react";
 import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
@@ -54,7 +55,7 @@ export default function AuditLogsSection() {
   const fetchAuditLogs = async (page = 1, search = '', filtersObj = activeFilters) => {
     try {
       setLoading(true);
-      const limit = (typeof window !== 'undefined' && window.innerWidth >= 768) ? 500 : 10;
+      const limit = 20;
       const params = {
         page,
         limit,
@@ -344,29 +345,31 @@ icon: <FileText size={18} />,
 
 
         {/* Main Content */}
-        <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
-          {/* Search and Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Activity size={20} className="text-black" />
-              <h3 className="text-xl font-semibold text-black">Audit Log Entries</h3>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
+          
+          {/* Top Sage Green Header */}
+          <div className="bg-[#BEC5AD] px-6 py-5 text-black">
+            <h3 className="text-xl font-bold">Audit Log Entries</h3>
+            <p className="text-sm font-medium mt-1 text-gray-700">Total: {pagination.totalLogs || logs.length} records</p>
+          </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Search and Filter Bar */}
+          <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full justify-end">
               <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Search logs by user, action, or description..."
+                  placeholder="Search logs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow"
                 />
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <button 
-                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none"
+                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg px-4 py-2 transition-colors flex-1 sm:flex-none text-sm"
                   onClick={() => setIsFilterModalOpen(true)}
                 >
                   <Filter size={16} />
@@ -374,16 +377,16 @@ icon: <FileText size={18} />,
                 </button>
 
                 <button 
-                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg px-4 py-2 transition-colors flex-1 sm:flex-none text-sm"
                   onClick={handleExport}
                   disabled={exporting}
                 >
                   {exporting ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                   <span>{exporting ? 'Exporting...' : 'Export'}</span>
                 </button>
-
+                
                 <button 
-                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 shadow-md transition-all duration-300 flex-1 sm:flex-none ${
+                  className={`flex items-center justify-center gap-2 font-medium rounded-lg px-4 py-2 transition-colors flex-1 sm:flex-none text-sm ${
                     autoRefresh 
                       ? 'bg-purple-600 hover:bg-purple-700 text-white' 
                       : 'bg-gray-500 hover:bg-gray-600 text-white'
@@ -400,7 +403,7 @@ icon: <FileText size={18} />,
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 m-6 rounded-lg flex items-center justify-between">
               <span>{error}</span>
               <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
                 <X size={18} />
@@ -412,44 +415,39 @@ icon: <FileText size={18} />,
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="text-2xl animate-spin text-gray-600" size={32} />
-              <span className="ml-2 text-gray-600">Loading audit logs...</span>
+              <span className="ml-2 text-gray-600 font-medium">Loading audit logs...</span>
             </div>
           ) : (
-            <>
+            <div className="p-2 sm:p-6 bg-white">
               {/* Mobile Card View */}
-              <div className="block md:hidden space-y-4">
+              <div className="block md:hidden space-y-4 font-sans">
                 {logs.length > 0 ? (
                   logs.map((log, idx) => (
-                    <div key={log._id || idx} className="bg-white rounded-xl p-4 shadow-md">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-start">
+                    <div key={log._id || idx} className="bg-gray-50 rounded-xl p-5 shadow-sm border border-gray-100">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start border-b border-gray-200 pb-3">
                           <div className="flex items-center gap-2">
-                            <Clock size={14} className="text-gray-500" />
-                            <span className="text-xs text-gray-500">{formatTimestamp(log.timestamp)}</span>
+                            <Clock size={16} className="text-gray-500" />
+                            <span className="text-sm font-medium text-gray-600">{formatTimestamp(log.timestamp)}</span>
                           </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <User size={14} className="text-gray-500" />
-                            <span className="text-xs font-semibold text-gray-600">User:</span>
-                          </div>
-                          <p className="font-semibold text-sm ml-6">{log.user}</p>
-                        </div>
-                        <div>
-                          <span className="text-xs font-semibold text-gray-600">Action:</span>
-                          <p className={`inline-block ml-2 px-2 py-1 rounded-full text-xs font-medium ${getColorForAction(log.actionType)}`}>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getColorForAction(log.actionType)}`}>
                             {log.actionType}
-                          </p>
+                          </span>
                         </div>
-                        <div>
-                          <span className="text-xs font-semibold text-gray-600">Description:</span>
-                          <p className="mt-1 text-sm text-gray-700">{log.description}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                            {log.user.charAt(0)}
+                          </div>
+                          <p className="font-semibold text-gray-800">{log.user}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-100">
+                          <p className="text-sm text-gray-700 leading-relaxed">{log.description}</p>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+                  <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-gray-200 font-medium">
                     No logs found matching your criteria.
                   </div>
                 )}
@@ -457,34 +455,42 @@ icon: <FileText size={18} />,
 
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-white rounded-lg">
-                      <th className="px-4 py-3 rounded-tl-lg text-sm font-semibold text-gray-700">Timestamp</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-700">User</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-700">Action Type</th>
-                      <th className="px-4 py-3 rounded-tr-lg text-sm font-semibold text-gray-700">Description</th>
+                    <tr className="border-b border-gray-200 bg-[#f4f6f0]">
+                      <th className="px-6 py-4 text-sm font-bold text-[#374151]">Sr<br/>No</th>
+                      <th className="px-6 py-4 text-sm font-bold text-[#374151]">Timestamp</th>
+                      <th className="px-6 py-4 text-sm font-bold text-[#374151]">User</th>
+                      <th className="px-6 py-4 text-sm font-bold text-[#374151]">Action Type</th>
+                      <th className="px-6 py-4 text-sm font-bold text-[#374151]">Description</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100 bg-white">
                     {logs.length > 0 ? (
                       logs.map((log, idx) => (
-                        <tr key={log._id || idx} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <tr key={log._id || idx} className="hover:bg-gray-50 transition-colors duration-200">
+                          <td className="px-6 py-5 text-sm font-bold text-[#1f2937]">
+                            {(pagination.currentPage - 1) * 20 + idx + 1}
+                          </td>
+                          <td className="px-6 py-5 text-sm font-medium text-gray-600 whitespace-nowrap">
                             {formatTimestamp(log.timestamp)}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-800">{log.user}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getColorForAction(log.actionType)}`}>
+                          <td className="px-6 py-5 text-sm font-bold text-[#1f2937]">
+                            {log.user}
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getColorForAction(log.actionType)}`}>
                               {log.actionType}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{log.description}</td>
+                          <td className="px-6 py-5 text-sm font-medium text-gray-600 leading-relaxed max-w-2xl">
+                            {log.description}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="text-center py-8 text-gray-600">
+                        <td colSpan={5} className="text-center py-12 text-gray-500 font-medium">
                           No logs found matching your criteria.
                         </td>
                       </tr>
@@ -495,7 +501,7 @@ icon: <FileText size={18} />,
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-6 md:hidden">
+                <div className="flex justify-center items-center gap-4 mt-6 pb-4">
                   <button
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                     disabled={!pagination.hasPreviousPage}
@@ -544,36 +550,36 @@ icon: <FileText size={18} />,
               )}
               
               {/* Total logs info */}
-              <div className="text-center mt-4 text-sm text-gray-600 md:hidden">
+              <div className="text-center mt-4 mb-4 text-sm text-gray-600 font-medium">
                 Showing {logs.length} of {pagination.totalLogs} logs
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* Filter Modal */}
         {isFilterModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/50">
-            <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                    <Filter size={20} /> Filter Audit Logs
-                  </h3>
-                  <button
-                    onClick={() => setIsFilterModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50 p-4 font-sans">
+            <div className="bg-[#f4f6f0] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300 border border-gray-200">
+              {/* Sage Green Header */}
+              <div className="bg-[#BEC5AD] px-6 py-4 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-black">
+                  Filter Audit Logs
+                </h3>
+                <button
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="text-black hover:text-gray-800 transition-colors rounded-full"
+                >
+                  <XCircle size={24} className="stroke-[2.5]" />
+                </button>
               </div>
               
-              <div className="p-6 space-y-4">
+              {/* Form Body */}
+              <div className="p-6 space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Action Type</label>
+                  <label className="block text-sm font-bold text-[#2C3E50] mb-2">Action Type</label>
                   <select 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow shadow-sm"
                     value={activeFilters.actionType}
                     onChange={(e) => setActiveFilters({...activeFilters, actionType: e.target.value})}
                   >
@@ -585,9 +591,9 @@ icon: <FileText size={18} />,
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin User</label>
+                  <label className="block text-sm font-bold text-[#2C3E50] mb-2">Admin User</label>
                   <select 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow shadow-sm"
                     value={activeFilters.adminId}
                     onChange={(e) => setActiveFilters({...activeFilters, adminId: e.target.value})}
                   >
@@ -601,9 +607,9 @@ icon: <FileText size={18} />,
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Type</label>
+                  <label className="block text-sm font-bold text-[#2C3E50] mb-2">Target Type</label>
                   <select 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow shadow-sm"
                     value={activeFilters.targetType}
                     onChange={(e) => setActiveFilters({...activeFilters, targetType: e.target.value})}
                   >
@@ -614,37 +620,40 @@ icon: <FileText size={18} />,
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                  <input
-                    type="date"
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={activeFilters.startDate}
-                    onChange={(e) => setActiveFilters({...activeFilters, startDate: e.target.value})}
-                  />
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-[#2C3E50] mb-2">Date From</label>
+                    <input
+                      type="date"
+                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow shadow-sm"
+                      value={activeFilters.startDate}
+                      onChange={(e) => setActiveFilters({...activeFilters, startDate: e.target.value})}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                  <input
-                    type="date"
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={activeFilters.endDate}
-                    onChange={(e) => setActiveFilters({...activeFilters, endDate: e.target.value})}
-                  />
+                  <div>
+                    <label className="block text-sm font-bold text-[#2C3E50] mb-2">Date To</label>
+                    <input
+                      type="date"
+                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow shadow-sm"
+                      value={activeFilters.endDate}
+                      onChange={(e) => setActiveFilters({...activeFilters, endDate: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex gap-3">
+              {/* Footer */}
+              <div className="px-6 py-5 bg-[#f4f6f0] border-t border-gray-200 flex gap-3">
                 <button
                   onClick={clearFilters}
-                  className="flex-1 bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="flex-1 bg-white border border-gray-300 text-gray-700 font-bold px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
                 >
                   Clear All
                 </button>
                 <button
                   onClick={applyFilters}
-                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                  className="flex-1 bg-green-500 text-white font-bold px-4 py-3 rounded-xl hover:bg-green-600 transition-colors shadow-md shadow-green-200"
                 >
                   Apply Filters
                 </button>

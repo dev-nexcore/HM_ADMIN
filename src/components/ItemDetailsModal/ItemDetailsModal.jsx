@@ -1,26 +1,34 @@
 import React from 'react';
-import { X, Calendar, MapPin, Package, Info, QrCode } from 'lucide-react';
+import { X, QrCode } from 'lucide-react';
 
 const BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224';
 
-const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
+const ItemDetailsModal = ({ item, isOpen, onClose }) => {
   if (!isOpen || !item) return null;
 
-  const statusColor = {
-    "In Use": "bg-orange-500 text-white",
-    "Available": "bg-green-500 text-white", 
-    "In maintenance": "bg-yellow-500 text-black",
-    "Damaged": "bg-red-500 text-white",
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "In Use":
+        return "bg-blue-50 text-blue-600 border-blue-200";
+      case "Available":
+        return "bg-green-50 text-green-600 border-green-200";
+      case "In maintenance":
+        return "bg-orange-50 text-orange-600 border-orange-200";
+      case "Damaged":
+        return "bg-red-50 text-red-600 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-600 border-gray-200";
+    }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
-    return new Date(dateString).toLocaleDateString('en-GB');
+    return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const handleDownloadQR = async () => {
     try {
-      const response = await fetch(`/api/adminauth/inventory/${item._id}/qr-code/download`);
+      const response = await fetch(`${BASE_URL}/api/adminauth/inventory/${item._id}/qr-code/download`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -42,13 +50,12 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
 
   const handleGenerateQR = async () => {
     try {
-      const response = await fetch(`/api/adminauth/inventory/${item._id}/qr-code`, {
+      const response = await fetch(`${BASE_URL}/api/adminauth/inventory/${item._id}/qr-code`, {
         method: 'POST',
       });
       const result = await response.json();
       if (result.success) {
         alert('QR code generated successfully');
-        // Refresh the item data to show the new QR code
         window.location.reload();
       } else {
         alert('Failed to generate QR code');
@@ -60,209 +67,175 @@ const ItemDetailsModal = ({ item, isOpen, onClose, onEdit }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Package size={24} />
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
+      <div className="bg-[#F8F9F4] rounded-[20px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+        
+        {/* Header - Soft Green */}
+        <div className="bg-[#CFD5C2] px-6 py-4 flex justify-between items-center rounded-t-[20px]">
+          <h2 className="text-[22px] font-bold text-[#1C2B38]" style={{ fontFamily: "Inter" }}>
             Item Details
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded-full border-2 border-[#1C2B38] text-[#1C2B38] hover:bg-black/5 transition-colors flex items-center justify-center"
           >
-            <X size={24} />
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                Basic Information
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Package className="text-blue-500 mt-1" size={18} />
-                  <div>
-                    <p className="font-medium text-gray-600">Item Name</p>
-                    <p className="text-lg font-semibold">{item.itemName}</p>
-                  </div>
-                </div>
+          
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+            
+            {/* Item Name */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Item Name</p>
+              <p className="text-[#2D3A4A] font-medium text-[14px]">{item.itemName}</p>
+            </div>
 
-                <div className="flex items-start gap-3">
-                  <QrCode className="text-blue-500 mt-1" size={18} />
-                  <div>
-                    <p className="font-medium text-gray-600">Barcode ID</p>
-                    <p className="text-lg font-mono">{item.barcodeId}</p>
-                  </div>
-                </div>
+            {/* Status */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-1">Status</p>
+              <span className={`inline-flex px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border ${getStatusStyle(item.status)} tracking-wider`}>
+                {item.status}
+              </span>
+            </div>
 
-                <div className="flex items-start gap-3">
-                  <Info className="text-blue-500 mt-1" size={18} />
-                  <div>
-                    <p className="font-medium text-gray-600">Category</p>
-                    <p className="text-lg">{item.category}</p>
-                  </div>
-                </div>
+            {/* Barcode ID */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Barcode ID</p>
+              <p className="text-[#5B6978] text-[14px]">{item.barcodeId}</p>
+            </div>
 
-                <div className="flex items-start gap-3">
-                  <MapPin className="text-blue-500 mt-1" size={18} />
-                  <div>
-                    <p className="font-medium text-gray-600">Location</p>
-                    <p className="text-lg">{item.location}</p>
-                  </div>
-                </div>
+            {/* Category */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Category</p>
+              <p className="text-[#5B6978] text-[14px]">{item.category}</p>
+            </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-4 h-4 rounded-full bg-blue-500 mt-1.5"></div>
-                  <div>
-                    <p className="font-medium text-gray-600">Status</p>
-                    <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${statusColor[item.status] || 'bg-gray-200 text-gray-800'}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
+            {/* Location */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Location</p>
+              <p className="text-[#5B6978] text-[14px]">{item.location}</p>
+            </div>
 
-                {item.purchaseDate && (
-                  <div className="flex items-start gap-3">
-                    <Calendar className="text-blue-500 mt-1" size={18} />
-                    <div>
-                      <p className="font-medium text-gray-600">Purchase Date</p>
-                      <p className="text-lg">{formatDate(item.purchaseDate)}</p>
-                    </div>
-                  </div>
-                )}
+            {/* Room No */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Room No</p>
+              <p className="text-[#5B6978] text-[14px]">{item.roomNo || "N/A"}</p>
+            </div>
 
-                {item.purchaseCost && (
-                  <div className="flex items-start gap-3">
-                    <div className="text-blue-500 mt-1">₹</div>
-                    <div>
-                      <p className="font-medium text-gray-600">Purchase Cost</p>
-                      <p className="text-lg font-semibold">₹{item.purchaseCost}</p>
-                    </div>
+            {/* Floor */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Floor</p>
+              <p className="text-[#5B6978] text-[14px]">{item.floor || "N/A"}</p>
+            </div>
+
+            {/* Purchase Date */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Purchase Date</p>
+              <p className="text-[#5B6978] text-[14px]">{formatDate(item.purchaseDate)}</p>
+            </div>
+            
+            {/* Purchase Cost */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Purchase Cost</p>
+              <p className="text-[#5B6978] text-[14px]">{item.purchaseCost ? `₹${item.purchaseCost}` : "Not specified"}</p>
+            </div>
+
+          </div>
+
+          <div className="w-full h-px bg-gray-200 my-5"></div>
+
+          {/* Description */}
+          <div className="mb-4">
+            <p className="text-[13px] font-bold text-[#3B4856] mb-2">Description</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-3 text-[#5B6978] text-[13px] shadow-sm">
+              {item.description || "No description available"}
+            </div>
+          </div>
+
+          {/* QR Code & Receipt Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* QR Code */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-2">QR Code</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center min-h-[140px] text-center">
+                {item.qrCodeUrl ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <img 
+                      src={item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `${BASE_URL}${item.qrCodeUrl.startsWith('/') ? '' : '/'}${item.qrCodeUrl}`}
+                      alt="QR Code"
+                      className="w-20 h-20 p-1"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <p className="text-[12px] text-gray-500 font-medium">Generated</p>
+                    <button
+                      onClick={handleDownloadQR}
+                      className="px-4 py-1.5 bg-white border border-gray-300 text-[#3B4856] rounded-lg hover:bg-gray-50 transition-colors font-semibold text-[12px] shadow-sm"
+                    >
+                      Download
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <QrCode size={28} className="text-gray-300" />
+                    <p className="text-[12px] text-gray-500 font-medium">None</p>
+                    <button
+                      onClick={handleGenerateQR}
+                      className="px-4 py-1.5 bg-[#2D3A4A] text-white rounded-lg hover:bg-[#1C2B38] transition-colors font-semibold text-[12px] shadow-sm"
+                    >
+                      Generate QR
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Description and QR Code */}
-            <div className="space-y-4">
-              {/* Description */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
-                  Description
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700">
-                    {item.description || "No description available"}
-                  </p>
-                </div>
-              </div>
-
-              {/* QR Code Section */}
-              <div>
-  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
-    QR Code
-  </h3>
-  <div className="bg-gray-50 p-4 rounded-lg text-center">
-    {item.qrCodeUrl ? (
-      <div className="space-y-3">
-        <img 
-          src={item.qrCodeUrl.startsWith('http') ? item.qrCodeUrl : `${BASE_URL}${item.qrCodeUrl.startsWith('/') ? '' : '/'}${item.qrCodeUrl}`}
-          alt="QR Code"
-          className="mx-auto w-32 h-32 border border-gray-300 rounded-lg"
-          onError={(e) => {
-            console.error('QR Code image failed to load:', e.target.src);
-            e.target.style.display = 'none';
-            if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
-          }}
-        />
-        <div style={{display: 'none'}} className="text-red-500 text-sm">
-          QR Code image failed to load
-        </div>
-        <p className="text-sm text-gray-600">
-          Scan this QR code to view item details
-        </p>
-        <button
-          onClick={handleDownloadQR}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-        >
-          <QrCode size={16} />
-          Download QR Code
-        </button>
-      </div>
-    ) : (
-      <div className="space-y-3">
-        <div className="w-32 h-32 bg-gray-200 border border-gray-300 rounded-lg mx-auto flex items-center justify-center">
-          <QrCode size={48} className="text-gray-400" />
-        </div>
-        <p className="text-sm text-gray-600">
-          No QR code generated yet
-        </p>
-        <button
-          onClick={handleGenerateQR}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
-        >
-          <QrCode size={16} />
-          Generate QR Code
-        </button>
-      </div>
-    )}
-  </div>
-</div>
-
-              {/* Receipt Section */}
-              {item.receiptUrl && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
-                    Receipt
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600 mb-2">Receipt available</p>
+            {/* Receipt */}
+            <div>
+              <p className="text-[13px] font-bold text-[#3B4856] mb-2">Receipt</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center min-h-[140px] text-center">
+                {item.receiptUrl ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative group w-20 h-20 rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white cursor-pointer"
+                         onClick={() => window.open(item.receiptUrl.startsWith('http') ? item.receiptUrl : `${BASE_URL}${item.receiptUrl.startsWith('/') ? '' : '/'}${item.receiptUrl}`, '_blank')}>
+                      {item.receiptUrl.toLowerCase().endsWith('.pdf') ? (
+                        <div className="w-full h-full bg-red-50 flex flex-col items-center justify-center">
+                          <svg className="w-8 h-8 text-red-500 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5c0 .8-.7 1.5-1.5 1.5H7v2H5.5V9H8c.8 0 1.5.7 1.5 1.5v1zm5 2c0 .8-.7 1.5-1.5 1.5h-2.5V9H13c.8 0 1.5.7 1.5 1.5v3zm4-3h-2v1.5h1.5v1.5H16.5V15H15V9h3.5v1.5zM7 10.5h1v1H7v-1zm6 0h1v2h-1v-2z"/></svg>
+                          <span className="text-[10px] font-bold text-red-500 uppercase">PDF</span>
+                        </div>
+                      ) : (
+                        <img 
+                          src={item.receiptUrl.startsWith('http') ? item.receiptUrl : `${BASE_URL}${item.receiptUrl.startsWith('/') ? '' : '/'}${item.receiptUrl}`} 
+                          alt="Receipt Preview" 
+                          className="w-full h-full object-cover" 
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                        <span className="text-white text-[11px] font-bold px-3 py-1.5 border border-white/50 rounded-lg shadow-sm">View</span>
+                      </div>
+                    </div>
                     <button
                       onClick={() => window.open(item.receiptUrl.startsWith('http') ? item.receiptUrl : `${BASE_URL}${item.receiptUrl.startsWith('/') ? '' : '/'}${item.receiptUrl}`, '_blank')}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="px-4 py-1.5 bg-white border border-gray-300 text-[#3B4856] rounded-lg hover:bg-gray-50 transition-colors font-semibold text-[12px] shadow-sm"
                     >
                       View Receipt
                     </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <p className="text-[#5B6978] text-[13px] font-medium">No receipt available</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Last Updated */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              Last updated: {formatDate(item.lastUpdated || item.updatedAt)}
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="border-t px-6 py-4 bg-gray-50 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-          >
-            Close
-          </button>
-          {onEdit && (
-            <button
-              onClick={() => {
-                onEdit(item);
-                onClose();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Edit Item
-            </button>
-          )}
         </div>
       </div>
     </div>

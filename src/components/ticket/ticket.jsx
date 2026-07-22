@@ -21,6 +21,85 @@ import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const AttachmentPreviewCard = ({ ticketId, attachment, onView }) => {
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (attachment.mimeType?.startsWith('image/') || attachment.mimeType === 'application/pdf') {
+      let objectUrl = null;
+      const fetchPreview = async () => {
+        setLoading(true);
+        setError(false);
+        try {
+          const response = await api.get(
+            `/api/adminauth/complaints/${ticketId}/attachment/${attachment._id}`,
+            {
+              headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+              responseType: "blob",
+            }
+          );
+          objectUrl = URL.createObjectURL(response.data);
+          setPreviewUrl(objectUrl);
+        } catch (error) {
+          console.error("Failed to load attachment preview", error);
+          setError(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPreview();
+      
+      return () => {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+      };
+    }
+  }, [ticketId, attachment]);
+
+  return (
+    <div className="border border-gray-200 rounded-xl bg-white p-4 flex flex-col hover:shadow-md transition-shadow">
+      <h4 className="text-sm font-semibold text-gray-800 mb-3 truncate" title={attachment.originalName || attachment.filename}>
+        {attachment.originalName || attachment.filename}
+      </h4>
+      <div className="bg-gray-50 border border-gray-200 border-dashed rounded-lg overflow-hidden h-32 flex items-center justify-center mb-4">
+        {previewUrl ? (
+          attachment.mimeType?.startsWith('image/') ? (
+            <img src={previewUrl} alt="preview" className="w-full h-full object-cover" />
+          ) : attachment.mimeType === 'application/pdf' ? (
+            <div className="text-gray-400 flex flex-col items-center">
+              <File size={32} className="text-red-500" />
+              <span className="text-xs mt-2 font-medium">PDF Document</span>
+            </div>
+          ) : null
+        ) : (
+          <div className="text-gray-400 flex flex-col items-center">
+            {loading ? (
+              <span className="text-xs font-medium text-gray-500 animate-pulse">Loading preview...</span>
+            ) : error ? (
+              <>
+                <File size={32} className="text-gray-300 mb-2" />
+                <span className="text-xs font-medium text-gray-500 text-center">Preview not available<br/>(File missing on server)</span>
+              </>
+            ) : attachment.mimeType?.startsWith('video/') ? (
+              <Video size={32} />
+            ) : (
+              <File size={32} />
+            )}
+          </div>
+        )}
+      </div>
+      <button
+        onClick={() => onView(attachment)}
+        className="w-full bg-[#5287c8] hover:bg-[#4070a8] text-white py-2 rounded-lg font-bold text-sm transition-colors mt-auto"
+      >
+        OPEN DOCUMENT
+      </button>
+    </div>
+  );
+};
+
+
 export default function TicketsSection() {
   const [openTickets, setOpenTickets] = useState([]);
   const [inProcessTickets, setInProcessTickets] = useState([]);
@@ -609,24 +688,29 @@ export default function TicketsSection() {
 
         {/* Open Tickets */}
         {(activeFilter === "total" || activeFilter === "open") && (
-          <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner mb-8">
-            <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
-              <MessageSquare size={20} />
-              Open Ticket ({displayedOpenTickets.length})
-            </h2>
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-8 border border-[#BEC5AD]/30 font-[Poppins]">
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-black flex items-center gap-2 font-[Poppins]">
+                  <MessageSquare size={20} />
+                  Open Ticket
+                </h2>
+                <p className="text-sm text-gray-700 mt-1 font-medium">Total: {displayedOpenTickets.length} records</p>
+              </div>
+            </div>
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="hidden lg:block overflow-x-auto p-4">
+              <table className="w-full text-left text-black text-xs sm:text-sm md:text-base">
                 <thead>
-                  <tr className="bg-white text-black font-semibold rounded-lg">
-                    <th className="p-3 rounded-tl-lg">Ticket ID</th>
-                    <th className="p-3">Subject & Files</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Raised By</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Date</th>
-                    <th className="p-3 rounded-tr-lg">Actions</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Ticket ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Subject & Files</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Type</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Raised By</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Status</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Date</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -634,7 +718,7 @@ export default function TicketsSection() {
                     displayedOpenTickets.map((ticket, index) => (
                       <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="p-3 font-semibold text-sm">{ticket.id}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
                             {ticket.subject}
                           </div>
@@ -647,8 +731,8 @@ export default function TicketsSection() {
                             </button>
                           )}
                         </td>
-                        <td className="p-3 text-sm">{ticket.complaintType}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.complaintType}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium">{ticket.raisedBy}</div>
                           {ticket.studentId && (
                             <div className="text-xs text-gray-500">ID: {ticket.studentId}</div>
@@ -657,13 +741,13 @@ export default function TicketsSection() {
                             <div className="text-xs text-gray-500">Room: {ticket.studentRoom}</div>
                           )}
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <Clock size={12} /> {ticket.status}
                           </span>
                         </td>
-                        <td className="p-3 text-sm">{ticket.dateRaised}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.dateRaised}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="flex gap-2">
                             <button
                               onClick={() => viewTicketDetails(ticket)}
@@ -694,7 +778,7 @@ export default function TicketsSection() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-600">
+                      <td colSpan={7} className="text-center py-8 text-gray-600 font-medium">
                         No open tickets available.
                       </td>
                     </tr>
@@ -788,24 +872,29 @@ export default function TicketsSection() {
 
         {/* In-Process Tickets */}
         {(activeFilter === "total" || activeFilter === "inProcess") && (
-          <div className="bg-[#D4C5E2] rounded-2xl p-6 shadow-inner mb-8">
-            <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
-              <Clock size={20} />
-              Inprocess Ticket ({displayedInProcessTickets.length})
-            </h2>
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-8 border border-[#D4C5E2]/80 font-[Poppins]">
+            <div className="bg-gradient-to-r from-[#D4C5E2] to-[#bbaac9] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-black flex items-center gap-2 font-[Poppins]">
+                  <Clock size={20} />
+                  Inprocess Ticket
+                </h2>
+                <p className="text-sm text-gray-700 mt-1 font-medium">Total: {displayedInProcessTickets.length} records</p>
+              </div>
+            </div>
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="hidden lg:block overflow-x-auto p-4">
+              <table className="w-full text-left text-black text-xs sm:text-sm md:text-base">
                 <thead>
-                  <tr className="bg-white text-black font-semibold rounded-lg">
-                    <th className="p-3 rounded-tl-lg">Ticket ID</th>
-                    <th className="p-3">Subject & Files</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Raised By</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Date</th>
-                    <th className="p-3 rounded-tr-lg">Actions</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Ticket ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Subject & Files</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Type</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Raised By</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Status</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Date</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -813,7 +902,7 @@ export default function TicketsSection() {
                     displayedInProcessTickets.map((ticket, index) => (
                       <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="p-3 font-semibold text-sm">{ticket.id}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
                             {ticket.subject}
                           </div>
@@ -826,8 +915,8 @@ export default function TicketsSection() {
                             </button>
                           )}
                         </td>
-                        <td className="p-3 text-sm">{ticket.complaintType}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.complaintType}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium">{ticket.raisedBy}</div>
                           {ticket.studentId && (
                             <div className="text-xs text-gray-500">ID: {ticket.studentId}</div>
@@ -836,13 +925,13 @@ export default function TicketsSection() {
                             <div className="text-xs text-gray-500">Room: {ticket.studentRoom}</div>
                           )}
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             <Clock size={12} /> {ticket.status}
                           </span>
                         </td>
-                        <td className="p-3 text-sm">{ticket.dateRaised}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.dateRaised}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="flex gap-2">
                             <button
                               onClick={() => viewTicketDetails(ticket)}
@@ -865,7 +954,7 @@ export default function TicketsSection() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-600">
+                      <td colSpan={7} className="text-center py-8 text-gray-600 font-medium">
                         No in-process tickets available.
                       </td>
                     </tr>
@@ -952,25 +1041,30 @@ export default function TicketsSection() {
 
         {/* Resolved Tickets */}
         {(activeFilter === "total" || activeFilter === "resolved") && (
-          <div className="bg-[#BEC5AD] rounded-2xl p-6 shadow-inner">
-            <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
-              <CheckCircle size={20} />
-              Resolved Section ({displayedResolvedTickets.length})
-            </h3>
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-8 border border-[#BEC5AD]/30 font-[Poppins]">
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-black flex items-center gap-2 font-[Poppins]">
+                  <CheckCircle size={20} />
+                  Resolved Section
+                </h2>
+                <p className="text-sm text-gray-700 mt-1 font-medium">Total: {displayedResolvedTickets.length} records</p>
+              </div>
+            </div>
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="hidden lg:block overflow-x-auto p-4">
+              <table className="w-full text-left text-black text-xs sm:text-sm md:text-base">
                 <thead>
-                  <tr className="bg-white text-black font-semibold rounded-lg">
-                    <th className="p-3 rounded-tl-lg">Ticket ID</th>
-                    <th className="p-3">Subject & Files</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Raised By</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Filed</th>
-                    <th className="p-3">Resolved</th>
-                    <th className="p-3 rounded-tr-lg">Actions</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Ticket ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Subject & Files</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Type</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Raised By</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Status</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Filed</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Resolved</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -978,7 +1072,7 @@ export default function TicketsSection() {
                     displayedResolvedTickets.map((ticket) => (
                       <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="p-3 font-semibold text-sm">{ticket.id}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
                             {ticket.subject}
                           </div>
@@ -991,21 +1085,21 @@ export default function TicketsSection() {
                             </button>
                           )}
                         </td>
-                        <td className="p-3 text-sm">{ticket.complaintType}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.complaintType}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium">{ticket.raisedBy}</div>
                           {ticket.studentId && (
                             <div className="text-xs text-gray-500">{ticket.studentId}</div>
                           )}
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <CheckCircle size={12} /> {ticket.status}
                           </span>
                         </td>
-                        <td className="p-3 text-sm">{ticket.dateRaised}</td>
-                        <td className="p-3 text-sm">{ticket.resolvedDate || 'N/A'}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.dateRaised}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.resolvedDate || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <button
                             onClick={() => viewTicketDetails(ticket)}
                             className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
@@ -1018,7 +1112,7 @@ export default function TicketsSection() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-600">
+                      <td colSpan={8} className="text-center py-8 text-gray-600 font-medium">
                         No resolved tickets available.
                       </td>
                     </tr>
@@ -1106,25 +1200,30 @@ export default function TicketsSection() {
 
         {/* Rejected Tickets Section */}
         {(activeFilter === "total" || activeFilter === "rejected") && (
-          <div className="bg-[#E5D1D1] rounded-2xl p-6 shadow-inner mt-8">
-            <h3 className="text-xl font-semibold mb-4 text-black flex items-center gap-2">
-              <XCircle size={20} className="text-red-600" />
-              Rejected Section ({displayedRejectedTickets.length})
-            </h3>
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-8 border border-[#E5D1D1]/80 font-[Poppins]">
+            <div className="bg-gradient-to-r from-[#E5D1D1] to-[#e3bdbd] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-black flex items-center gap-2 font-[Poppins]">
+                  <XCircle size={20} className="text-red-600" />
+                  Rejected Section
+                </h2>
+                <p className="text-sm text-gray-700 mt-1 font-medium">Total: {displayedRejectedTickets.length} records</p>
+              </div>
+            </div>
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="hidden lg:block overflow-x-auto p-4">
+              <table className="w-full text-left text-black text-xs sm:text-sm md:text-base">
                 <thead>
-                  <tr className="bg-white text-black font-semibold rounded-lg">
-                    <th className="p-3 rounded-tl-lg">Ticket ID</th>
-                    <th className="p-3">Subject & Files</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Raised By</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Filed</th>
-                    <th className="p-3">Rejected</th>
-                    <th className="p-3 rounded-tr-lg">Actions</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Ticket ID</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Subject & Files</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Type</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Raised By</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Status</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Filed</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Rejected</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1132,7 +1231,7 @@ export default function TicketsSection() {
                     displayedRejectedTickets.map((ticket) => (
                       <tr key={ticket.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="p-3 font-semibold text-sm">{ticket.id}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium truncate max-w-[200px]" title={ticket.subject}>
                             {ticket.subject}
                           </div>
@@ -1145,21 +1244,21 @@ export default function TicketsSection() {
                             </button>
                           )}
                         </td>
-                        <td className="p-3 text-sm">{ticket.complaintType}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.complaintType}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <div className="text-sm font-medium">{ticket.raisedBy}</div>
                           {ticket.studentId && (
                             <div className="text-xs text-gray-500">{ticket.studentId}</div>
                           )}
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                             <XCircle size={12} /> Rejected
                           </span>
                         </td>
-                        <td className="p-3 text-sm">{ticket.dateRaised}</td>
-                        <td className="p-3 text-sm">{ticket.rejectedDate || 'N/A'}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.dateRaised}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">{ticket.rejectedDate || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-800 text-center">
                           <button
                             onClick={() => viewTicketDetails(ticket)}
                             className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
@@ -1172,7 +1271,7 @@ export default function TicketsSection() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-600">
+                      <td colSpan={8} className="text-center py-8 text-gray-600 font-medium">
                         No rejected tickets available.
                       </td>
                     </tr>
@@ -1259,100 +1358,99 @@ export default function TicketsSection() {
 
         {/* Ticket Details Modal */}
         {showModal && selectedTicket && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <FileText size={24} /> Ticket Details
-                  </h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600 text-2xl"
-                  >
-                    ×
-                  </button>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col font-[Inter] animate-in zoom-in-95 duration-200">
+              
+              {/* Header */}
+              <div className="bg-[#BEC5AD] px-6 py-4 flex items-center justify-between shrink-0">
+                <h3 className="text-black font-bold text-xl leading-tight">Ticket Details</h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-black hover:text-gray-700 transition-colors"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-8 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Ticket ID</label>
+                    <p className="text-base text-gray-900 font-medium">{selectedTicket.id}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                      selectedTicket.status === 'Resolved' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-yellow-50 text-yellow-600 border-yellow-200'
+                    }`}>
+                      {selectedTicket.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Type</label>
+                    <p className="text-base text-gray-900 font-medium">{selectedTicket.complaintType}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Raised By</label>
+                    <p className="text-base text-gray-900 font-medium">{selectedTicket.raisedBy}</p>
+                    {selectedTicket.studentId && (
+                      <p className="text-xs text-gray-500 font-medium">ID: {selectedTicket.studentId}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Room</label>
+                    <p className="text-base text-gray-900 font-medium">{selectedTicket.studentRoom || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Date</label>
+                    <p className="text-base text-gray-900 font-medium">{selectedTicket.dateRaised}</p>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600">Ticket ID</label>
-                      <p className="text-lg font-bold">{selectedTicket.id}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600">Status</label>
-                      <p className={`text-lg font-bold ${selectedTicket.status === 'Resolved' ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {selectedTicket.status}
-                      </p>
+                <hr className="border-gray-200 my-6" />
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Subject</label>
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 text-gray-800 text-sm font-medium">
+                      {selectedTicket.subject}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-600">Subject</label>
-                    <p className="text-gray-900 break-all">{selectedTicket.subject}</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600">Description</label>
-                    <p className="text-gray-900 whitespace-pre-wrap break-all">{selectedTicket.description}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600">Type</label>
-                      <p className="text-gray-900">{selectedTicket.complaintType}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600">Raised By</label>
-                      <p className="text-gray-900">{selectedTicket.raisedBy}</p>
-                      {selectedTicket.studentId && (
-                        <p className="text-sm text-gray-500">ID: {selectedTicket.studentId}</p>
-                      )}
-                      {selectedTicket.studentRoom && (
-                        <p className="text-sm text-gray-500">Room: {selectedTicket.studentRoom}</p>
-                      )}
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 text-gray-700 text-sm whitespace-pre-wrap break-words min-h-[80px]">
+                      {selectedTicket.description}
                     </div>
                   </div>
 
                   {selectedTicket.adminNotes && (
-                    <div className={`p-4 rounded-2xl border ${selectedTicket.status?.toLowerCase().includes("reject") ? "bg-red-50 border-red-100" : "bg-green-50 border-green-100"}`}>
-                      <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${selectedTicket.status?.toLowerCase().includes("reject") ? "text-red-500" : "text-green-500"}`}>
+                    <div>
+                      <label className={`block text-sm font-bold mb-2 ${selectedTicket.status?.toLowerCase().includes("reject") ? "text-red-700" : "text-green-700"}`}>
                         {selectedTicket.status?.toLowerCase().includes("reject") ? "Rejection Reason" : "Resolution Notes"}
-                      </p>
-                      <p className={`text-sm font-medium break-all ${selectedTicket.status?.toLowerCase().includes("reject") ? "text-red-800" : "text-green-800"}`}>
+                      </label>
+                      <div className={`bg-white border rounded-xl p-4 text-sm whitespace-pre-wrap break-words ${selectedTicket.status?.toLowerCase().includes("reject") ? "border-red-200 text-red-800" : "border-green-200 text-green-800"}`}>
                         {selectedTicket.adminNotes}
-                      </p>
+                      </div>
                     </div>
                   )}
 
                   {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
                     <div>
-                      <label className="block text-sm font-semibold text-gray-600 mb-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
                         Attachments ({selectedTicket.attachments.length})
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedTicket.attachments.map((attachment, idx) => (
-                          <div key={idx} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium truncate flex-1" title={attachment.originalName}>
-                                {attachment.originalName || attachment.filename}
-                              </span>
-                              {attachment.mimeType?.startsWith('image/') ? (
-                                <ImageIcon size={16} className="text-blue-500" />
-                              ) : attachment.mimeType?.startsWith('video/') ? (
-                                <Video size={16} className="text-purple-500" />
-                              ) : (
-                                <File size={16} className="text-gray-500" />
-                              )}
-                            </div>
-                            <button
-                              onClick={() => viewAttachment(selectedTicket._id, attachment._id, attachment.originalName, attachment.mimeType)}
-                              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 text-sm transition-colors"
-                            >
-                              View File
-                            </button>
-                          </div>
+                          <AttachmentPreviewCard 
+                            key={idx} 
+                            ticketId={selectedTicket._id} 
+                            attachment={attachment} 
+                            onView={(att) => viewAttachment(selectedTicket._id, att._id, att.originalName, att.mimeType)} 
+                          />
                         ))}
                       </div>
                     </div>
@@ -1365,7 +1463,7 @@ export default function TicketsSection() {
 
         {/* Attachment Viewer Modal */}
         {attachmentModal.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[70] p-4">
             <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
               <div className="p-4 border-b flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900 truncate">{attachmentModal.filename}</h3>
@@ -1394,16 +1492,21 @@ export default function TicketsSection() {
                   </video>
                 )}
                 {attachmentModal.type === 'document' && (
-                  <div className="text-center p-8">
-                    <File size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600 mb-4">Preview not available for this file type</p>
-                    <a
-                      href={attachmentModal.url}
-                      download={attachmentModal.filename}
-                      className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      <FileText size={18} /> Download File
-                    </a>
+                  <div className="w-full h-[70vh] flex flex-col">
+                    <iframe
+                      src={attachmentModal.url}
+                      title={attachmentModal.filename}
+                      className="w-full h-full rounded-lg border border-gray-200 shadow-sm flex-1"
+                    />
+                    <div className="mt-4 flex justify-end">
+                      <a
+                        href={attachmentModal.url}
+                        download={attachmentModal.filename}
+                        className="inline-flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200 font-semibold text-sm"
+                      >
+                        <FileText size={18} /> Download File
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>

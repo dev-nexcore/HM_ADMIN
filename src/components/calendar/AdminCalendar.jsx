@@ -11,64 +11,6 @@ import {
   HiOutlineChevronRight,
 } from "react-icons/hi";
 
-// ── Theme tokens (Luxury Sage & Gold Palette) ─────────────────────
-const T = {
-  bg: "#7A8B5E",
-  bgLight: "#F8FAF5",
-  accent: "#5A6E3A",
-  accentDark: "#3E4B28",
-  accentLight: "#E8EDDF",
-  gold: "#C5A059",
-  goldLight: "#F4EDE1",
-  text: "#1A1F16",
-  textMuted: "#6B7280",
-  border: "rgba(90,110,58,0.1)",
-  glass: "rgba(255, 255, 255, 0.7)",
-  shadow: "rgba(40, 50, 30, 0.08)",
-  green: "#10B981",
-  red: "#EF4444",
-  orange: "#F59E0B",
-  blue: "#3B82F6",
-};
-
-const css = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#F1F3EE",
-    fontFamily: "'Outfit', 'Inter', system-ui, sans-serif",
-  },
-  glassCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "24px",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: `0 10px 40px ${T.shadow}`
-  },
-  btnPrimary: {
-    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
-    color: "#fff",
-    borderRadius: "14px",
-    padding: "10px 20px",
-    fontSize: "13px",
-    fontWeight: 700,
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  input: {
-    background: "#fff",
-    border: `1.5px solid ${T.accent}20`,
-    borderRadius: "14px",
-    padding: "10px 16px",
-    fontSize: "13px",
-    outline: "none",
-    transition: "all 0.2s ease",
-    width: "100%"
-  },
-};
 
 export default function AdminCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -178,16 +120,16 @@ export default function AdminCalendar() {
       const isToday = new Date().toDateString() === dateObj.toDateString();
 
       days.push(
-        <div key={d} className={`min-h-[80px] md:h-24 p-1 md:p-2 rounded-xl border ${isToday ? 'border-[#5A6E3A] bg-[#F8FAF5]' : 'border-gray-100 bg-white'} relative group hover:border-[#5A6E3A] transition-all`}>
-          <span className={`font-bold text-xs md:text-sm ${isToday ? 'text-[#5A6E3A]' : 'text-gray-700'}`}>{d}</span>
+        <div key={d} className={`min-h-[80px] md:h-24 p-1 md:p-2 rounded-xl border ${isToday ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200 bg-white'} relative group hover:border-blue-400 transition-all`}>
+          <span className={`font-bold text-xs md:text-sm ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{d}</span>
           
           <div className="mt-1 space-y-1 overflow-y-auto max-h-[60px]">
             {dayHolidays.map(h => (
-              <div key={h._id} className="text-[10px] bg-[#E8EDDF] text-[#3E4B28] px-2 py-1 rounded truncate flex justify-between items-center group/item">
+              <div key={h._id} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded truncate flex justify-between items-center group/item font-bold">
                 <span title={h.title}>{h.title}</span>
                 <button 
                   onClick={() => handleDeleteHoliday(h._id)}
-                  className="opacity-0 group-hover/item:opacity-100 text-red-500 ml-1 shrink-0"
+                  className="opacity-0 group-hover/item:opacity-100 text-red-500 ml-1 shrink-0 hover:text-red-700 transition-colors"
                 >
                   <HiOutlineTrash size={12}/>
                 </button>
@@ -200,7 +142,7 @@ export default function AdminCalendar() {
               setNewHoliday(prev => ({ ...prev, date: dateStr }));
               setShowAddModal(true);
             }}
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-[#5A6E3A] hover:bg-[#E8EDDF] p-1 rounded transition-all"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-blue-500 hover:bg-blue-100 p-1 rounded transition-all"
             title="Add Holiday"
           >
             <HiOutlinePlus size={14}/>
@@ -213,46 +155,52 @@ export default function AdminCalendar() {
   };
 
   return (
-    <div style={css.page} className="p-3 sm:p-4 md:p-6">
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
+      <div className="w-full">
         
-        <header className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[#1A1F16] m-0">Holiday Calendar</h1>
-            <p className="text-[#6B7280] text-sm mt-1">Manage public holidays and off-days for staff salary calculation.</p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: "Inter" }}>
+                Holiday Calendar
+              </h1>
+            </div>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: "Poppins" }}>Manage public holidays and off-days for staff salary calculation.</p>
           </div>
           
-          <button onClick={() => setShowAddModal(true)} style={css.btnPrimary} className="w-full md:w-auto justify-center">
+          <button onClick={() => setShowAddModal(true)} className="mt-4 sm:mt-0 px-5 py-2.5 bg-black text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-colors flex items-center gap-2">
             <HiOutlinePlus size={18} /> Add Holiday
           </button>
-        </header>
+        </div>
 
-        <div style={css.glassCard} className="p-3 sm:p-4 md:p-6 overflow-hidden">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-[#1A1F16]">
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <h2 className="text-xl font-bold text-black mb-4 sm:mb-0">
               {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
             </h2>
             <div className="flex gap-2">
-              <button onClick={handlePrevMonth} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-all">
+              <button onClick={handlePrevMonth} className="p-2 bg-white/30 rounded-xl hover:bg-white/50 text-black transition-colors shadow-sm">
                 <HiOutlineChevronLeft size={20} />
               </button>
-              <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold text-sm transition-all">
+              <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 bg-white/30 rounded-xl hover:bg-white/50 text-black font-semibold text-sm transition-colors shadow-sm">
                 Today
               </button>
-              <button onClick={handleNextMonth} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-all">
+              <button onClick={handleNextMonth} className="p-2 bg-white/30 rounded-xl hover:bg-white/50 text-black transition-colors shadow-sm">
                 <HiOutlineChevronRight size={20} />
               </button>
             </div>
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-gray-500">Loading calendar...</div>
+            <div className="py-20 text-center font-bold text-gray-400 uppercase tracking-widest text-sm">Loading calendar...</div>
           ) : (
-            <div className="w-full overflow-x-auto pb-4">
+            <div className="w-full overflow-x-auto pb-4 p-4 md:p-6">
               <div className="min-w-full md:min-w-[700px]">
                 <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4 mb-2 md:mb-4">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest truncate">{day}</div>
+                    <div key={day} className="text-center text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest truncate">{day}</div>
                   ))}
                 </div>
                 <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4">
@@ -270,30 +218,30 @@ export default function AdminCalendar() {
             <h3 className="text-lg font-bold text-gray-900 mb-4">Add Holiday</h3>
             <form onSubmit={handleAddHoliday} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Date</label>
                 <input 
                   type="date" 
-                  style={css.input}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm"
                   value={newHoliday.date}
                   onChange={e => setNewHoliday({...newHoliday, date: e.target.value})}
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Holiday Title</label>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Holiday Title</label>
                 <input 
                   type="text" 
                   placeholder="e.g., Diwali, Independence Day"
-                  style={css.input}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm"
                   value={newHoliday.title}
                   onChange={e => setNewHoliday({...newHoliday, title: e.target.value})}
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Type</label>
                 <select 
-                  style={css.input}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm"
                   value={newHoliday.type}
                   onChange={e => setNewHoliday({...newHoliday, type: e.target.value})}
                 >
@@ -303,11 +251,11 @@ export default function AdminCalendar() {
                 </select>
               </div>
               
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">
+              <div className="flex gap-3 pt-4 border-t border-gray-200 mt-6">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-100 transition-colors">
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#5A6E3A] text-white font-bold hover:bg-[#3E4B28] shadow-lg shadow-[#5A6E3A]/20">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-black text-white font-bold hover:bg-gray-800 transition-colors shadow-md">
                   Save Holiday
                 </button>
               </div>

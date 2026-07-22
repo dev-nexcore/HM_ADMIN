@@ -1,150 +1,36 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
+import api from '@/lib/api';
 import {
-  HiOutlineSearch,
-  HiOutlineCheckCircle,
-  HiOutlineXCircle,
-  HiOutlineClock,
-  HiOutlineEye,
-  HiOutlineX,
-  HiOutlineDocumentText,
-  HiOutlineUserGroup,
-  HiOutlineUsers,
-  HiOutlineBriefcase,
-} from "react-icons/hi";
-import api from "@/lib/api";
-import { toast } from "react-hot-toast";
-
-// ── Theme tokens (Luxury Sage & Gold Palette) ─────────────────────
-const T = {
-  bg: "#4F8CCF",
-  bgLight: "#F0F6FC",
-  accent: "#4F8CCF",
-  accentDark: "#3A6FA6",
-  accentLight: "#E1EDF8",
-  gold: "#F59E0B",
-  goldLight: "#FEF3C7",
-  text: "#1F2937",
-  textMuted: "#6B7280",
-  border: "#E5E7EB",
-  glass: "rgba(255, 255, 255, 0.95)",
-  shadow: "rgba(0, 0, 0, 0.05)",
-  green: "#22C55E",
-  red: "#EF4444",
-  orange: "#F59E0B",
-  blue: "#3B82F6",
-};
-
-const css = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#F3F4F6",
-    padding: "24px",
-    fontFamily: "'Inter', system-ui, sans-serif",
-  },
-  glassCard: {
-    background: "#FFFFFF",
-    borderRadius: "16px",
-    border: "1px solid #E5E7EB",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-    padding: "24px",
-  },
-  btnPrimary: {
-    background: "#4F8CCF",
-    color: "#fff",
-    borderRadius: "8px",
-    padding: "10px 20px",
-    fontSize: "13px",
-    fontWeight: 600,
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  btnSecondary: {
-    background: "#FFFFFF",
-    color: "#4F8CCF",
-    borderRadius: "8px",
-    padding: "10px 20px",
-    fontSize: "13px",
-    fontWeight: 600,
-    border: "1px solid #E5E7EB",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  input: {
-    background: "#F9FAFB",
-    border: "1px solid #E5E7EB",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    fontSize: "14px",
-    color: "#1F2937",
-    outline: "none",
-    width: "100%",
-  },
-  badge: {
-    padding: "4px 10px",
-    borderRadius: "99px",
-    fontSize: "11px",
-    fontWeight: 800,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-  }
-};
-
-const StatusBadge = ({ status }) => {
-  const map = {
-    pending:   { bg: "#FFFBEB", color: "#D97706", label: "Pending", icon: <HiOutlineClock /> },
-    approved:  { bg: "#ECFDF5", color: "#059669", label: "Approved", icon: <HiOutlineCheckCircle /> },
-    rejected:  { bg: "#FEF2F2", color: "#DC2626", label: "Rejected", icon: <HiOutlineXCircle /> },
-  };
-  const s = map[status] || map.pending;
-  return (
-    <span style={{ ...css.badge, background: s.bg, color: s.color }}>
-      {s.icon} {s.label}
-    </span>
-  );
-};
-
-const TypeBadge = ({ type }) => {
-  const map = {
-    student: { bg: "#EFF6FF", color: "#2563EB", label: "Student", icon: <HiOutlineUserGroup /> },
-    parent:  { bg: "#F3E8FF", color: "#7C3AED", label: "Parent", icon: <HiOutlineUsers /> },
-    worker:  { bg: "#FEF3C7", color: "#D97706", label: "Worker", icon: <HiOutlineBriefcase /> },
-    staff:   { bg: "#DBEAFE", color: "#0284C7", label: "Staff", icon: <HiOutlineBriefcase /> },
-    notice:  { bg: "#FDF2F8", color: "#DB2777", label: "Notice", icon: <HiOutlineDocumentText /> },
-    inventory_replacement: { bg: "#FFF7ED", color: "#EA580C", label: "Replacement", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> },
-    complaint_resolution: { bg: "#EEF2FF", color: "#4338CA", label: "Complaint", icon: <HiOutlineDocumentText /> },
-  };
-  const t = map[type] || map.student;
-  return (
-    <span style={{ ...css.badge, background: t.bg, color: t.color, fontSize: '11px' }}>
-      {t.icon} {t.label}
-    </span>
-  );
-};
+  Search,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  User,
+  Users,
+  Briefcase,
+  FileText,
+  XCircle,
+  Eye,
+  MessageSquare,
+  Trash2,
+  ExternalLink
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const WardenRequisitions = () => {
   const [requisitions, setRequisitions] = useState([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [selectedReq, setSelectedReq] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [notes, setNotes] = useState("");
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -156,8 +42,8 @@ const WardenRequisitions = () => {
     try {
       setLoading(true);
       const [reqRes, compRes] = await Promise.all([
-        api.get("/api/adminauth/requisitions"),
-        api.get("/api/adminauth/complaints?limit=200") // Fetch more to get resolved ones too
+        api.get('/api/adminauth/requisitions'),
+        api.get('/api/adminauth/complaints?limit=200')
       ]);
       
       let allItems = [];
@@ -173,13 +59,13 @@ const WardenRequisitions = () => {
         const complaints = relevantComplaints.map(c => ({
           _id: c._id,
           isComplaint: true,
-          requestedByName: "Hostel Warden",
-          requestedBy: { wardenId: "Warden Team" },
-          requisitionType: "complaint_resolution",
+          requestedByName: 'Hostel Warden',
+          requestedBy: { wardenId: 'Warden Team' },
+          requisitionType: 'complaint_resolution',
           status: c.status === 'pending_approval' ? 'pending' : 'approved', 
           createdAt: c.filedDate,
           approvedAt: c.updatedAt,
-          approvedByName: "Admin",
+          approvedByName: 'Admin',
           data: {
             subject: c.subject,
             description: c.description,
@@ -197,7 +83,7 @@ const WardenRequisitions = () => {
       allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setRequisitions(allItems);
     } catch (error) {
-      toast.error("Failed to fetch requisitions");
+      toast.error('Failed to fetch requisitions');
       console.error(error);
     } finally {
       setLoading(false);
@@ -207,8 +93,8 @@ const WardenRequisitions = () => {
   const fetchStats = async () => {
     try {
       const [reqRes, compRes] = await Promise.all([
-        api.get("/api/adminauth/requisitions/stats"),
-        api.get("/api/adminauth/complaints?limit=200")
+        api.get('/api/adminauth/requisitions/stats'),
+        api.get('/api/adminauth/complaints?limit=200')
       ]);
       
       let s = { total: 0, pending: 0, approved: 0, rejected: 0 };
@@ -225,7 +111,7 @@ const WardenRequisitions = () => {
       }
       setStats(s);
     } catch (error) {
-      console.error("Failed to fetch stats:", error);
+      console.error('Failed to fetch stats:', error);
     }
   };
 
@@ -237,11 +123,11 @@ const WardenRequisitions = () => {
         const targetStatus = selectedReq.data?.targetStatus || 'resolved';
         await api.put(`/api/adminauth/complaints/${id}/status`, {
           status: targetStatus,
-          adminNotes: notes || `Request approved by Admin.`
+          adminNotes: notes || 'Request approved by Admin.'
         });
         toast.success(`Complaint request approved! Status changed to ${targetStatus}.`);
         setShowModal(false);
-        setNotes("");
+        setNotes('');
         fetchRequisitions();
         fetchStats();
         return;
@@ -255,19 +141,19 @@ const WardenRequisitions = () => {
         let successMsg = `Registration approved successfully! ID: ${res.data.entityId}`;
         
         if (selectedReq.requisitionType === 'notice') {
-          successMsg = "Notice approved and issued successfully!";
+          successMsg = 'Notice approved and issued successfully!';
         } else if (selectedReq.requisitionType === 'inventory_replacement') {
-          successMsg = "Inventory replacement request approved!";
+          successMsg = 'Inventory replacement request approved!';
         }
           
         toast.success(successMsg);
         setShowModal(false);
-        setNotes("");
+        setNotes('');
         fetchRequisitions();
         fetchStats();
       }
     } catch (error) {
-      const message = error.response?.data?.message || "Failed to approve requisition";
+      const message = error.response?.data?.message || 'Failed to approve requisition';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -276,7 +162,7 @@ const WardenRequisitions = () => {
 
   const handleReject = async (id) => {
     if (!rejectionReason.trim()) {
-      toast.error("Rejection reason is required");
+      toast.error('Rejection reason is required');
       return;
     }
     
@@ -285,7 +171,7 @@ const WardenRequisitions = () => {
       
       if (selectedReq.isComplaint) {
         const targetStatus = selectedReq.data?.targetStatus;
-        let returnStatus = 'in progress'; // Default for resolution rejection
+        let returnStatus = 'in progress'; 
         
         if (targetStatus === 'in progress' || targetStatus === 'rejected') {
           returnStatus = 'pending';
@@ -298,8 +184,8 @@ const WardenRequisitions = () => {
         toast.success(`Resolution rejected. Complaint set to ${returnStatus}.`);
         setShowModal(false);
         setShowRejectModal(false);
-        setRejectionReason("");
-        setNotes("");
+        setRejectionReason('');
+        setNotes('');
         fetchRequisitions();
         fetchStats();
         return;
@@ -311,16 +197,16 @@ const WardenRequisitions = () => {
         notes
       });
       if (res.data.success) {
-        toast.success("Requisition rejected successfully");
+        toast.success('Requisition rejected successfully');
         setShowModal(false);
         setShowRejectModal(false);
-        setRejectionReason("");
-        setNotes("");
+        setRejectionReason('');
+        setNotes('');
         fetchRequisitions();
         fetchStats();
       }
     } catch (error) {
-      toast.error("Failed to reject requisition");
+      toast.error('Failed to reject requisition');
     } finally {
       setSubmitting(false);
     }
@@ -334,14 +220,36 @@ const WardenRequisitions = () => {
         req.data?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.data?.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.data?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "all" || req.status === statusFilter;
-      const matchesType = typeFilter === "all" || req.requisitionType === typeFilter;
+      const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
+      const matchesType = typeFilter === 'all' || req.requisitionType === typeFilter;
       return matchesSearch && matchesStatus && matchesType;
     });
   }, [requisitions, searchTerm, statusFilter, typeFilter]);
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'approved': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'rejected': return 'bg-rose-100 text-rose-700 border-rose-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
+
+  const getTypeColor = (type) => {
+    switch(type) {
+      case 'student': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'parent': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'worker': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'staff': return 'bg-sky-100 text-sky-700 border-sky-200';
+      case 'notice': return 'bg-pink-100 text-pink-700 border-pink-200';
+      case 'inventory_replacement': return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'complaint_resolution': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
+
   return (
-    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans sf-page-container">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
       <div className="w-full">
         
         {/* Header */}
@@ -349,158 +257,173 @@ const WardenRequisitions = () => {
           <div className="flex flex-col">
             <div className="flex items-center">
               <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
-              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: "Inter" }}>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: 'Inter' }}>
                 Warden Requisitions
               </h1>
             </div>
-            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: "Poppins" }}>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: 'Poppins' }}>
               Review and approve registration requests from wardens
             </p>
           </div>
         </div>
 
-        {/* Main Content Box matching Admin Panel */}
-        <div className="bg-[#BEC5AD] rounded-[20px] p-4 sm:p-6 lg:p-8" style={{ boxShadow: "0px 4px 20px 0px #00000040 inset", fontFamily: "Poppins" }}>
-          
-          <div className="page-header mb-8">
-          {/* Stats Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
-            {[
-              { label: "Total Requests", value: stats.total, color: T.accent, bg: T.accentLight },
-              { label: "Pending", value: stats.pending, color: T.orange, bg: "#FFFBEB" },
-              { label: "Approved", value: stats.approved, color: T.green, bg: "#ECFDF5" },
-              { label: "Rejected", value: stats.rejected, color: T.red, bg: "#FEF2F2" },
-            ].map((stat, i) => (
-              <div key={i} style={{ ...css.glassCard, padding: "20px" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>{stat.label}</div>
-                <div style={{ fontSize: 32, fontWeight: 900, color: stat.color }}>{stat.value}</div>
-              </div>
-            ))}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <p className="text-gray-500 text-sm font-medium">Total Requests</p>
+            <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
           </div>
-
-          {/* Filters */}
-          <div className="header-actions flex flex-col md:flex-row gap-3 flex-wrap">
-            <div className="search-container relative flex-1 w-full md:w-auto">
-              <HiOutlineSearch size={18} color={T.textMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-              <input 
-                placeholder="Search by warden or registrant name..." 
-                className="search-input w-full"
-                style={{ ...css.input, paddingLeft: 40 }} 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <select 
-                className="status-select flex-1 w-full sm:min-w-[140px]"
-                style={css.input}
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-
-              <select 
-                className="type-select flex-1 w-full sm:min-w-[140px]"
-                style={css.input}
-                value={typeFilter}
-                onChange={e => setTypeFilter(e.target.value)}
-              >
-                <option value="all">All Types</option>
-                <option value="student">Student</option>
-                <option value="parent">Parent</option>
-                <option value="worker">Worker</option>
-                <option value="staff">Staff</option>
-                <option value="notice">Notice</option>
-                <option value="inventory_replacement">Replacement</option>
-                <option value="complaint_resolution">Complaint</option>
-              </select>
-            </div>
+          <div className="bg-amber-50 p-4 rounded-xl shadow-sm border border-amber-200">
+            <p className="text-amber-600 text-sm font-medium">Pending</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{stats.pending}</p>
+          </div>
+          <div className="bg-emerald-50 p-4 rounded-xl shadow-sm border border-emerald-200">
+            <p className="text-emerald-600 text-sm font-medium">Approved</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.approved}</p>
+          </div>
+          <div className="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200">
+            <p className="text-rose-600 text-sm font-medium">Rejected</p>
+            <p className="text-2xl font-bold text-rose-700 mt-1">{stats.rejected}</p>
           </div>
         </div>
 
-        {/* Table */}
-        <div style={css.glassCard} className="table-container">
+        {/* Filtering */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full justify-between mb-6">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search by name, email..."
+              className="pl-10 pr-4 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm font-semibold text-black shadow-sm w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <select
+              className="flex-1 sm:flex-none px-4 py-2 bg-white rounded-xl outline-none text-sm font-semibold text-black shadow-sm border border-gray-200"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <select
+              className="flex-1 sm:flex-none px-4 py-2 bg-white rounded-xl outline-none text-sm font-semibold text-black shadow-sm border border-gray-200"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="student">Student</option>
+              <option value="parent">Parent</option>
+              <option value="worker">Worker</option>
+              <option value="staff">Staff</option>
+              <option value="notice">Notice</option>
+              <option value="inventory_replacement">Replacement</option>
+              <option value="complaint_resolution">Complaint</option>
+            </select>
+
+            <button
+              onClick={fetchRequisitions}
+              className="p-2 bg-white shadow-sm border border-gray-200 rounded-xl text-black hover:bg-gray-50 transition-all flex-shrink-0"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Table Container */}
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-black">
+                Warden Requisitions
+              </h2>
+              <p className="text-sm text-gray-700 mt-1">Total: {filteredRequisitions.length} records</p>
+            </div>
+          </div>
+
           {loading ? (
-            <div style={{ padding: "60px", textAlign: "center", color: T.textMuted }}>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>Loading requisitions...</div>
+            <div className="p-12 flex justify-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
             </div>
           ) : filteredRequisitions.length === 0 ? (
-            <div style={{ padding: "60px", textAlign: "center", color: T.textMuted }}>
-              <HiOutlineDocumentText size={48} style={{ margin: "0 auto 16px", opacity: 0.3 }} />
-              <div style={{ fontSize: 16, fontWeight: 600 }}>No requisitions found</div>
-              <div style={{ fontSize: 14, marginTop: 4 }}>Try adjusting your filters</div>
+            <div className="text-center py-16 bg-white/40">
+              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 font-bold text-sm uppercase tracking-widest">No requisitions found.</p>
             </div>
           ) : (
-            <div className="w-full overflow-x-auto pb-4">
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+            <div className="overflow-x-auto p-4">
+              <table className="w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: `2px solid ${T.border}` }}>
-                    {["Warden", "Type", "Registrant", "Email", "Contact", "Status", "Submitted", "Action"].map(h => (
-                      <th key={h} style={{ textAlign: "left", padding: "16px", fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</th>
+                  <tr className="border-b-2 border-gray-200">
+                    {["Warden", "Type", "Registrant", "Email", "Contact", "Status", "Submitted", "Action"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-sm font-semibold text-gray-700">
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRequisitions.map((req) => (
-                    <tr key={req._id} style={{ borderBottom: `1px solid ${T.border}`, transition: "background 0.2s" }} className="hover-row">
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: "50%", background: T.accentLight, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>
-                            {req.requestedByName?.charAt(0) || "W"}
+                    <tr key={req._id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-800 font-bold whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+                            {req.requestedByName?.charAt(0) || 'W'}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 14 }}>{req.requestedByName}</div>
-                            <div style={{ fontSize: 11, color: T.textMuted }}>ID: {req.requestedBy?.wardenId || "N/A"}</div>
+                            <div className="font-bold text-gray-800 text-sm">{req.requestedByName}</div>
+                            <div className="text-xs text-gray-500 font-medium">ID: {req.requestedBy?.wardenId || 'N/A'}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <TypeBadge type={req.requisitionType} />
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getTypeColor(req.requisitionType)}`}>
+                          {req.requisitionType.replace('_', ' ')}
+                        </span>
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {req.requisitionType === 'notice' ? req.data?.title : 
-                           req.requisitionType === 'inventory_replacement' ? req.data?.itemName :
-                           req.requisitionType === 'complaint_resolution' ? req.data?.subject :
-                           `${req.data?.firstName} ${req.data?.lastName}`}
-                        </div>
+                      <td className="px-4 py-3 text-sm text-gray-800 font-bold whitespace-nowrap">
+                        {req.requisitionType === 'notice' ? req.data?.title : 
+                         req.requisitionType === 'inventory_replacement' ? req.data?.itemName :
+                         req.requisitionType === 'complaint_resolution' ? req.data?.subject :
+                         `${req.data?.firstName} ${req.data?.lastName}`}
                       </td>
-                      <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {req.requisitionType === 'notice' ? `To: ${req.data?.recipientType}` : 
                          req.requisitionType === 'inventory_replacement' ? `ID: ${req.data?.barcodeId}` :
                          req.requisitionType === 'complaint_resolution' ? `Student: ${req.data?.studentName}` :
                          req.data?.email}
                       </td>
-                      <td style={{ padding: "16px", fontSize: 13, color: T.textMuted }}>
-                        {req.requisitionType === 'notice' ? (req.data?.individualRecipient || "All") : 
-                         req.requisitionType === 'inventory_replacement' ? "N/A" :
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {req.requisitionType === 'notice' ? (req.data?.individualRecipient || 'All') : 
+                         req.requisitionType === 'inventory_replacement' ? 'N/A' :
                          req.requisitionType === 'complaint_resolution' ? req.data?.ticketId :
                          req.data?.contactNumber}
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <StatusBadge status={req.status} />
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(req.status)}`}>
+                          {req.status}
+                        </span>
                       </td>
-                      <td style={{ padding: "16px", fontSize: 12, color: T.textMuted }}>
-                        {new Date(req.createdAt).toLocaleDateString()}
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {new Date(req.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <button 
-                          style={{ background: "none", border: "none", cursor: "pointer", color: T.accent, padding: 8, borderRadius: 8, transition: "background 0.2s" }}
-                          className="action-btn"
-                          onClick={() => { 
-                            setSelectedReq(req); 
-                            setNotes(req.notes || ""); 
-                            setRejectionReason("");
-                            setShowModal(true); 
-                          }}
-                        >
-                          <HiOutlineEye size={20} />
-                        </button>
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => { setSelectedReq(req); setNotes(req.notes || ''); setRejectionReason(''); setShowModal(true); }}
+                            className="text-gray-500 hover:text-gray-700 transition-colors" 
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -509,402 +432,367 @@ const WardenRequisitions = () => {
             </div>
           )}
         </div>
-        </div>
-      </div>
 
-      {/* Detail Modal */}
-      {showModal && selectedReq && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
-          <div className="modal-content" style={{ ...css.glassCard, width: "100%", maxWidth: 700, padding: 0, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: "24px", background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Registration Request Details</h2>
-                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>
-                  <TypeBadge type={selectedReq.requisitionType} /> 
-                  <span style={{ marginLeft: 8 }}>Submitted {new Date(selectedReq.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <button onClick={() => setShowModal(false)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", cursor: "pointer", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <HiOutlineX size={20} />
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <div style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
+        {/* View Details Modal */}
+        {showModal && selectedReq && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-2xl relative flex flex-col border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter', maxHeight: '90vh' }}>
               
-              {/* Warden Info */}
-              <div style={{ background: T.bgLight, padding: "16px", borderRadius: "12px", marginBottom: 24 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Requested By</div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{selectedReq.requestedByName}</div>
-                <div style={{ fontSize: 13, color: T.textMuted, marginTop: 2 }}>Warden ID: {selectedReq.requestedBy?.wardenId || "N/A"}</div>
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">Requisition Details</h2>
+                  <p className="text-sm text-gray-800 mt-1 font-medium">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/50 border-black/10 inline-block mr-2`}>
+                      {selectedReq.requisitionType.replace('_', ' ')}
+                    </span>
+                    Submitted {new Date(selectedReq.createdAt).toLocaleDateString('en-IN')}
+                  </p>
+                </div>
+                <button onClick={() => setShowModal(false)} className="text-black/70 hover:text-black transition-colors">
+                  <XCircle size={24} />
+                </button>
               </div>
 
-              {/* Registrant Details */}
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 12 }}>
-                  {selectedReq.requisitionType === 'complaint_resolution' 
-                    ? 'Complaint Details' 
-                    : `${selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1)} Information`}
+              <div className="p-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Requested By</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedReq.requestedByName}</p>
+                  <p className="text-sm font-medium text-gray-500">Warden ID: {selectedReq.requestedBy?.wardenId || 'N/A'}</p>
                 </div>
-                <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  {selectedReq.requisitionType !== 'notice' && selectedReq.requisitionType !== 'inventory_replacement' && selectedReq.requisitionType !== 'complaint_resolution' && (
-                    <>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>First Name</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.firstName || "N/A"}</div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Last Name</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.lastName || "N/A"}</div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Email</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.email || "N/A"}</div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Contact Number</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.contactNumber || "N/A"}</div>
-                      </div>
-                    </>
-                  )}
 
-                  {/* Student/Worker specific fields */}
-                  {(selectedReq.requisitionType === 'student' || selectedReq.requisitionType === 'worker') && (
-                    <>
-                      {selectedReq.data?.roomNumber && (
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    {selectedReq.requisitionType === 'complaint_resolution' 
+                      ? 'Complaint Details' 
+                      : `${selectedReq.requisitionType.charAt(0).toUpperCase() + selectedReq.requisitionType.slice(1).replace('_', ' ')} Information`}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
+                    
+                    {selectedReq.requisitionType !== 'notice' && selectedReq.requisitionType !== 'inventory_replacement' && selectedReq.requisitionType !== 'complaint_resolution' && (
+                      <>
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Room Number</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.roomNumber}</div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">First Name</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.firstName || 'N/A'}</p>
                         </div>
-                      )}
-                      {selectedReq.data?.bedNumber && (
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Bed Number</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.bedNumber}</div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Last Name</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.lastName || 'N/A'}</p>
                         </div>
-                      )}
-                      {selectedReq.data?.emergencyContact && (
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Emergency Contact</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.emergencyContact}</div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Email</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.email || 'N/A'}</p>
                         </div>
-                      )}
-                      {selectedReq.data?.emergencyContactName && (
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Emergency Contact Name</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.emergencyContactName}</div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Contact Number</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.contactNumber || 'N/A'}</p>
                         </div>
-                      )}
-                      {selectedReq.data?.admissionDate && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Admission Date</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{new Date(selectedReq.data.admissionDate).toLocaleDateString()}</div>
-                        </div>
-                      )}
-                      {selectedReq.data?.feeStatus && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Fee Status</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.feeStatus}</div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Notice specific fields */}
-                  {selectedReq.requisitionType === 'notice' && (
-                    <>
-                      {selectedReq.data?.template && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Template</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.template}</div>
-                        </div>
-                      )}
-                      {selectedReq.data?.recipientType && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Recipient Type</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.recipientType}</div>
-                        </div>
-                      )}
-                      {selectedReq.data?.individualRecipient && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Recipient ID</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.individualRecipient}</div>
-                        </div>
-                      )}
-                      {selectedReq.data?.issueDate && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Issue Date</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{new Date(selectedReq.data.issueDate).toLocaleDateString()}</div>
-                        </div>
-                      )}
-                      <div style={{ gridColumn: "span 2" }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Message</label>
-                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data.message}</div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Parent specific fields */}
-                  {selectedReq.requisitionType === 'parent' && (
-                    <>
-                      {selectedReq.data?.relation && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Relation</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.relation}</div>
-                        </div>
-                      )}
-                      {selectedReq.data?.studentId && (
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Student ID</label>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data.studentId}</div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Inventory Replacement specific fields */}
-                  {selectedReq.requisitionType === 'inventory_replacement' && (
-                    <>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Item Name</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.itemName}</div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Barcode ID</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.barcodeId}</div>
-                      </div>
-                      <div style={{ gridColumn: "span 2" }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Replacement Reason</label>
-                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data?.reason}</div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Complaint Resolution specific fields */}
-                  {selectedReq.requisitionType === 'complaint_resolution' && (
-                    <>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Ticket ID</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.ticketId}</div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Requested Action</label>
-                        <div style={{ 
-                          fontWeight: 800, 
-                          fontSize: 12, 
-                          color: selectedReq.data?.targetStatus === 'in progress' ? T.blue : 
-                                 selectedReq.data?.targetStatus === 'resolved' ? T.green : 
-                                 selectedReq.data?.targetStatus === 'rejected' ? T.red : T.text,
-                          textTransform: 'uppercase'
-                        }}>
-                          {selectedReq.data?.targetStatus === 'in progress' ? 'Start Processing' : 
-                           selectedReq.data?.targetStatus === 'resolved' ? 'Mark as Resolved' : 
-                           selectedReq.data?.targetStatus === 'rejected' ? 'Reject Complaint' : 'N/A'}
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Student</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.studentName} ({selectedReq.data?.studentEmail})</div>
-                      </div>
-                      <div style={{ gridColumn: "span 2" }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Subject</label>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedReq.data?.subject}</div>
-                      </div>
-                      <div style={{ gridColumn: "span 2" }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 4 }}>Description</label>
-                        <div style={{ fontWeight: 600, fontSize: 14, background: T.bgLight, padding: 12, borderRadius: 8 }}>{selectedReq.data?.description}</div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Documents */}
-              {(selectedReq.documents?.aadharCard || selectedReq.documents?.panCard || selectedReq.documents?.photo) && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Documents / Evidence</div>
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    {selectedReq.documents.aadharCard && (
-                      <a 
-                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/${selectedReq.documents.aadharCard.path}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12 }}
-                      >
-                        <HiOutlineDocumentText /> View Aadhar Card
-                      </a>
+                      </>
                     )}
-                    {selectedReq.documents.panCard && (
-                      <a 
-                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/${selectedReq.documents.panCard.path}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12 }}
-                      >
-                        <HiOutlineDocumentText /> View PAN Card
-                      </a>
+
+                    {(selectedReq.requisitionType === 'student' || selectedReq.requisitionType === 'worker') && (
+                      <>
+                        {selectedReq.data?.roomNumber && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Room Number</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.roomNumber}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.bedNumber && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Bed Number</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.bedNumber}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.emergencyContact && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Emergency Contact</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.emergencyContact}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.emergencyContactName && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Emergency Contact Name</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.emergencyContactName}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.admissionDate && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Admission Date</p>
+                            <p className="text-sm font-medium text-gray-600">{new Date(selectedReq.data.admissionDate).toLocaleDateString()}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.feeStatus && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Fee Status</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.feeStatus}</p>
+                          </div>
+                        )}
+                      </>
                     )}
-                    {selectedReq.documents.photo && (
-                      <a 
-                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5224"}/uploads/wardens/${selectedReq.documents.photo.filename}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ ...css.btnSecondary, textDecoration: "none", fontSize: 12, borderColor: T.orange, color: T.orange }}
-                      >
-                        <HiOutlineEye /> View Item Photo
-                      </a>
+
+                    {selectedReq.requisitionType === 'notice' && (
+                      <>
+                        {selectedReq.data?.template && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Template</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.template}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.recipientType && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Recipient Type</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.recipientType}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.individualRecipient && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Recipient ID</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.individualRecipient}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.issueDate && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Issue Date</p>
+                            <p className="text-sm font-medium text-gray-600">{new Date(selectedReq.data.issueDate).toLocaleDateString()}</p>
+                          </div>
+                        )}
+                        <div className="col-span-1 md:col-span-2">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Message</p>
+                          <div className="text-sm font-medium text-gray-600 bg-white px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
+                            {selectedReq.data.message}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedReq.requisitionType === 'parent' && (
+                      <>
+                        {selectedReq.data?.relation && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Relation</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.relation}</p>
+                          </div>
+                        )}
+                        {selectedReq.data?.studentId && (
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-1">Student ID</p>
+                            <p className="text-sm font-medium text-gray-600">{selectedReq.data.studentId}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {selectedReq.requisitionType === 'inventory_replacement' && (
+                      <>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Item Name</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.itemName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Barcode ID</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.barcodeId}</p>
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Replacement Reason</p>
+                          <div className="text-sm font-medium text-gray-600 bg-white px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
+                            {selectedReq.data?.reason}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedReq.requisitionType === 'complaint_resolution' && (
+                      <>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Ticket ID</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.ticketId}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Requested Action</p>
+                          <p className={`text-sm font-bold uppercase ${selectedReq.data?.targetStatus === 'in progress' ? 'text-blue-600' : selectedReq.data?.targetStatus === 'resolved' ? 'text-emerald-600' : selectedReq.data?.targetStatus === 'rejected' ? 'text-rose-600' : 'text-gray-800'}`}>
+                            {selectedReq.data?.targetStatus === 'in progress' ? 'Start Processing' : 
+                             selectedReq.data?.targetStatus === 'resolved' ? 'Mark as Resolved' : 
+                             selectedReq.data?.targetStatus === 'rejected' ? 'Reject Complaint' : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Student</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.studentName} ({selectedReq.data?.studentEmail})</p>
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Subject</p>
+                          <p className="text-sm font-medium text-gray-600">{selectedReq.data?.subject}</p>
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">Description</p>
+                          <div className="text-sm font-medium text-gray-600 bg-white px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
+                            {selectedReq.data?.description}
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
-              )}
 
-              {/* Status Info */}
-              {selectedReq.status !== 'pending' && (
-                <div style={{ background: selectedReq.status === 'approved' ? "#ECFDF5" : "#FEF2F2", padding: "16px", borderRadius: "12px", marginBottom: 24 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", marginBottom: 8 }}>
-                    {selectedReq.status === 'approved' ? 'Approval Details' : 'Rejection Details'}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
-                    {selectedReq.status === 'approved' ? `Approved by ${selectedReq.approvedByName}` : `Rejected by ${selectedReq.rejectedByName}`}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 8 }}>
-                    {selectedReq.status === 'approved' 
-                      ? new Date(selectedReq.approvedAt).toLocaleString()
-                      : new Date(selectedReq.rejectedAt).toLocaleString()
-                    }
-                  </div>
-                  {selectedReq.rejectionReason && (
-                    <div style={{ fontSize: 13, marginTop: 8, padding: "12px", background: "rgba(255,255,255,0.7)", borderRadius: "8px" }}>
-                      <strong>Reason:</strong> {selectedReq.rejectionReason}
+                {(selectedReq.documents?.aadharCard || selectedReq.documents?.panCard || selectedReq.documents?.photo) && (
+                  <div className="mb-6">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Documents / Evidence</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {selectedReq.documents.aadharCard && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">Aadhar Card</p>
+                          <div 
+                            className="w-full h-32 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center cursor-pointer relative group"
+                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.aadharCard.path}`, '_blank')}
+                          >
+                            {selectedReq.documents.aadharCard.path.toLowerCase().endsWith('.pdf') ? (
+                              <iframe src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.aadharCard.path}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-[150%] pointer-events-none transform origin-top" title="Aadhar Preview" />
+                            ) : (
+                              <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.aadharCard.path}`} className="w-full h-full object-cover" alt="Aadhar Card" />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[#4F8CCF] text-[10px] font-bold px-3 py-1.5 rounded shadow-sm transition-opacity">Click to View</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedReq.documents.panCard && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">PAN Card</p>
+                          <div 
+                            className="w-full h-32 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center cursor-pointer relative group"
+                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.panCard.path}`, '_blank')}
+                          >
+                            {selectedReq.documents.panCard.path.toLowerCase().endsWith('.pdf') ? (
+                              <iframe src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.panCard.path}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-[150%] pointer-events-none transform origin-top" title="PAN Preview" />
+                            ) : (
+                              <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/${selectedReq.documents.panCard.path}`} className="w-full h-full object-cover" alt="PAN Card" />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[#4F8CCF] text-[10px] font-bold px-3 py-1.5 rounded shadow-sm transition-opacity">Click to View</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedReq.documents.photo && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">Item Photo</p>
+                          <div 
+                            className="w-full h-32 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center cursor-pointer relative group"
+                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/uploads/wardens/${selectedReq.documents.photo.filename}`, '_blank')}
+                          >
+                            <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5224'}/uploads/wardens/${selectedReq.documents.photo.filename}`} className="w-full h-full object-cover" alt="Item Photo" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[#4F8CCF] text-[10px] font-bold px-3 py-1.5 rounded shadow-sm transition-opacity">Click to View</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {selectedReq.notes && (
-                    <div style={{ fontSize: 13, marginTop: 8, padding: "12px", background: "rgba(255,255,255,0.7)", borderRadius: "8px" }}>
-                      <strong>Notes:</strong> {selectedReq.notes}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Actions for Pending */}
-              {selectedReq.status === 'pending' && (
-                <div style={{ background: T.bgLight, padding: "20px", borderRadius: "16px" }}>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Admin Notes (Optional)</label>
-                  <textarea 
-                    style={{ ...css.input, minHeight: 80, resize: "vertical", marginBottom: 16 }}
-                    placeholder="Add internal notes about this requisition..."
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                  />
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <button 
-                      disabled={submitting}
-                      style={{ ...css.btnSecondary, flex: 1, justifyContent: "center", opacity: submitting ? 0.6 : 1 }}
-                      onClick={() => setShowRejectModal(true)}
-                    >
-                      <HiOutlineXCircle /> Reject
-                    </button>
-                    <button 
-                      disabled={submitting}
-                      style={{ ...css.btnPrimary, background: T.green, flex: 1, justifyContent: "center", opacity: submitting ? 0.6 : 1 }}
-                      onClick={() => handleApprove(selectedReq._id)}
-                    >
-                      <HiOutlineCheckCircle /> {submitting ? "Processing..." : "Approve & Register"}
-                    </button>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                )}
 
-      {/* Reject Modal */}
-      {showRejectModal && selectedReq && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, padding: 20 }}>
-          <div style={{ ...css.glassCard, width: "100%", maxWidth: 500, padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "20px", background: T.red, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Reject Requisition</h3>
-              <button onClick={() => setShowRejectModal(false)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", cursor: "pointer", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <HiOutlineX size={18} />
-              </button>
-            </div>
-            <div style={{ padding: "24px" }}>
-              <p style={{ fontSize: 14, color: T.textMuted, marginBottom: 16 }}>
-                Please provide a reason for rejecting this registration request. This will be visible to the warden.
-              </p>
-              <label style={{ fontSize: 11, fontWeight: 800, color: T.textMuted, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Rejection Reason *</label>
-              <textarea 
-                style={{ ...css.input, minHeight: 100, resize: "vertical", marginBottom: 20 }}
-                placeholder="Enter rejection reason..."
-                value={rejectionReason}
-                onChange={e => setRejectionReason(e.target.value)}
-                autoFocus
-              />
-              <div style={{ display: "flex", gap: 12 }}>
-                <button 
-                  style={{ ...css.btnSecondary, flex: 1, justifyContent: "center" }}
-                  onClick={() => setShowRejectModal(false)}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button 
-                  disabled={submitting || !rejectionReason.trim()}
-                  style={{ ...css.btnPrimary, background: T.red, flex: 1, justifyContent: "center", opacity: (submitting || !rejectionReason.trim()) ? 0.6 : 1 }}
-                  onClick={() => handleReject(selectedReq._id)}
-                >
-                  {submitting ? "Rejecting..." : "Confirm Rejection"}
-                </button>
+                {selectedReq.status !== 'pending' && (
+                  <div className={`p-4 rounded-xl border mb-6 ${selectedReq.status === 'approved' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      {selectedReq.status === 'approved' ? 'Approval Details' : 'Rejection Details'}
+                    </p>
+                    <p className="text-sm font-bold text-gray-800 mb-1">
+                      {selectedReq.status === 'approved' ? `Approved by ${selectedReq.approvedByName}` : `Rejected by ${selectedReq.rejectedByName}`}
+                    </p>
+                    <p className="text-xs font-medium text-gray-500 mb-3">
+                      {selectedReq.status === 'approved' 
+                        ? new Date(selectedReq.approvedAt).toLocaleString()
+                        : new Date(selectedReq.rejectedAt).toLocaleString()
+                      }
+                    </p>
+                    {selectedReq.rejectionReason && (
+                      <div className="text-sm font-medium text-gray-700 bg-white/60 px-4 py-3 rounded-lg">
+                        <strong>Reason:</strong> {selectedReq.rejectionReason}
+                      </div>
+                    )}
+                    {selectedReq.notes && (
+                      <div className="text-sm font-medium text-gray-700 bg-white/60 px-4 py-3 rounded-lg mt-2">
+                        <strong>Notes:</strong> {selectedReq.notes}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedReq.status === 'pending' && (
+                  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Admin Notes (Optional)</p>
+                    <textarea 
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none resize-y min-h-[80px] mb-4"
+                      placeholder="Add internal notes about this requisition..."
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                    />
+                    <div className="flex gap-3">
+                      <button 
+                        disabled={submitting}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+                        onClick={() => setShowRejectModal(true)}
+                      >
+                        <XCircle size={18} /> Reject
+                      </button>
+                      <button 
+                        disabled={submitting}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                        onClick={() => handleApprove(selectedReq._id)}
+                      >
+                        <CheckCircle size={18} /> {submitting ? 'Processing...' : 'Approve & Register'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <style jsx>{`
-        .hover-row:hover {
-          background-color: ${T.bgLight};
-        }
-        .action-btn:hover {
-          background-color: ${T.accentLight} !important;
-        }
-        @media (max-width: 768px) {
-          .page-header {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 16px;
-          }
-          .header-actions {
-            width: 100%;
-            flex-direction: column;
-          }
-          .search-container {
-            width: 100% !important;
-          }
-          .search-input {
-            width: 100% !important;
-          }
-          .status-select, .type-select {
-            width: 100% !important;
-          }
-          .table-container {
-            overflow-x: auto;
-            margin: 0 -24px;
-            padding: 0 24px;
-          }
-          .detail-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .modal-content {
-            width: 95% !important;
-            margin: 10px !important;
-          }
-        }
-      `}</style>
+        {/* Reject Confirmation Modal */}
+        {showRejectModal && selectedReq && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+            <div className="bg-white rounded-[20px] p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200" style={{ fontFamily: 'Poppins' }}>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 mb-4">
+                  <Trash2 size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-black mb-2">Reject Requisition</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Please provide a reason for rejecting this registration request. This will be visible to the warden.
+                </p>
+                <textarea 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none resize-y min-h-[100px] mb-6 text-left"
+                  placeholder="Enter rejection reason..."
+                  value={rejectionReason}
+                  onChange={e => setRejectionReason(e.target.value)}
+                  autoFocus
+                />
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setShowRejectModal(false)}
+                    disabled={submitting}
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleReject(selectedReq._id)}
+                    disabled={submitting || !rejectionReason.trim()}
+                    className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30 disabled:opacity-50"
+                  >
+                    {submitting ? 'Rejecting...' : 'Reject'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
+      </div>
     </div>
   );
 };

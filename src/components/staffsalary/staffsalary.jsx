@@ -553,166 +553,113 @@ export default function StaffSalaryContent() {
 
   // ── Summary Cards ─────────────────────────────────────────────────────────
   const renderSummaryCards = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-      {[
-        { label:"Total Payroll Cost", value:`₹${totals.totalPayroll.toLocaleString('en-IN')}`, Icon:HiOutlineCurrencyRupee, bg:"bg-blue-50",  text:"text-blue-600"   },
-        { label:"Total Payout",       value:`₹${totals.totalPayout.toLocaleString('en-IN')}`,  Icon:HiOutlineTrendingUp,    bg:"bg-green-50", text:"text-green-600"  },
-        { label:"Staff Count",        value:`${salaries.length} Members`,                       Icon:HiOutlineUsers,         bg:"bg-purple-50",text:"text-purple-600" },
-      ].map(({ label, value, Icon, bg, text }) => (
-        <div key={label} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-4 sm:gap-5 hover:shadow-md transition-all">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${bg} flex items-center justify-center ${text} shrink-0`}>
-            <Icon size={24} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider truncate">{label}</p>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900">{value}</h3>
-          </div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <p className="text-gray-500 text-sm font-medium">Total Payroll Cost</p>
+        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totals.totalPayroll.toLocaleString('en-IN')}</p>
+      </div>
+      <div className="bg-amber-50 p-4 rounded-xl shadow-sm border border-amber-200">
+        <p className="text-amber-600 text-sm font-medium">Total Payout</p>
+        <p className="text-2xl font-bold text-amber-700 mt-1">₹{totals.totalPayout.toLocaleString('en-IN')}</p>
+      </div>
+      <div className="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-200">
+        <p className="text-blue-600 text-sm font-medium">Staff Count</p>
+        <p className="text-2xl font-bold text-blue-700 mt-1">{salaries.length}</p>
+      </div>
     </div>
   )
 
   // ── Salary Table ──────────────────────────────────────────────────────────
   const renderTable = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-4 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-        <div className="relative w-full sm:w-72">
-          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+    <>
+      {/* Filtering */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full justify-between mb-6">
+        <div className="relative w-full sm:w-80">
+          <HiOutlineSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input type="text" placeholder="Search staff name..." value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+            className="pl-10 pr-4 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm font-semibold text-black shadow-sm w-full" />
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="flex gap-2">
           <button onClick={handleExport}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 transition-all">
+            className="px-4 py-2 text-sm font-semibold text-black bg-white shadow-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2">
             <HiOutlineDownload size={16} /><span className="hidden sm:inline">Export</span>
           </button>
           <button onClick={() => setShowProcessSalary(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
+            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 shadow-sm rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2">
             <HiOutlinePlus size={16} /><span>Process Salary</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile cards */}
-      <div className="sm:hidden divide-y divide-gray-50">
-        {loading ? [...Array(3)].map((_,i) => (
-          <div key={i} className="p-4 animate-pulse"><div className="h-12 bg-gray-100 rounded-lg" /></div>
-        )) : filteredSalaries.length === 0 ? (
-          <div className="p-10 text-center text-gray-400 text-sm">No records found for this period</div>
-        ) : filteredSalaries.map(salary => (
-          <div key={salary._id} className="p-4 hover:bg-gray-50/50 transition-all">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-                  {salary.staffName.charAt(0)}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-gray-900 truncate">{salary.staffName}</div>
-                  <div className="text-xs text-gray-500">{salary.role}</div>
-                </div>
-              </div>
-              <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold capitalize ${
-                salary.status==='paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-              }`}>
-                {salary.status==='paid' ? <HiOutlineCheckCircle size={10}/> : <HiOutlineClock size={10}/>}
-                {salary.status}
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="flex gap-4">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Basic</div>
-                  <div className="text-sm font-bold text-gray-900">₹{salary.basicSalary.toLocaleString('en-IN')}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Net</div>
-                  <div className="text-sm font-bold text-blue-600">₹{salary.netSalary.toLocaleString('en-IN')}</div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {salary.status==='pending' && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleUpdateStatus(salary._id,'paid', 'cash')}
-                      className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Cash Payment">
-                      <HiOutlineCheckCircle size={16}/>
-                    </button>
-                    <button onClick={() => handleRazorpayPayment(salary)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Online Payment">
-                      <HiOutlineCurrencyRupee size={16}/>
-                    </button>
-                  </div>
-                )}
-                <button onClick={() => { setSelectedSalary(salary); setShowPayslipModal(true); }}
-                  className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold transition-all">
-                  Payslip
-                </button>
-              </div>
-            </div>
+      <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+        <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-black">
+              Payroll Records
+            </h2>
+            <p className="text-sm text-gray-700 mt-1">Total: {filteredSalaries.length} records</p>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Desktop table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto p-4">
+        <table className="w-full text-left bg-white rounded-xl overflow-hidden shadow-sm">
           <thead>
-            <tr className="bg-gray-50/50">
+            <tr className="border-b-2 border-gray-200">
               {["Staff Member","Basic Salary","Net Salary","Status","Actions"].map(h => (
-                <th key={h} className={`px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider ${h==="Actions"?"text-right":""}`}>{h}</th>
+                <th key={h} className={`px-4 py-3 text-sm font-semibold text-gray-700 ${h==="Actions"?"text-right":""}`}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {loading ? [...Array(5)].map((_,i) => (
-              <tr key={i} className="animate-pulse">
-                <td colSpan={5} className="px-6 py-4"><div className="h-10 bg-gray-100 rounded-lg"/></td>
+              <tr key={i} className="animate-pulse bg-white border-b border-gray-100">
+                <td colSpan={5} className="px-4 py-3"><div className="h-10 bg-gray-100 rounded-lg"/></td>
               </tr>
             )) : filteredSalaries.length===0 ? (
-              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No records found for this period</td></tr>
+              <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400 font-bold text-sm uppercase tracking-widest bg-white/40">No records found for this period</td></tr>
             ) : filteredSalaries.map(salary => (
-              <tr key={salary._id} className="hover:bg-gray-50/50 transition-all">
-                <td className="px-6 py-4">
+              <tr key={salary._id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm uppercase shrink-0">
                       {salary.staffName.charAt(0)}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-gray-900">{salary.staffName}</div>
-                      <div className="text-xs text-gray-500">{salary.role}</div>
+                      <div className="text-sm font-bold text-gray-800">{salary.staffName}</div>
+                      <div className="text-xs font-semibold text-gray-500">{salary.role}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">₹{salary.basicSalary.toLocaleString('en-IN')}</div>
+                <td className="px-4 py-3 text-sm font-medium text-gray-700">
+                  ₹{salary.basicSalary.toLocaleString('en-IN')}
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-bold text-blue-600">₹{salary.netSalary.toLocaleString('en-IN')}</div>
+                <td className="px-4 py-3 text-sm font-bold text-[#4F8CCF]">
+                  ₹{salary.netSalary.toLocaleString('en-IN')}
                 </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                    salary.status==='paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border inline-block ${
+                    salary.status==='paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'
                   }`}>
-                    {salary.status==='paid' ? <HiOutlineCheckCircle size={12}/> : <HiOutlineClock size={12}/>}
                     {salary.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-4 py-3 text-sm whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-2">
                     {salary.status==='pending' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 border-r border-gray-200 pr-3 mr-1">
                         <button onClick={() => handleUpdateStatus(salary._id,'paid', 'cash')}
-                          className="flex items-center gap-1 px-3 py-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all text-xs font-semibold" title="Mark as Paid (Cash)">
-                          <HiOutlineCheckCircle size={16}/> Cash
+                          className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white rounded text-xs font-bold hover:bg-green-600 transition-colors" title="Mark as Paid (Cash)">
+                          <HiOutlineCheckCircle size={14}/> Cash
                         </button>
                         <button onClick={() => handleRazorpayPayment(salary)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-xs font-semibold shadow-sm" title="Pay Online">
-                          <HiOutlineCurrencyRupee size={16}/> Online
+                          className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-bold shadow-sm" title="Pay Online">
+                          <HiOutlineCurrencyRupee size={14}/> Online
                         </button>
                       </div>
                     )}
                     <button onClick={() => { setSelectedSalary(salary); setShowPayslipModal(true); }}
-                      className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-semibold transition-all">
+                      className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-bold transition-colors border border-blue-200">
                       View Payslip
                     </button>
                   </div>
@@ -723,6 +670,7 @@ export default function StaffSalaryContent() {
         </table>
       </div>
     </div>
+    </>
   )
 
   // ── Payslip Preview (React modal — uses react-icons) ─────────────────────
@@ -906,26 +854,29 @@ export default function StaffSalaryContent() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-3 sm:p-6 lg:p-8 overflow-x-hidden">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
       <Toaster position="top-right" />
-      <div className="max-w-7xl mx-auto">
-
+      <div className="w-full">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Staff Salary</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: 'Inter' }}>
+                Staff Salary
+              </h1>
             </div>
-            <p className="text-sm text-gray-500 font-medium pl-3.5">Manage and process monthly payroll with ease</p>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: 'Poppins' }}>
+              Manage and process monthly payroll with ease
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-[#f4f6f0] p-1.5 rounded-xl shadow-sm border border-[#BEC5AD]/30 w-full sm:w-auto mt-4 sm:mt-0">
             <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-transparent border-none rounded-xl text-sm font-bold text-gray-700 focus:ring-0 cursor-pointer">
               {months.map(m => <option key={m.value} value={m.value}>{m.name}</option>)}
             </select>
-            <div className="w-px h-5 bg-gray-100" />
+            <div className="w-px h-5 bg-gray-300" />
             <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-transparent border-none rounded-xl text-sm font-bold text-gray-700 focus:ring-0 cursor-pointer">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -939,25 +890,25 @@ export default function StaffSalaryContent() {
         {/* ── Payslip Modal ── */}
         {showPayslipModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" onClick={() => setShowPayslipModal(false)} />
-            <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPayslipModal(false)} />
+            <div className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-xl font-sans">
 
               {/* Modal header */}
-              <div className="bg-blue-600 p-4 sm:p-5 text-white flex justify-between items-center rounded-t-3xl shrink-0">
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0 sm:rounded-t-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="bg-white/10 rounded-xl p-1.5 shrink-0">
+                  <div className="bg-white/30 rounded-xl p-1.5 shrink-0">
                     <img src="/photos/logo1.svg" alt="Logo"
                       className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
                       onError={e => { e.currentTarget.style.display='none' }} />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-bold leading-tight">Salary Slip</h2>
-                    <p className="text-blue-100 text-xs">{currentMonthName} {selectedYear}</p>
+                    <h2 className="text-base sm:text-lg font-bold text-black leading-tight">Salary Slip</h2>
+                    <p className="text-gray-800 text-xs font-semibold">{currentMonthName} {selectedYear}</p>
                   </div>
                 </div>
                 <button onClick={() => setShowPayslipModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-full transition-all">
-                  <HiOutlineX size={18} />
+                  className="text-black/70 hover:text-black transition-colors">
+                  <HiOutlineX size={20} />
                 </button>
               </div>
 
@@ -989,29 +940,31 @@ export default function StaffSalaryContent() {
   // ── Process Salary Modal ──────────────────────────────────────────────────
   function renderProcessSalaryModal() {
     return (
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowProcessSalary(false)} />
-        <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col shadow-2xl">
-
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0 rounded-t-3xl">
+      <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-[100] p-4">
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-2xl relative flex flex-col border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter', maxHeight: '90vh' }}>
+          
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0">
             <div>
-              <h2 className="text-lg font-black text-gray-900 tracking-tight">Process Monthly Salary</h2>
-              <p className="text-xs text-gray-500 font-medium">Enter payment and bank details</p>
+              <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+                Process Monthly Salary
+              </h2>
             </div>
-            <button onClick={() => setShowProcessSalary(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
-              <HiOutlineX size={18} />
+            <button onClick={() => setShowProcessSalary(false)} className="text-black/70 hover:text-black transition-colors">
+              <HiOutlineX size={24} />
             </button>
           </div>
 
-          <form onSubmit={handleProcessSalary} className="p-5 sm:p-7 space-y-6 overflow-y-auto flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <form onSubmit={handleProcessSalary} className="p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
+              
               <div className="space-y-4">
-                <h4 className="text-[9px] font-black text-blue-600 uppercase tracking-widest border-b pb-2">Employment Info</h4>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Employment Info</p>
+                
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Staff Member</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Staff Member</label>
                   <select value={formData.staffId}
                     onChange={e => handleStaffSelect(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium"
                     required>
                     <option value="">Choose member...</option>
                     {staffs.map(s => (
@@ -1021,118 +974,119 @@ export default function StaffSalaryContent() {
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Base Salary (₹)</label>
-                  <div className="relative flex flex-col gap-1">
-                    <div className="relative">
-                      <HiOutlineCurrencyRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                      <input type="number" value={formData.amountToPay}
-                        onChange={e => setFormData(prev => ({ ...prev, amountToPay: e.target.value }))}
-                        className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50"
-                        disabled={formData.isCalculating}
-                        required />
-                    </div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Base Salary (₹)</label>
+                  <div className="relative">
+                    <HiOutlineCurrencyRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input type="number" value={formData.amountToPay}
+                      onChange={e => setFormData(prev => ({ ...prev, amountToPay: e.target.value }))}
+                      className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#BEC5AD] transition-all disabled:opacity-50 text-gray-800"
+                      disabled={formData.isCalculating}
+                      required />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Allowances (₹)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Allowances (₹)</label>
                     <input type="number" value={formData.allowances}
                       onChange={e => setFormData(prev => ({ ...prev, allowances: e.target.value }))}
-                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Other Deductions (₹)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Other Deductions (₹)</label>
                     <input type="number" value={formData.otherDeductions}
                       onChange={e => setFormData(prev => ({ ...prev, otherDeductions: e.target.value }))}
-                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
                   </div>
                 </div>
                 
                 {formData.isCalculating && (
-                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 flex items-center justify-center animate-pulse">
-                    <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">Calculating Attendance...</span>
+                  <div className="bg-white shadow-sm rounded-xl p-3 border border-gray-200 flex items-center justify-center animate-pulse">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Calculating Attendance...</span>
                   </div>
                 )}
                 
                 {!formData.isCalculating && formData.daysInMonth > 0 && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
-                    <div className="flex justify-between items-center text-xs border-b border-gray-200 pb-2">
-                      <span className="font-bold text-gray-500 uppercase tracking-widest">Total Days</span>
-                      <span className="font-black text-gray-900">{formData.daysInMonth}</span>
+                  <div className="bg-white shadow-sm rounded-xl p-4 border border-gray-200 space-y-3">
+                    <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
+                      <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Total Days</span>
+                      <span className="font-bold text-gray-900">{formData.daysInMonth}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center text-xs pt-1">
-                      <span className="font-bold text-gray-500 uppercase tracking-widest">Attendance</span>
-                      <span className="font-black text-gray-900">{formData.actualAttendance}</span>
+                    <div className="flex justify-between items-center text-sm pt-1">
+                      <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Attendance</span>
+                      <span className="font-bold text-gray-900">{formData.actualAttendance}</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-green-600 uppercase tracking-widest">Paid Holidays</span>
-                      <span className="font-black text-green-700">{formData.paidHolidays || 0}</span>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-bold text-[#10b981] uppercase tracking-wider text-xs">Paid Holidays</span>
+                      <span className="font-bold text-[#10b981]">{formData.paidHolidays || 0}</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs border-b border-gray-200 pb-3">
-                      <span className="font-bold text-blue-600 uppercase tracking-widest">Total Paid Days</span>
-                      <span className="font-black text-blue-700">{formData.presentDays}</span>
+                    <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-3">
+                      <span className="font-bold text-[#3b82f6] uppercase tracking-wider text-xs">Total Paid Days</span>
+                      <span className="font-bold text-[#3b82f6]">{formData.presentDays}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center text-xs pt-1">
-                      <span className="font-bold text-gray-500 uppercase tracking-widest">Leaves</span>
-                      <span className="font-black text-gray-900 whitespace-nowrap">0</span>
+                    <div className="flex justify-between items-center text-sm pt-1">
+                      <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Leaves</span>
+                      <span className="font-bold text-gray-900 whitespace-nowrap">0</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs text-red-600 pt-1">
-                      <span className="font-bold uppercase tracking-widest">Absences</span>
-                      <span className="font-black text-red-700 whitespace-nowrap">{formData.absentDaysRaw}</span>
+                    <div className="flex justify-between items-center text-sm text-red-600 pt-1">
+                      <span className="font-bold uppercase tracking-wider text-xs">Absences</span>
+                      <span className="font-bold text-red-600 whitespace-nowrap">{formData.absentDaysRaw}</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs text-red-600 border-t border-red-100 pt-2 mt-1">
-                      <span className="font-bold uppercase tracking-widest">Deduction</span>
-                      <span className="font-black text-red-700 whitespace-nowrap">-₹{formData.absentDeduction}</span>
+                    <div className="flex justify-between items-center text-sm text-red-600 border-t border-red-50 pt-2 mt-1">
+                      <span className="font-bold uppercase tracking-wider text-xs">Deduction</span>
+                      <span className="font-bold text-red-600 whitespace-nowrap">-₹{formData.absentDeduction}</span>
                     </div>
                   </div>
                 )}
 
-                <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 flex justify-between items-center mt-2">
-                  <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">Net Salary</span>
-                  <span className="text-lg font-black text-blue-700">
+                <div className="bg-white shadow-sm rounded-xl p-3 border border-gray-200 flex justify-between items-center mt-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Net Salary</span>
+                  <span className="text-lg font-bold text-gray-900">
                     ₹{((Number(formData.amountToPay) || 0) + (Number(formData.allowances) || 0) - (Number(formData.otherDeductions) || 0) - (Number(formData.absentDeduction) || 0)).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-[9px] font-black text-blue-600 uppercase tracking-widest border-b pb-2">Bank Details</h4>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Bank Details</p>
+                
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Bank Name</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Bank Name</label>
                   <input type="text" value={formData.bankName}
                     onChange={e => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
                     placeholder="e.g. HDFC Bank"
-                    className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                    className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
                 </div>
+                
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Account No.</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Account No.</label>
                     <input type="text" value={formData.accountNumber}
                       onChange={e => setFormData(prev => ({ ...prev, accountNumber: e.target.value }))}
-                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">IFSC Code</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">IFSC Code</label>
                     <input type="text" value={formData.ifscCode}
                       onChange={e => setFormData(prev => ({ ...prev, ifscCode: e.target.value }))}
-                      className="w-full px-3 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 uppercase transition-all" />
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] uppercase transition-all text-gray-600 font-medium" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-4">
               <button type="button" onClick={() => setShowProcessSalary(false)}
-                className="flex-1 px-6 py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all order-2 sm:order-1">
+                className="flex-1 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium py-3 hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
               <button type="submit" disabled={processing || formData.isCalculating}
-                className="flex-1 px-6 py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all disabled:opacity-50 order-1 sm:order-2">
-                {processing ? "Processing..." : "Confirm & Process Payout"}
+                className="flex-1 bg-[#10b981] text-white rounded-xl font-medium py-3 hover:bg-[#059669] transition-colors disabled:opacity-50">
+                {processing ? "Processing..." : "Confirm & Process"}
               </button>
             </div>
           </form>

@@ -9,9 +9,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const statusStyles = {
-  Scheduled: "bg-[#FF9D00] text-white",
-  Completed: "bg-[#28C404] text-white",
-  Cancelled: "bg-gray-300 text-black",
+  Scheduled: "bg-yellow-100 text-yellow-800",
+  Completed: "bg-green-100 text-green-800",
+  Cancelled: "bg-red-100 text-red-800",
 };
 
 export default function InspectionPage() {
@@ -405,194 +405,215 @@ Generated on: ${new Date().toLocaleString()}
 
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl p-6 mb-10"
-          style={{
-            backgroundColor: "#BEC5AD",
-            boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
-          }}
-        >
-          <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-10 border border-[#BEC5AD]/30">
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
-              <label htmlFor="title" className="block font-semibold mb-2 text-black">
-                Inspection Title
-              </label>
-              <select
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                disabled={loading}
-              >
-                <option value="" disabled hidden>Select Title</option>
-                <option value="Monthly Room Check">Monthly Room Check</option>
-                <option value="Sanitation Check">Sanitation Check</option>
-                <option value="Safety Inspection">Safety Inspection</option>
-                <option value="Maintenance Check">Maintenance Check</option>
-                <option value="Night Roll Call">Night Roll Call</option>
-                <option value="Mess Food Inspection">Mess Food Inspection</option>
-                <option value="Electrical Safety Check">Electrical Safety Check</option>
-                <option value="Asset Verification">Asset Verification</option>
-                <option value="Student Discipline Check">Student Discipline Check</option>
-                <option value="Furniture Condition Check">Furniture Condition Check</option>
-              </select>
-              {errors.title && (
-                <p className="text-red-600 text-xs mt-1">{errors.title}</p>
-              )}
+              <h2 className="text-xl font-semibold text-black font-[Poppins]">
+                Inspection Notice
+              </h2>
+            </div>
+          </div>
+          <form
+            onSubmit={handleSubmit}
+            className="p-4 sm:p-6 lg:p-8"
+          >
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="title" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Inspection Title
+                </label>
+                <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
+                  <select
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    className="w-full appearance-none bg-transparent text-black px-4 font-semibold text-[12px] font-[Poppins] cursor-pointer outline-none border-none h-[40px]"
+                    disabled={loading}
+                  >
+                    <option value="" disabled hidden>Select Title</option>
+                    <option value="Monthly Room Check">Monthly Room Check</option>
+                    <option value="Sanitation Check">Sanitation Check</option>
+                    <option value="Safety Inspection">Safety Inspection</option>
+                    <option value="Maintenance Check">Maintenance Check</option>
+                    <option value="Night Roll Call">Night Roll Call</option>
+                    <option value="Mess Food Inspection">Mess Food Inspection</option>
+                    <option value="Electrical Safety Check">Electrical Safety Check</option>
+                    <option value="Asset Verification">Asset Verification</option>
+                    <option value="Student Discipline Check">Student Discipline Check</option>
+                    <option value="Furniture Condition Check">Furniture Condition Check</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {errors.title && (
+                  <p className="text-red-600 text-xs mt-1 ml-2">{errors.title}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="target" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Target Warden/Area
+                </label>
+                <input
+                  name="target"
+                  type="text"
+                  value={formData.target}
+                  onChange={handleChange}
+                  placeholder="Enter Target"
+                  className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]"
+                  style={{ height: "40px", background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
+                  disabled={loading}
+                />
+                {errors.target && (
+                  <p className="text-red-600 text-xs mt-1 ml-2">{errors.target}</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="target" className="block font-semibold mb-2 text-black">
-                Target Warden/Area
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label htmlFor="area" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Area
+                </label>
+                <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
+                  <select
+                    name="area"
+                    value={formData.area}
+                    onChange={handleChange}
+                    className="w-full appearance-none bg-transparent text-black px-4 font-semibold text-[12px] font-[Poppins] cursor-pointer outline-none border-none h-[40px]"
+                    disabled={loading}
+                  >
+                    <option value="" disabled hidden>Select Area</option>
+                    <option value="Dormitory">Dormitory</option>
+                    <option value="Block A">Block A</option>
+                    <option value="Block B">Block B</option>
+                    <option value="Block C">Block C</option>
+                    <option value="Common Areas">Common Areas</option>
+                    <option value="Kitchen">Kitchen</option>
+                    <option value="Bathrooms">Bathrooms</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {errors.area && (
+                  <p className="text-red-600 text-xs mt-1 ml-2">{errors.area}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="date" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Date
+                </label>
+                <div className="flex items-center gap-2 relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white px-4 h-[40px]">
+                  <input
+                    name="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    id="dateInput"
+                    className="flex-1 w-full text-black font-semibold text-[12px] font-[Poppins] bg-transparent outline-none border-none"
+                    disabled={loading}
+                  />
+                  <Calendar 
+                    size={20}
+                    className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
+                    onClick={() => !loading && (
+                      document.getElementById("dateInput")?.showPicker?.() ||
+                      document.getElementById("dateInput")?.focus()
+                    )}
+                  />
+                </div>
+                {errors.date && (
+                  <p className="text-red-600 text-xs mt-1 ml-2">{errors.date}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label htmlFor="time" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Time
+                </label>
+                <div className="flex items-center gap-2 relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white px-4 h-[40px]">
+                  <input
+                    name="time"
+                    type="time"
+                    value={formData.time}
+                    onChange={handleChange}
+                    id="timeInput"
+                    className="flex-1 w-full text-black font-semibold text-[12px] font-[Poppins] bg-transparent outline-none border-none"
+                    disabled={loading}
+                  />
+                  <Clock 
+                    size={20}
+                    className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
+                    onClick={() => !loading && (
+                      document.getElementById("timeInput")?.showPicker?.() ||
+                      document.getElementById("timeInput")?.focus()
+                    )}
+                  />
+                </div>
+                {errors.time && (
+                  <p className="text-red-600 text-xs mt-1 ml-2">{errors.time}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label htmlFor="instructions" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                Instructions (optional)
               </label>
-              <input
-                name="target"
-                type="text"
-                value={formData.target}
+              <textarea
+                name="instructions"
+                value={formData.instructions}
                 onChange={handleChange}
-                placeholder="Enter Target"
-                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                rows={3}
+                className="w-full px-4 py-3 text-black font-semibold text-[12px] font-[Poppins] resize-none"
+                style={{ background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
                 disabled={loading}
+                placeholder="Enter specific instructions for the inspection..."
               />
-              {errors.target && (
-                <p className="text-red-600 text-xs mt-1">{errors.target}</p>
-              )}
             </div>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <label htmlFor="area" className="block font-semibold mb-2 text-black">
-                Area
-              </label>
-              <select
-                name="area"
-                value={formData.area}
-                onChange={handleChange}
-                className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    title: "",
+                    target: "",
+                    area: "",
+                    date: "",
+                    time: "",
+                    instructions: "",
+                  });
+                  setErrors({});
+                }}
                 disabled={loading}
+                className={`bg-white border border-gray-200 cursor-pointer text-black px-8 py-3 rounded-xl shadow-sm font-semibold text-sm transition-all duration-300 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+                }`}
               >
-                <option value="" disabled hidden>Select Area</option>
-                <option value="Dormitory">Dormitory</option>
-                <option value="Block A">Block A</option>
-                <option value="Block B">Block B</option>
-                <option value="Block C">Block C</option>
-                <option value="Common Areas">Common Areas</option>
-                <option value="Kitchen">Kitchen</option>
-                <option value="Bathrooms">Bathrooms</option>
-              </select>
-              {errors.area && (
-                <p className="text-red-600 text-xs mt-1">{errors.area}</p>
-              )}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`bg-white border border-gray-200 cursor-pointer text-black px-8 py-3 rounded-xl shadow-sm font-semibold text-sm transition-all duration-300 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+                }`}
+              >
+                {loading ? 'Scheduling...' : 'Schedule Inspection'}
+              </button>
             </div>
-
-            <div>
-              <label htmlFor="date" className="block font-semibold mb-2 text-black">
-                Date
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  name="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  id="dateInput"
-                  className="flex-1 p-3 text-gray-800 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  disabled={loading}
-                />
-                <Calendar 
-                  size={24}
-                  className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
-                  onClick={() => !loading && (
-                    document.getElementById("dateInput")?.showPicker?.() ||
-                    document.getElementById("dateInput")?.focus()
-                  )}
-                />
-              </div>
-              {errors.date && (
-                <p className="text-red-600 text-xs mt-1">{errors.date}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <label htmlFor="time" className="block font-semibold mb-2 text-black">
-                Time
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  name="time"
-                  type="time"
-                  value={formData.time}
-                  onChange={handleChange}
-                  id="timeInput"
-                  className="flex-1 p-3 text-gray-800 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  disabled={loading}
-                />
-                <Clock 
-                  size={24}
-                  className={`hover:scale-110 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-gray-600'}`}
-                  onClick={() => !loading && (
-                    document.getElementById("timeInput")?.showPicker?.() ||
-                    document.getElementById("timeInput")?.focus()
-                  )}
-                />
-              </div>
-              {errors.time && (
-                <p className="text-red-600 text-xs mt-1">{errors.time}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label htmlFor="instructions" className="block font-semibold mb-2 text-black">
-              Instructions (optional)
-            </label>
-            <textarea
-              name="instructions"
-              value={formData.instructions}
-              onChange={handleChange}
-              rows={3}
-              className="w-full p-3 bg-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              disabled={loading}
-              placeholder="Enter specific instructions for the inspection..."
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <button
-              type="button"
-              onClick={() => {
-                setFormData({
-                  title: "",
-                  target: "",
-                  area: "",
-                  date: "",
-                  time: "",
-                  instructions: "",
-                });
-                setErrors({});
-              }}
-              disabled={loading}
-              className={`bg-white text-black font-semibold px-8 py-2 rounded-lg shadow-md transition-all duration-300 ${
-                loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 hover:shadow-lg'
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`bg-white text-black font-semibold px-8 py-2 rounded-lg shadow-md transition-all duration-300 ${
-                loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 hover:shadow-lg'
-              }`}
-            >
-              {loading ? 'Scheduling...' : 'Schedule Inspection'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
 
         {/* Inspection Table */}
         <InspectionTable
@@ -685,7 +706,7 @@ function InspectionTable({
 
   if (fetchLoading) {
     return (
-      <div className="bg-[#BEC5AD] rounded-2xl p-8 shadow-xl">
+      <div className="bg-[#f4f6f0] rounded-2xl p-8 shadow-xl border border-[#BEC5AD]/30">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
@@ -694,153 +715,157 @@ function InspectionTable({
   }
 
   return (
-    <div className="bg-[#BEC5AD] rounded-2xl p-4 shadow-xl">
-      <h2 className="text-black text-lg font-semibold mb-3 ml-2 flex items-center gap-2">
-        <ClipboardList size={20} />
-        Upcoming Inspections
-      </h2>
-
-      {/* Desktop Table View */}
-      <div className="overflow-x-auto hidden sm:block">
-        <div className="min-w-full inline-block overflow-hidden rounded-t-2xl border border-gray-200">
-          <table className="min-w-full text-black text-xs sm:text-sm md:text-base">
-            <thead>
-              <tr className="bg-white border-b">
-                {tableHeaders.map((header, i) => (
-                  <th key={i} className="text-center font-semibold py-3 px-2 whitespace-nowrap">
-                    {header.label}
-                  </th>
-                ))}
-               </tr>
-            </thead>
-            <tbody>
-              {upcomingInspections.length === 0 ? (
-                <tr>
-                  <td colSpan={tableHeaders.length} className="text-center py-8 text-gray-600">
-                    No inspections found. Create your first inspection above.
-                  </td>
-                </tr>
-              ) : (
-                upcomingInspections.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="bg-white hover:bg-gray-50 transition-colors border-b">
-                    {tableHeaders.map((column, cellIndex) => {
-                      if (column.key === "actions") {
-                        return (
-                          <td key={cellIndex} className="text-center px-2 py-3">
-                            <div className="flex justify-center items-center gap-3">
-                              <button
-                                onClick={() => handleViewDetails(row)}
-                                className="text-blue-600 hover:text-blue-800 transition-colors"
-                                title="View Details"
-                              >
-                                <Eye size={18} />
-                              </button>
-                              <button
-                                onClick={() => handleDownload(row)}
-                                className="text-green-600 hover:text-green-800 transition-colors"
-                                title="Download Report"
-                              >
-                                <Download size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        );
-                      }
-
-                      if (column.key === "status") {
-                        return (
-                          <td key={cellIndex} className="text-center px-2 py-3">
-                            <button
-                              className={`inline-block w-24 px-3 py-1 text-[10px] sm:text-xs md:text-sm text-center font-medium rounded-lg transition-colors ${
-                                statusStyles[row.status] ?? "bg-gray-300 text-black"
-                              }`}
-                              onClick={() => {
-                                const newStatus = row.status === 'Scheduled' ? 'Completed' : 
-                                                 row.status === 'Completed' ? 'Cancelled' : 'Scheduled';
-                                handleStatusUpdate(row.id, newStatus);
-                              }}
-                              title="Click to change status"
-                            >
-                              {row.status}
-                            </button>
-                          </td>
-                        );
-                      }
-
-                      if (column.key === "id") {
-                        return (
-                          <td key={cellIndex} className="text-center px-2 py-3">
-                            <span title={row[column.key]} className="font-mono text-xs">
-                              {row[column.key] ? `INSP-${row[column.key].slice(-4).toUpperCase()}` : "N/A"}
-                            </span>
-                          </td>
-                        );
-                      }
-
-                      return (
-                        <td key={cellIndex} className="text-center px-2 py-3">
-                          {row[column.key]}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+    <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+      <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-black font-[Poppins]">
+            Upcoming Inspections
+          </h2>
+          <p className="text-sm text-gray-700 mt-1 font-medium">Total: {upcomingInspections.length} records</p>
         </div>
       </div>
 
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-x-auto p-4">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b-2 border-gray-200">
+              {tableHeaders.map((header, i) => (
+                <th key={i} className="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap text-center">
+                  {header.label}
+                </th>
+              ))}
+             </tr>
+          </thead>
+          <tbody>
+            {upcomingInspections.length === 0 ? (
+              <tr>
+                <td colSpan={tableHeaders.length} className="text-center py-8 text-gray-600 font-medium">
+                  No inspections found. Create your first inspection above.
+                </td>
+              </tr>
+            ) : (
+              upcomingInspections.map((row, rowIndex) => (
+                <tr key={rowIndex} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  {tableHeaders.map((column, cellIndex) => {
+                    if (column.key === "actions") {
+                      return (
+                        <td key={cellIndex} className="text-center px-4 py-3">
+                          <div className="flex justify-center items-center gap-3">
+                            <button
+                              onClick={() => handleViewDetails(row)}
+                              className="p-1.5 text-blue-600 hover:text-blue-800 transition-colors bg-white rounded-lg shadow-sm border border-gray-200"
+                              title="View Details"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDownload(row)}
+                              className="p-1.5 text-green-600 hover:text-green-800 transition-colors bg-white rounded-lg shadow-sm border border-gray-200"
+                              title="Download Report"
+                            >
+                              <Download size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      );
+                    }
+
+                    if (column.key === "status") {
+                      return (
+                        <td key={cellIndex} className="text-center px-4 py-3">
+                          <button
+                            className={`inline-block px-3 py-1 text-xs font-bold transition-colors ${
+                              statusStyles[row.status] ?? "bg-gray-100 text-gray-800 rounded-full"
+                            }`}
+                            onClick={() => {
+                              const newStatus = row.status === 'Scheduled' ? 'Completed' : 
+                                               row.status === 'Completed' ? 'Cancelled' : 'Scheduled';
+                              handleStatusUpdate(row.id, newStatus);
+                            }}
+                            title="Click to change status"
+                          >
+                            {row.status}
+                          </button>
+                        </td>
+                      );
+                    }
+
+                    if (column.key === "id") {
+                      return (
+                        <td key={cellIndex} className="text-center px-4 py-3">
+                          <span title={row[column.key]} className="font-mono text-xs font-semibold text-gray-800">
+                            {row[column.key] ? `INSP-${row[column.key].slice(-4).toUpperCase()}` : "N/A"}
+                          </span>
+                        </td>
+                      );
+                    }
+
+                    return (
+                      <td key={cellIndex} className="text-center px-4 py-3 text-sm font-semibold text-gray-800">
+                        {row[column.key]}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
       {/* Mobile Card View */}
-      <div className="space-y-4 sm:hidden">
+      <div className="space-y-4 lg:hidden p-4">
         {upcomingInspections.length === 0 ? (
-          <div className="text-center py-8 text-gray-600 bg-white rounded-xl">
+          <div className="text-center py-8 text-gray-600 bg-white rounded-xl shadow-md font-medium">
             No inspections found. Create your first inspection above.
           </div>
         ) : (
           upcomingInspections.map((row, index) => (
-            <div key={index} className="bg-white rounded-xl p-4 shadow-md">
+            <div key={index} className="bg-white rounded-xl p-4 shadow-md border-l-4 border-[#BEC5AD]">
               <div className="mb-2">
-                <span className="text-xs font-semibold text-gray-500">ID:</span>
-                <span className="ml-2 text-sm font-mono">{row.id ? `INSP-${row.id.slice(-4).toUpperCase()}` : "N/A"}</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Inspection ID</span>
+                <p className="text-sm font-bold font-mono text-gray-900">{row.id ? `INSP-${row.id.slice(-4).toUpperCase()}` : "N/A"}</p>
               </div>
               <div className="mb-2">
-                <span className="text-xs font-semibold text-gray-500">Title:</span>
-                <span className="ml-2 text-sm">{row.title}</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Title</span>
+                <p className="text-sm font-bold text-gray-900">{row.title}</p>
               </div>
               <div className="mb-2">
-                <span className="text-xs font-semibold text-gray-500">Target:</span>
-                <span className="ml-2 text-sm">{row.target}</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Target</span>
+                <p className="text-sm font-bold text-gray-900">{row.target}</p>
               </div>
-              <div className="mb-2">
-                <span className="text-xs font-semibold text-gray-500">Date:</span>
-                <span className="ml-2 text-sm">{row.date}</span>
-              </div>
-              <div className="mb-2">
-                <span className="text-xs font-semibold text-gray-500">Time:</span>
-                <span className="ml-2 text-sm">{row.time}</span>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date</span>
+                  <p className="text-sm font-semibold">{row.date}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Time</span>
+                  <p className="text-sm font-semibold">{row.time}</p>
+                </div>
               </div>
               
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200">
-                <div className="flex gap-3">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <div className="flex gap-2">
                   <button
                     onClick={() => handleViewDetails(row)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                    className="flex-1 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"
                     title="View Details"
                   >
-                    <Eye size={18} />
+                    <Eye size={16} /> View
                   </button>
                   <button
                     onClick={() => handleDownload(row)}
-                    className="text-green-600 hover:text-green-800 transition-colors"
+                    className="flex-1 bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
                     title="Download Report"
                   >
-                    <Download size={18} />
+                    <Download size={16} /> Get
                   </button>
                 </div>
                 <button
-                  className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                    statusStyles[row.status] ?? "bg-gray-300 text-black"
+                  className={`inline-block px-3 py-1.5 text-xs font-bold transition-colors ${
+                    statusStyles[row.status] ?? "bg-gray-100 text-gray-800 rounded-full"
                   }`}
                   onClick={() => {
                     const newStatus = row.status === 'Scheduled' ? 'Completed' : 
@@ -858,4 +883,5 @@ function InspectionTable({
       </div>
     </div>
   );
+
 }

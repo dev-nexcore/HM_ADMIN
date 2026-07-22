@@ -385,21 +385,22 @@ const HostelNotices = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "Poppins" }}>
-      {/* Header */}
-      <div className="w-full px-4 sm:px-12 py-4 -mb-6 mt-8">
-        <h1
-          className="text-[25px] leading-[25px] font-extrabold text-[#000000] text-left"
-          style={{ fontFamily: "Inter" }}
-        >
-          <span className="border-l-4 border-[#4F8CCF] pl-2 inline-flex font-bold items-center h-[25px]">
-            Hostel Notices
-          </span>
-        </h1>
-      </div>
-
-      {/* Content Container */}
-      <div className="p-4 sm:p-6 lg:p-10">
+    <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
+      <div className="w-full">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-7">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-[#4F8CCF] mr-2"></div>
+              <h1 className="text-[25px] leading-[25px] font-extrabold text-black flex items-center" style={{ fontFamily: 'Inter' }}>
+                Hostel Notices
+              </h1>
+            </div>
+            <p className="text-gray-500 font-medium mt-1 text-sm ml-3" style={{ fontFamily: 'Poppins' }}>
+              Manage and issue notices to students and staff
+            </p>
+          </div>
+        </div>
        
 
         {/* Alternative Minimal Cards Design (Like your reference) */}
@@ -606,55 +607,74 @@ const HostelNotices = () => {
   </div>
 </div>
         {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button 
-            onClick={() => setActiveTab("issue")}
-            className={`px-6 py-2 rounded-lg font-semibold shadow-sm transition-all duration-300 ${activeTab === 'issue' ? 'bg-[#4F8CCF] text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+        <div className="hidden sm:flex mb-4 gap-3 overflow-x-auto pb-2 custom-scrollbar whitespace-nowrap">
+          {["issue", "template"].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab === tab ? "bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily: "Poppins" }}>
+              {tab === "issue" ? "Issue Notice" : "Create Template"}
+            </button>
+          ))}
+        </div>
+        <div className="sm:hidden mb-4 relative h-[45px] w-full">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="w-full h-full px-4 bg-[#BEC5AD] rounded-[12px] outline-none cursor-pointer appearance-none text-[14px] font-semibold text-black shadow-md border border-[#4F8CCF]/50"
+            style={{ WebkitAppearance: "none", fontFamily: "Poppins" }}
           >
-            Issue Notice
-          </button>
-          <button 
-            onClick={() => setActiveTab("template")}
-            className={`px-6 py-2 rounded-lg font-semibold shadow-sm transition-all duration-300 ${activeTab === 'template' ? 'bg-[#4F8CCF] text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-          >
-            Create Template
-          </button>
+            <option value="issue">Issue Notice</option>
+            <option value="template">Create Template</option>
+          </select>
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+            </svg>
+          </div>
         </div>
 
         {activeTab === "template" && (
-          <>
-          <div className="p-6 rounded-2xl shadow-inner mb-10 min-h-[250px]" style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset" }}>
-             <h3 className="text-xl font-bold text-black mb-6">Create New Template</h3>
-             <div className="flex flex-col gap-6 w-full lg:w-3/4">
+          <div className="w-full">
+          <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-10 border border-[#BEC5AD]/30">
+            <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-black font-[Poppins]">
+                  Create New Template
+                </h2>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col gap-6 w-full lg:w-3/4">
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-black font-medium mb-2 block ml-2">Template Name</label>
+                    <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>Template Name</label>
                     <input 
                        type="text" 
                        placeholder="e.g. Monthly Fee Reminder"
                        id="newTemplateName"
-                       className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+                       className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]"
+                       style={{ height: "40px", background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
                     />
                   </div>
                   <div>
-                    <label className="text-black font-medium mb-2 block ml-2">Default Notice Title (Optional)</label>
+                    <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>Default Notice Title (Optional)</label>
                     <input 
                        type="text" 
                        placeholder="e.g. Please pay your fees"
                        id="newTemplateTitle"
-                       className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px]"
+                       className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins]"
+                       style={{ height: "40px", background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-black font-medium mb-2 block ml-2">Default Message Content (Optional)</label>
+                  <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>Default Message Content (Optional)</label>
                   <textarea 
                      rows={4}
                      placeholder="Type the default message template here..."
                      id="newTemplateMessage"
-                     className="w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px] resize-none"
+                     className="w-full px-4 py-3 text-black font-semibold text-[12px] font-[Poppins] resize-none"
+                     style={{ background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
                   />
                 </div>
 
@@ -689,36 +709,44 @@ const HostelNotices = () => {
 
                       setActiveTab('issue');
                     }}
-                    className="bg-white cursor-pointer text-black px-8 py-3 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100 transition-all duration-300"
+                    className="bg-white border border-gray-200 cursor-pointer text-black px-8 py-3 rounded-xl shadow-sm font-semibold text-sm hover:bg-gray-50 transition-all duration-300"
                   >
                     Save Template
                   </button>
                 </div>
              </div>
           </div>
+          </div>
 
           {/* Templates List */}
           <div>
-            <h3 className="text-2xl text-black font-semibold mb-4 font-[Poppins] ml-4">
-              Saved Templates
-            </h3>
-            <div className="rounded-2xl p-4 overflow-x-auto mb-6" style={{ backgroundColor: "#BEC5AD", boxShadow: "0px 4px 4px 0px #00000040 inset" }}>
-              <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] hidden sm:table">
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">
+                    Saved Templates
+                  </h2>
+                  <p className="text-sm text-gray-700 mt-1">Total: {templates.length} records</p>
+                </div>
+              </div>
+
+              <div className="hidden lg:block overflow-x-auto p-4">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-white font-[Poppins] font-semibold">
-                    <th className="p-3 text-left rounded-tl-3xl">Sr No</th>
-                    <th className="p-3 text-left">Template Name</th>
-                    <th className="p-3 text-left">Default Title</th>
-                    <th className="p-3 text-left">Status</th>
-                    <th className="p-3 text-left rounded-tr-3xl">Actions</th>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Sr No</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Template Name</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Default Title</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Status</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {templates.map((t, index) => (
-                    <tr key={t.name} className="font-[Poppins] font-semibold bg-[#f3f4f0] shadow-sm rounded-lg">
-                      <td className="p-3 pl-5 rounded-l-lg">{index + 1}</td>
-                      <td className="p-3">{t.name}</td>
-                      <td className="p-3">{t.title || "-"}</td>
+                    <tr key={t.name} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800 font-bold whitespace-nowrap">{t.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{t.title || "-"}</td>
                       <td className="p-3">
                         {t.status === 'Pending Approval' || t.status === 'Pending Edit' || t.status === 'Pending Deletion' ? (
                           <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">
@@ -794,11 +822,12 @@ const HostelNotices = () => {
                   ))}
                   {templates.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="text-center p-4">No templates found</td>
+                      <td colSpan="5" className="text-center p-4 text-gray-500">No templates found</td>
                     </tr>
                   )}
                 </tbody>
               </table>
+              </div>
 
               {/* Mobile View for Templates */}
               <div className="space-y-4 sm:hidden">
@@ -851,28 +880,29 @@ const HostelNotices = () => {
               </div>
             </div>
           </div>
-          </>
+          </div>
         )}
 
         {/* Form Box */}
         {activeTab === "issue" && (
-        <div
-          className="p-6 rounded-2xl shadow-inner mb-10 min-h-[500px]"
-          style={{
-            backgroundColor: "#BEC5AD",
-            boxShadow: "0px 4px 20px 0px rgba(0, 0, 0, 0.25) inset",
-          }}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 font-[Poppins]">
-            {/* Select Template */}
-            <div className="w-full">
-              <label className="text-black font-medium mb-1 block ml-2">
-                Select Template
-              </label>
-              <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
-                <select
-                  className={`w-full appearance-none bg-white text-black px-4 py-3 rounded-lg outline-none border-none text-[12px] ${formErrors?.template ? "border border-red-500" : ""
-                    }`}
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-10 border border-[#BEC5AD]/30">
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-black font-[Poppins]">
+                Issue Notice
+              </h2>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Select Template */}
+              <div className="w-full">
+                <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                  Select Template
+                </label>
+                <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
+                  <select
+                    className={`w-full appearance-none bg-transparent text-black px-4 font-semibold text-[12px] font-[Poppins] cursor-pointer outline-none border-none h-[40px] ${formErrors?.template ? "border border-red-500" : ""}`}
                   value={form.template}
                   onChange={(e) => {
                     const selectedName = e.target.value;
@@ -906,7 +936,7 @@ const HostelNotices = () => {
 
             {/* Notice Title */}
             <div className="w-full">
-              <label className="text-black font-medium mb-1 block ml-2">
+              <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
                 Notice Title
               </label>
               <input
@@ -924,8 +954,8 @@ const HostelNotices = () => {
                     setFormErrors((prev) => ({ ...prev, title: true }));
                   }
                 }}
-                className={`w-full px-4 py-3 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none placeholder:font-medium placeholder:text-gray-400 text-[12px] ${formErrors?.title ? "border border-red-500" : ""
-                  }`}
+                className={`w-full px-4 text-black font-semibold text-[12px] font-[Poppins] ${formErrors?.title ? "border border-red-500" : ""}`}
+                style={{ height: "40px", background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
               />
               {formErrors?.title && (
                 <p className="text-red-500 text-xs mt-1 ml-2">
@@ -936,13 +966,12 @@ const HostelNotices = () => {
 
             {/* Recipient */}
             <div className="w-full">
-              <label className="text-black font-medium mb-1 block ml-2">
+              <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
                 Recipient
               </label>
-              <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
+              <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
                 <select
-                  className={`w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium ${formErrors?.recipient ? "border border-red-500" : ""
-                    }`}
+                  className={`w-full appearance-none bg-transparent text-gray-500 px-4 font-semibold text-[12px] font-[Poppins] cursor-pointer outline-none border-none h-[40px] ${formErrors?.recipient ? "border border-red-500" : ""}`}
                   value={form.recipient}
                   onChange={async (e) => {
                     const recipientType = e.target.value;
@@ -1010,12 +1039,12 @@ const HostelNotices = () => {
 
             {/* Individual Recipient Input */}
             <div className={`w-full ${form.recipient === "All" ? "opacity-50 pointer-events-none" : ""}`}>
-              <label className="text-black font-medium mb-1 block ml-2 whitespace-nowrap">
-                Individual Recipient (Optional)
+              <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
+                Specific Recipient
               </label>
-              <div className="relative shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] rounded-lg">
+              <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
                 <select
-                  className="w-full appearance-none bg-white text-gray-500 px-4 py-3 rounded-lg outline-none border-none text-[12px] font-medium"
+                  className="w-full appearance-none bg-transparent text-gray-500 px-4 font-semibold text-[12px] font-[Poppins] cursor-pointer outline-none border-none h-[40px]"
                   value={form.individualRecipient}
                   onChange={(e) => setForm({ ...form, individualRecipient: e.target.value })}
                   disabled={form.recipient === "All" || loadingOptions}
@@ -1048,8 +1077,8 @@ const HostelNotices = () => {
             </div>
           </div>
 
-          <div className="w-full font-[Poppins] mt-6">
-            <label className="text-black font-medium mb-2 block ml-2">
+          <div className="w-full mt-6">
+            <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
               Message Content
             </label>
             <textarea
@@ -1067,8 +1096,8 @@ const HostelNotices = () => {
                   setFormErrors((prev) => ({ ...prev, message: true }));
                 }
               }}
-              className={`w-full px-4 py-2 rounded-lg bg-white text-black shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] outline-none border-none text-[12px] placeholder:font-medium placeholder:text-gray-400 resize-none ${formErrors?.message ? "border border-red-500" : ""
-                }`}
+              className={`w-full px-4 py-3 text-black font-semibold text-[12px] font-[Poppins] resize-none ${formErrors?.message ? "border border-red-500" : ""}`}
+              style={{ background: "#FFFFFF", boxShadow: "0px 4px 10px rgba(0,0,0,0.25)", borderRadius: "10px", color: "#000", border: "none", outline: "none" }}
             />
             {formErrors?.message && (
               <p className="text-red-500 text-xs mt-1 ml-2">
@@ -1077,10 +1106,10 @@ const HostelNotices = () => {
             )}
           </div>
 
-          <div className="w-full mt-6 font-[Poppins] flex flex-wrap items-center justify-between gap-4">
+          <div className="w-full mt-6 flex flex-wrap items-center justify-between gap-4">
             {/* Issue Date */}
             <div className="w-full sm:w-auto">
-              <label className="block mb-1 text-black ml-2 font-[Poppins] font-medium">
+              <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
                 Issue Date
               </label>
               <div className="relative flex items-center">
@@ -1119,13 +1148,12 @@ const HostelNotices = () => {
                     style={{ colorScheme: "light" }}
                   />
                   <div
-                    className={`bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040] ${formErrors?.date ? "border border-red-500" : ""
-                      }`}
+                    className={`bg-white rounded-[10px] shadow-[0px_4px_10px_rgba(0,0,0,0.25)] px-4 h-[40px] flex items-center font-[Poppins] font-semibold text-[12px] tracking-widest text-gray-800 select-none z-10 ${formErrors?.date ? "border border-red-500" : "border-none"}`}
                   >
                     {form.date || ""}
                   </div>
                   {!form.date && (
-                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
+                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-semibold text-sm tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
                       d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                     </div>
                   )}
@@ -1150,7 +1178,7 @@ const HostelNotices = () => {
 
             {/* Expiry Date */}
             <div className="w-full sm:w-auto">
-              <label className="block mb-1 text-black ml-2 font-[Poppins] font-medium">
+              <label className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
                 Expiry Date (Optional)
               </label>
               <div className="relative flex items-center">
@@ -1183,12 +1211,12 @@ const HostelNotices = () => {
                     style={{ colorScheme: "light" }}
                   />
                   <div
-                    className="bg-white rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 select-none z-10 shadow-[0px_4px_10px_0px_#00000040]"
+                    className="bg-white rounded-[10px] shadow-[0px_4px_10px_rgba(0,0,0,0.25)] px-4 h-[40px] flex items-center font-[Poppins] font-semibold text-[12px] tracking-widest text-gray-800 select-none z-10 border-none"
                   >
                     {form.expiryDate || ""}
                   </div>
                   {!form.expiryDate && (
-                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-[Poppins] font-medium text-[15px] tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
+                    <div className="absolute top-1/2 left-4 -translate-y-1/2 z-0 text-gray-400 font-semibold text-sm tracking-[0.em] md:tracking-[0.4em] pointer-events-none select-none">
                       d&nbsp;d&nbsp;-&nbsp;m&nbsp;m&nbsp;-&nbsp;y&nbsp;y&nbsp;y&nbsp;y
                     </div>
                   )}
@@ -1217,7 +1245,7 @@ const HostelNotices = () => {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100 transition-all duration-300"
+                  className="bg-white border border-gray-200 cursor-pointer text-black px-6 py-2 rounded-xl shadow-sm font-semibold text-sm hover:bg-gray-50 transition-all duration-300"
                 >
                   Cancel
                 </button>
@@ -1239,13 +1267,14 @@ const HostelNotices = () => {
                     setFormErrors(null);
                     handleIssueNotice();
                   }}
-                  className="bg-white cursor-pointer text-black px-6 py-2 rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] font-semibold text-[14px] hover:bg-gray-100 transition-all duration-300"
+                  className="bg-[#4F8CCF] border border-[#4F8CCF] cursor-pointer text-white px-6 py-2 rounded-xl shadow-sm font-semibold text-sm hover:bg-blue-600 transition-all duration-300"
                 >
                   Issue Notice
                 </button>
               </div>
             </div>
           </div>
+        </div>
         </div>
         )}
 
@@ -1957,11 +1986,26 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
   }
 
   if (filterDate) {
-    const parts = filterDate.split('-');
-    if (parts.length === 3) {
-      const selectedDateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      filteredNotices = filteredNotices.filter((n) => n.date === selectedDateStr || n.date === `${parts[2]}-${parts[1]}-${parts[0]}`);
-    }
+    filteredNotices = filteredNotices.filter((n) => {
+      const d = n.date || n.issueDate;
+      if (!d) return false;
+      
+      let parsedDate = d;
+      if (d.includes('T')) {
+        parsedDate = d.split('T')[0];
+      } else {
+        const separator = d.includes('/') ? '/' : '-';
+        const parts = d.split(separator);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            parsedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          } else if (parts[2].length === 4) {
+            parsedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+      }
+      return parsedDate === filterDate || d === filterDate;
+    });
   }
 
   const totalPages = Math.ceil(filteredNotices.length / ITEMS_PER_PAGE) || 1;
@@ -1981,13 +2025,9 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 px-4">
-        <h3 className="text-2xl text-black font-semibold font-[Poppins] whitespace-nowrap">
-          Recent Notices
-        </h3>
-        
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 px-4 w-full">
         {/* Search and Filters */}
-        <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
+        <div className="flex flex-wrap gap-3 w-full items-center justify-between">
           <div className="relative flex-grow md:flex-grow-0">
             <input
               type="text"
@@ -1997,7 +2037,7 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full md:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] text-sm font-[Poppins] text-black"
+              className="w-full md:w-64 pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-[#4F8CCF] text-sm font-semibold text-black"
             />
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2006,67 +2046,68 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
             </div>
           </div>
 
-          <select
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] text-sm font-[Poppins] text-black appearance-none cursor-pointer"
-          >
-            <option value="All">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Scheduled">Scheduled</option>
-            <option value="Pending Approval">Pending Approval</option>
-            <option value="Pending Edit">Pending Edit</option>
-            <option value="Pending Deletion">Pending Deletion</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Archived">Archived</option>
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-[#4F8CCF] text-sm font-semibold text-black cursor-pointer"
+            >
+              <option value="All">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Pending Approval">Pending Approval</option>
+              <option value="Pending Edit">Pending Edit</option>
+              <option value="Pending Deletion">Pending Deletion</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Archived">Archived</option>
+            </select>
 
-          <select
-            value={filterRecipient}
-            onChange={(e) => {
-              setFilterRecipient(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] text-sm font-[Poppins] text-black appearance-none cursor-pointer"
-          >
-            <option value="All">All Recipients</option>
-            <option value="Student">Student</option>
-            <option value="Warden">Warden</option>
-            <option value="Worker">Worker</option>
-            <option value="Parent">Parent</option>
-          </select>
+            <select
+              value={filterRecipient}
+              onChange={(e) => {
+                setFilterRecipient(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-[#4F8CCF] text-sm font-semibold text-black cursor-pointer"
+            >
+              <option value="All">All Recipients</option>
+              <option value="Student">Student</option>
+              <option value="Warden">Warden</option>
+              <option value="Worker">Worker</option>
+              <option value="Parent">Parent</option>
+            </select>
 
-          <div className="relative flex items-center">
-            <div className="relative">
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => {
-                  setFilterDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
-                style={{ colorScheme: "light" }}
-              />
-              <div className="px-4 h-[38px] flex items-center rounded-lg border border-gray-200 bg-white shadow-sm text-sm font-[Poppins] text-black min-w-[140px] z-10">
-                {filterDate ? filterDate.split("-").reverse().join("-") : <span className="text-gray-400 tracking-widest">dd-mm-yyyy</span>}
+            <div className="relative flex items-center">
+              <div className="relative">
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => {
+                    setFilterDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="absolute top-0 left-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                  style={{ colorScheme: "light" }}
+                />
+                <div className="px-4 h-[38px] flex items-center rounded-xl border border-gray-200 bg-white shadow-sm text-sm font-semibold text-black min-w-[140px] z-10">
+                  {filterDate ? filterDate.split("-").reverse().join("-") : <span className="text-gray-400">dd-mm-yyyy</span>}
+                </div>
               </div>
-            </div>
-            {filterDate && (
-              <button
-                onClick={() => {
-                  setFilterDate("");
-                  setCurrentPage(1);
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-white px-1 z-30"
-                title="Clear date filter"
-              >
-                &times;
-              </button>
-            )}
+              {filterDate && (
+                <button
+                  onClick={() => {
+                    setFilterDate("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-white px-1 z-30"
+                  title="Clear date filter"
+                >
+                  &times;
+                </button>
+              )}
             <button
               onClick={(e) => {
                 const input = e.currentTarget.parentElement.querySelector('input[type="date"]');
@@ -2086,38 +2127,43 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
                 </g>
               </svg>
             </button>
+            </div>
           </div>
         </div>
       </div>
-      <div
-        className="rounded-2xl p-4 overflow-x-auto mb-6"
-        style={{
-          backgroundColor: "#BEC5AD",
-          boxShadow: "0px 4px 4px 0px #00000040 inset",
-        }}
-      >
+      <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-6 border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter' }}>
+        <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-black">
+              Recent Notices
+            </h2>
+            <p className="text-sm text-gray-700 mt-1">Total: {filteredNotices.length} records</p>
+          </div>
+        </div>
+        
+        <div className="hidden lg:block overflow-x-auto p-4">
         {/* Desktop Table View */}
-        <table className="w-full text-left text-black border-separate border-spacing-y-2 font-[Poppins] hidden sm:table">
+        <table className="w-full text-left">
           <thead>
-            <tr className="bg-white font-[Poppins] font-semibold">
-              <th className="p-3 text-left rounded-tl-3xl">Sr No</th>
-              <th className="p-3 text-left">Title</th>
-              <th className="p-3 text-left">Recipient</th>
-              <th className="p-3 text-left">Date Issued</th>
-              <th className="p-3 text-left">Expiry Date</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left rounded-tr-3xl">Actions</th>
+            <tr className="border-b-2 border-gray-200">
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Sr No</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Title</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Recipient</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Date Issued</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Expiry Date</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Status</th>
+              <th className="px-4 py-3 text-sm font-semibold text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayedNotices.map((n, index) => (
-              <tr key={n.id} className="font-[Poppins] font-semibold">
-                <td className="p-2 pl-5">{(validCurrentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                <td className="p-2">{n.title}</td>
-                <td className="p-2">{n.recipient}</td>
-                <td className="p-2">{n.date}</td>
-                <td className="p-2">{n.expiryDate || "-"}</td>
-                <td className="p-2">
+              <tr key={n.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{(validCurrentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                <td className="px-4 py-3 text-sm text-gray-800 font-bold whitespace-nowrap">{n.title}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 font-medium whitespace-nowrap">{n.recipient}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{n.date}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{n.expiryDate || "-"}</td>
+                <td className="px-4 py-3 text-sm whitespace-nowrap">
                   <span
                     className={`px-3 py-2 w-[150px] flex justify-center items-center rounded-[12px] font-semibold text-white text-[11px] text-center ${n.status === "Active" ? "bg-[#28C404]" : n.status === "Scheduled" ? "bg-[#3B82F6]" : n.status.startsWith("Pending") ? "bg-[#F59E0B]" : n.status === "Rejected" ? "bg-[#EF4444]" : "bg-[#5A5D50]"}`}
                   >
@@ -2177,6 +2223,7 @@ function NoticesTable({ notices, loading, handleEdit, handleDelete, handleViewDe
             ))}
           </tbody>
         </table>
+        </div>
 
         {/* Mobile Card View */}
         <div className="space-y-4 sm:hidden">
