@@ -2,11 +2,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
-import { QrCode, Camera, Download, Check, AlertCircle } from "lucide-react";
+import { QrCode, Camera, Download, Check, AlertCircle, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 import ItemDetailsModal from "../ItemDetailsModal/ItemDetailsModal";
+import ReplaceItemModal from "./ReplaceItemModal";
 import toast, { Toaster } from 'react-hot-toast';
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, AlertTriangle } from "lucide-react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL;
 
@@ -71,6 +72,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   const [otherEditStatus, setOtherEditStatus] = useState('');
   const [otherEditRoomNo, setOtherEditRoomNo] = useState('');
   const [otherEditFloor, setOtherEditFloor] = useState('');
+  
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [itemToReplace, setItemToReplace] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
@@ -482,7 +486,11 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
       formDataToSend.append("barcodeId", editData.barcodeId);
       formDataToSend.append("description", editData.description || "");
       formDataToSend.append("purchaseDate", editData.purchaseDate || "");
-      formDataToSend.append("purchaseCost", editData.purchaseCost || "");
+      if (editData.purchaseCost !== null && editData.purchaseCost !== undefined && editData.purchaseCost !== "") {
+        formDataToSend.append("purchaseCost", editData.purchaseCost);
+      } else {
+        formDataToSend.append("purchaseCost", "");
+      }
 
       // Resolve "others" fields
       formDataToSend.append("location", editData.location === '__others__' ? otherEditLocation : editData.location);
@@ -904,6 +912,20 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                             fill="currentColor"
                           />
                         </svg>
+                      </div>
+
+                      <div className="w-[1px] h-5 bg-gray-400" />
+
+                      {/* Replace Icon */}
+                      <div
+                        className="cursor-pointer text-gray-600 hover:text-blue-600"
+                        title="Replace Item"
+                        onClick={() => {
+                          setItemToReplace(item);
+                          setShowReplaceModal(true);
+                        }}
+                      >
+                        <RefreshCw size={18} />
                       </div>
 
                       <div className="w-[1px] h-5 bg-gray-400" />
@@ -1388,7 +1410,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                   <input
                     type="number"
                     className="w-full border-gray-300 border px-4 py-2.5 rounded-[10px] focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-sm text-sm"
-                    value={editData.purchaseCost || ""}
+                    value={editData.purchaseCost !== null && editData.purchaseCost !== undefined ? editData.purchaseCost : ""}
                     onChange={(e) => setEditData({ ...editData, purchaseCost: e.target.value })}
                     placeholder="Enter Cost"
                   />
@@ -1400,16 +1422,8 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                   <input
                     type="date"
                     className="w-full border-gray-300 border px-4 py-2.5 rounded-[10px] focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-sm text-sm bg-white"
-                    value={editData.purchaseDate ? editData.purchaseDate.split('-').reverse().join('-') : ""}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const date = new Date(e.target.value);
-                        const formatted = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
-                        setEditData({ ...editData, purchaseDate: formatted });
-                      } else {
-                        setEditData({ ...editData, purchaseDate: "" });
-                      }
-                    }}
+                    value={editData.purchaseDate ? editData.purchaseDate.split('T')[0] : ""}
+                    onChange={(e) => setEditData({ ...editData, purchaseDate: e.target.value })}
                   />
                 </div>
               </div>
@@ -1485,13 +1499,39 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
         </div>
       )}
 
+      {/* Bulk Delete Confirm Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-red-600">Delete Items</h3>
+            <p className="mb-6 text-gray-700">
+              Are you sure you want to delete {selectedItems.length} selected items? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-medium transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors cursor-pointer"
+              >
+                Delete Items
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bulk QR Modal */}
       {showBulkQRModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
             <h3 className="text-xl font-bold mb-4">Generate QR Codes</h3>
             <p className="mb-4">
-              Generate QR codes for {selectedItemsForQR.length} selected items?
+              Generate QR codes for {selectedItems.length} selected items?
             </p>
             <div className="flex justify-end gap-4">
               <button
@@ -1647,6 +1687,19 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
           </div>
         </div>
       )}
+
+      {/* Replace Item Modal */}
+      <ReplaceItemModal
+        isOpen={showReplaceModal}
+        onClose={() => {
+          setShowReplaceModal(false);
+          setItemToReplace(null);
+        }}
+        oldItem={itemToReplace}
+        fetchInventory={fetchInventory}
+        availableRoomsForInventory={availableRoomsForInventory}
+        availableFloors={availableFloors}
+      />
 
       {/* Toast Notifications */}
       <Toaster position="top-right" reverseOrder={false} />

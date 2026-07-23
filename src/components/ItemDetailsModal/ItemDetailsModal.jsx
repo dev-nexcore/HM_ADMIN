@@ -1,9 +1,33 @@
-import React from 'react';
-import { X, QrCode } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, QrCode, Clock } from 'lucide-react';
 
 const BASE_URL = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5224';
 
 const ItemDetailsModal = ({ item, isOpen, onClose }) => {
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && item) {
+      fetchAuditLogs();
+    }
+  }, [isOpen, item]);
+
+  const fetchAuditLogs = async () => {
+    try {
+      setLoadingLogs(true);
+      const response = await fetch(`${BASE_URL}/api/adminauth/audit-logs?targetId=${item._id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setAuditLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   if (!isOpen || !item) return null;
 
   const getStatusStyle = (status) => {
@@ -234,6 +258,48 @@ const ItemDetailsModal = ({ item, isOpen, onClose }) => {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="w-full h-px bg-gray-200 my-5"></div>
+
+          {/* Audit Logs */}
+          <div className="mb-4">
+            <h3 className="text-[14px] font-bold text-[#3B4856] mb-3 flex items-center gap-2">
+              <Clock size={16} /> Audit Logs
+            </h3>
+            {loadingLogs ? (
+              <div className="flex justify-center p-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              </div>
+            ) : auditLogs.length > 0 ? (
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="max-h-[250px] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  {auditLogs.map((log, index) => (
+                    <div key={log._id || index} className="p-3 border-b border-gray-100 last:border-b-0 flex gap-3 text-sm hover:bg-gray-50 transition-colors">
+                      <div className="mt-0.5">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-semibold text-gray-800 text-[13px]">{log.actionType}</span>
+                          <span className="text-gray-500 text-[11px] whitespace-nowrap ml-2">
+                            {new Date(log.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 text-[12px]">{log.description}</p>
+                        {log.user && (
+                          <p className="text-gray-400 text-[11px] mt-1">by {log.user}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+                <p className="text-gray-500 text-[13px]">No audit logs found for this item.</p>
+              </div>
+            )}
           </div>
 
         </div>

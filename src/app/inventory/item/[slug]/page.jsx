@@ -13,7 +13,11 @@ import {
   Clock,
   ExternalLink,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  IndianRupee,
+  User,
+  Activity,
+  FileText
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
@@ -26,21 +30,39 @@ const ItemDetailsPage = () => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
-    const fetchItem = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Using the public-safe endpoint if possible, but the user requested "detail dekh"
-        // Let's try the QR slug endpoint first
         const response = await api.get(`/api/adminauth/inventory/qr/${slug}`);
         if (response.data.success) {
-          setItem(response.data.item);
+          const itemData = response.data.item;
+          setItem(itemData);
+          
+          // Fetch audit logs for this item
+          setLoadingLogs(true);
+          try {
+            const logsResponse = await api.get(`/api/adminauth/audit-logs?targetId=${itemData._id}`);
+            if (logsResponse.data.logs) {
+              setAuditLogs(logsResponse.data.logs);
+            }
+          } catch (logErr) {
+            if (logErr.response?.status !== 404) {
+              console.error("Error fetching audit logs:", logErr);
+            }
+          } finally {
+            setLoadingLogs(false);
+          }
         } else {
           setError("Item not found");
         }
       } catch (err) {
-        console.error("Error fetching item details:", err);
+        if (err.response?.status !== 404) {
+          console.error("Error fetching item details:", err);
+        }
         setError(err.response?.data?.message || "Failed to load item details");
       } finally {
         setLoading(false);
@@ -48,7 +70,7 @@ const ItemDetailsPage = () => {
     };
 
     if (slug) {
-      fetchItem();
+      fetchData();
     }
   }, [slug]);
 
@@ -157,18 +179,36 @@ const ItemDetailsPage = () => {
                       icon={<MapPin size={20} />} 
                       label="Location" 
                       value={item.location} 
-                      subValue={`${item.floor ? `Floor ${item.floor}` : ''}${item.roomNo ? ` • Room ${item.roomNo}` : ''}`}
+                      subValue={`${item.locationCategory ? `${item.locationCategory} • ` : ''}${item.floor ? `Floor ${item.floor}` : ''}${item.roomNo ? ` • Room ${item.roomNo}` : ''}`}
                     />
                     <InfoItem 
                       icon={<Calendar size={20} />} 
                       label="Purchase Date" 
                       value={formatDate(item.purchaseDate)} 
                     />
-                    <InfoItem 
-                      icon={<Clock size={20} />} 
-                      label="Last Audit" 
-                      value={formatDate(item.updatedAt)} 
-                    />
+                    {item.purchaseCost && (
+                      <InfoItem 
+                        icon={<IndianRupee size={20} />} 
+                        label="Purchase Cost" 
+                        value={`₹${item.purchaseCost.toLocaleString('en-IN')}`} 
+                      />
+                    )}
+                    {item.occupiedBy && (
+                      <InfoItem 
+                        icon={<User size={20} />} 
+                        label="Occupied By" 
+                        value="Student Assigned"
+                        subValue="View Student Details for more info" 
+                      />
+                    )}
+                    {item.replacementRequest && (
+                      <InfoItem 
+                        icon={<AlertCircle size={20} className="text-amber-500" />} 
+                        label="Replacement Request" 
+                        value={item.replacementRequest.replacementStatus}
+                        subValue={`Reason: ${item.replacementRequest.oldItemReason}`} 
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -242,6 +282,58 @@ const ItemDetailsPage = () => {
               </div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Scan to Verify Asset</p>
            </div>
+        </div>
+
+        {/* Audit Logs Section */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden mt-6">
+          <div className="bg-slate-800 p-6 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Activity size={20} className="text-[#9cb574]" /> Audit History
+            </h3>
+            <span className="px-3 py-1 bg-white/10 text-white rounded-full text-xs font-medium">
+              {auditLogs.length} Records
+            </span>
+          </div>
+          <div className="p-6">
+            {loadingLogs ? (
+              <div className="flex justify-center p-4">
+                <div className="w-8 h-8 border-4 border-[#7A8B5E] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : auditLogs.length > 0 ? (
+              <div className="space-y-4">
+                {auditLogs.map((log) => (
+                  <div key={log._id} className="flex gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
+                    <div className="mt-1 flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <FileText size={18} />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                        <p className="font-bold text-slate-800">{log.actionType}</p>
+                        <p className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md inline-block w-max">
+                          {formatDate(log.timestamp)} at {new Date(log.timestamp).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-2">{log.description}</p>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                        <User size={14} />
+                        <span>By {log.user || log.adminName || 'System'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Activity size={24} className="text-slate-400" />
+                </div>
+                <p className="font-medium text-slate-600">No audit logs found</p>
+                <p className="text-sm text-slate-400">There is no recorded history for this item yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

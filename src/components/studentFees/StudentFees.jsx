@@ -179,6 +179,7 @@ const StudentFees = () => {
   const [invoiceForm, setInvoiceForm] = useState({
     amount: "",
     invoiceType: "hostel_fee",
+    customInvoiceType: "",
     dueDate: new Date().toISOString().split("T")[0],
     description: "",
   });
@@ -344,6 +345,7 @@ const StudentFees = () => {
       await api.post("/api/adminauth/invoices/student", {
         studentId: activeStudent.studentId,
         ...invoiceForm,
+        invoiceType: invoiceForm.invoiceType === "other" && invoiceForm.customInvoiceType ? invoiceForm.customInvoiceType : invoiceForm.invoiceType,
         amount: Number(invoiceForm.amount),
       });
       toast.success("Invoice generated successfully");
@@ -352,6 +354,7 @@ const StudentFees = () => {
       setInvoiceForm({
         amount: "",
         invoiceType: "hostel_fee",
+        customInvoiceType: "",
         dueDate: new Date().toISOString().split("T")[0],
         description: "",
       });
@@ -1006,20 +1009,7 @@ const StudentFees = () => {
               </button>
               <h3 className="text-xl font-bold text-black m-0">Create Demand</h3>
               <p className="text-sm text-gray-800 m-0 mt-1 font-medium">Generating invoice for {activeStudent.studentName}</p>
-              {/* ── Show fee summary in header ── */}
-              <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }} className="sf-modal-header-summary">
-                {[
-                  { label: "3 Months Hostel Fee", val: activeStudent.quarterlyFee },
-                  { label: "Security Deposit", val: activeStudent.depositAmount, isDeposit: true },
-                  { label: "Already Paid", val: activeStudent.paidFees },
-                  { label: "Outstanding", val: activeStudent.pendingFees },
-                ].map((item, i) => (
-                  <div key={i} style={{ background: item.isDeposit ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.4)", borderRadius: 12, padding: "8px 14px", border: item.isDeposit ? `1px solid ${T.gold}40` : "none" }} className="sf-modal-summary-item">
-                    <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8, margin: "0 0 2px", color: "#1F2937" }}>{item.label}</p>
-                    <p style={{ fontSize: 14, fontWeight: 900, margin: 0, color: item.isDeposit ? "#92400E" : "#1F2937" }}>{formatCurrency(item.val)}</p>
-                  </div>
-                ))}
-              </div>
+
             </div>
             <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1, background: "#f4f6f0" }} className="sf-modal-content">
               {/* ── Security Deposit Status ── */}
@@ -1078,9 +1068,14 @@ const StudentFees = () => {
                       );
                     })()}
                     <option value="maintenance_fee">Maintenance</option>
-                    <option value="other">Other</option>
+                    <option value="other">Custom (Other)</option>
                   </select>
                 </ModalField>
+                {invoiceForm.invoiceType === "other" && (
+                  <ModalField label="Custom Category Name">
+                    <input style={css.input} type="text" placeholder="e.g. Gym Fee, Laundry..." required value={invoiceForm.customInvoiceType} onChange={e => setInvoiceForm({ ...invoiceForm, customInvoiceType: e.target.value })} />
+                  </ModalField>
+                )}
                 <ModalField label="Amount (₹)">
                   <div style={{ position: "relative" }}>
                     <HiOutlineCurrencyRupee size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
@@ -1095,6 +1090,82 @@ const StudentFees = () => {
                 <textarea style={{ ...css.input, height: 100, resize: "none" }} placeholder="Optional notes for this demand..."
                   value={invoiceForm.description} onChange={e => setInvoiceForm({ ...invoiceForm, description: e.target.value })} />
               </ModalField>
+              {/* Professional Invoice Preview (Matching PDF Format) */}
+              <div className="mt-8 mb-4 flex flex-col items-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 m-0 w-full text-center">Generated Invoice Preview</p>
+                
+                <div className="bg-white shadow-md mx-auto w-full max-w-[450px]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  {/* Header */}
+                  <div className="bg-[#a8b096] p-4 flex items-center justify-between h-[100px]">
+                    <div className="bg-white p-1 h-16 w-16 flex items-center justify-center">
+                      <img src="/photos/logo1.svg" alt="Logo" className="max-h-full max-w-full" onError={(e) => e.target.style.display='none'} />
+                    </div>
+                    <div className="text-center flex-1 px-2">
+                      <h2 className="text-lg font-black text-[#1A1F16] m-0 leading-tight">KGF Boys Hostel</h2>
+                      <p className="text-xs font-semibold text-[#3E4B28] m-0">Kokan Global Foundation</p>
+                      <p className="text-[10px] italic font-semibold text-gray-700 m-0 mt-0.5">Official Invoice</p>
+                      <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Hostel, Ground Floor, Admin Block</p>
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="px-5 pb-5 pt-0 bg-white">
+                    
+                    {/* Status Badge */}
+                    <div className="flex justify-center -mt-3 mb-5 relative z-10">
+                      <span className="bg-[#EF4444] text-white text-[11px] font-bold px-6 py-1 rounded-sm shadow-sm tracking-wider">UNPAID</span>
+                    </div>
+
+                    {/* Details Box */}
+                    <div className="border border-[#a8b096]/50 rounded-sm p-3 mb-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Invoice Number</p>
+                          <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">INV-KGF-Preview</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Date Issued</p>
+                          <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Due Date</p>
+                        <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">{invoiceForm.dueDate ? new Date(invoiceForm.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "Not Set"}</p>
+                      </div>
+                    </div>
+
+                    {/* Items Box */}
+                    <div className="border border-[#a8b096]/50 rounded-sm">
+                      <div className="flex justify-between border-b border-[#a8b096]/50 bg-[#F8FAF5] p-2 px-3">
+                        <span className="text-[9px] font-bold text-[#64748B] uppercase">Description</span>
+                        <span className="text-[9px] font-bold text-[#64748B] uppercase">Amount</span>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="text-[13px] font-bold text-[#1E293B] m-0 capitalize">{(invoiceForm.invoiceType === "other" ? (invoiceForm.customInvoiceType || "Custom Fee") : invoiceForm.invoiceType).replace(/_/g, " ")}</p>
+                          <p className="text-[13px] font-bold text-[#1E293B] m-0 whitespace-nowrap">Rs. {Number(invoiceForm.amount || 0).toLocaleString("en-IN")}</p>
+                        </div>
+                        <div className="text-[10px] text-[#64748B] mb-4 whitespace-pre-wrap leading-tight">
+                          {invoiceForm.description || "Generated for current billing cycle."}
+                        </div>
+                        <div className="text-[10px] text-[#64748B] mb-2">
+                          UTR / Ref: -
+                        </div>
+                      </div>
+                      <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
+                        <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Payable</span>
+                        <span className="text-[13px] font-black text-[#1E293B]">Rs. {Number(invoiceForm.amount || 0).toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer Note */}
+                    <div className="text-center mt-6">
+                      <p className="text-[8px] italic text-[#94A3B8] m-0 leading-tight">This is a computer generated receipt and does not require a physical signature.<br/>Thank you for choosing KGF Hostel.</p>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
               <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
                 <button type="button" onClick={() => setShowGenerateModal(false)} style={{ ...css.btnSecondary, flex: 1, justifyContent: "center" }}>Cancel</button>
                 <button type="submit" disabled={submitting} style={{ ...css.btnPrimary, flex: 2, justifyContent: "center" }}>
