@@ -33,6 +33,7 @@ import {
 import { FiPlus, FiX } from "react-icons/fi";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
+import AdminOnlinePayment from "./AdminOnlinePayment";
 
 // ── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -179,6 +180,9 @@ const StudentFees = () => {
   // ── Local partial-payment input state (avoids stale DOM getElementById) ───
   const [partialAmt, setPartialAmt] = useState("");
   const [editingInvoiceId, setEditingInvoiceId] = useState(null);
+
+  const [showOnlinePaymentModal, setShowOnlinePaymentModal] = useState(false);
+  const [selectedOnlineInvoice, setSelectedOnlineInvoice] = useState(null);
 
   const [invoiceForm, setInvoiceForm] = useState({
     items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: "" }],
@@ -652,22 +656,36 @@ const StudentFees = () => {
         ? (inv.paidAmount > 0 ? inv.paidAmount : inv.amount)
         : (inv.paidAmount || 0);
       const remaining = Math.max(0, (inv.amount || 0) - paid);
+      
+      let statusClass = "status-unpaid";
+      let statusText = "UNPAID";
+      if (inv.status === "paid") {
+         statusClass = "status-paid";
+         statusText = "PAID";
+      } else if (inv.status === "overdue") {
+         statusClass = "status-overdue";
+         statusText = "OVERDUE";
+      } else if (paid > 0 && remaining > 0) {
+         statusClass = "status-partial";
+         statusText = "PARTIAL";
+      }
+
+      const formatD = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" }) : "";
+      const cycleDisplay = (inv.billingCycleStart && inv.billingCycleEnd) 
+        ? `${formatD(inv.billingCycleStart)} - ${formatD(inv.billingCycleEnd)}` 
+        : "-";
+
       return `
         <tr>
-          <td>${inv.invoiceNumber || "—"}</td>
-          <td style="text-transform:capitalize;">${inv.invoiceType?.replace(/_/g, " ") || "—"}</td>
-          <td style="text-transform:capitalize;">${inv.items && inv.items.length > 0 ? inv.items.map(i => i.categoryName.replace(/_/g, ' ')).join(', ') : (inv.description || "—")}</td>
+          <td style="font-weight: 700;">${inv.invoiceNumber || "-"}</td>
+          <td style="text-transform:capitalize;">${inv.invoiceType?.replace(/_/g, " ") || "-"}</td>
+          <td>${cycleDisplay}</td>
           <td>${new Date(inv.dueDate).toLocaleDateString("en-IN")}</td>
-          <td style="text-align:right; font-weight:600;">₹${(inv.amount || 0).toLocaleString("en-IN")}</td>
-          <td style="text-align:right; color:#059669; font-weight:600;">₹${paid.toLocaleString("en-IN")}</td>
-          <td style="text-align:right; color:${remaining > 0 ? "#D97706" : "#059669"}; font-weight:700;">₹${remaining.toLocaleString("en-IN")}</td>
-          <td>
-            <span style="
-              padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
-              text-transform: uppercase; letter-spacing: 0.05em;
-              background: ${inv.status === "paid" ? "#ECFDF5" : inv.status === "overdue" ? "#FEF2F2" : "#FFFBEB"};
-              color: ${inv.status === "paid" ? "#059669" : inv.status === "overdue" ? "#DC2626" : "#D97706"};
-            ">${inv.status}</span>
+          <td style="text-align:right;">${(inv.amount || 0).toLocaleString("en-IN")}</td>
+          <td style="text-align:right; color:#15B76A;">${paid.toLocaleString("en-IN")}</td>
+          <td style="text-align:right; color:${remaining > 0 ? '#EF4444' : '#15B76A'};">${remaining.toLocaleString("en-IN")}</td>
+          <td style="text-align:center;">
+            <span class="status-badge ${statusClass}">${statusText}</span>
           </td>
         </tr>
       `;
@@ -678,118 +696,144 @@ const StudentFees = () => {
       <html>
       <head>
         <meta charset="UTF-8" />
-        <title>Fee Ledger — ${activeStudent.studentName}</title>
+        <title>Fee Ledger - ${activeStudent.studentName}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: 'Outfit', Arial, sans-serif; background: #fff; color: #1A1F16; padding: 40px 52px; font-size: 14px; }
-          .kgf-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; margin-bottom: 10px; border-bottom: 3px solid #3E4B28; }
-          .kgf-left { display: flex; align-items: center; gap: 18px; }
-          .kgf-logo-img { width: 90px; height: 90px; object-fit: contain; flex-shrink: 0; }
-          .kgf-org-name { font-size: 26px; font-weight: 900; color: #1A1F16; letter-spacing: -0.02em; line-height: 1.1; }
-          .kgf-org-sub { font-size: 11px; font-weight: 700; color: #5A6E3A; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 5px; }
-          .kgf-org-division { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
-          .kgf-contact { text-align: right; font-size: 12px; color: #6B7280; line-height: 2; }
-          .doc-title-strip { display: flex; justify-content: space-between; align-items: center; background: #3E4B28; color: #fff; padding: 12px 20px; border-radius: 10px; margin: 18px 0 28px; }
-          .doc-title-strip .dtitle { font-size: 15px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
-          .doc-title-strip .dmeta { font-size: 12px; opacity: 0.75; }
-          .student-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; background: #F1F3EE; border-radius: 12px; padding: 20px 24px; }
-          .student-section .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; margin-bottom: 4px; }
-          .student-section .value { font-size: 14px; font-weight: 700; color: #1A1F16; }
-          .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 32px; }
-          .summary-card { border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 16px 20px; }
-          .summary-card .s-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; margin-bottom: 8px; }
-          .summary-card .s-value { font-size: 22px; font-weight: 800; }
-          .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
-          .section-title::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
-          table { width: 100%; border-collapse: collapse; }
-          thead tr { background: #3E4B28; color: #fff; }
-          th { text-align: left; padding: 11px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-          tbody tr { border-bottom: 1px solid #F1F3EE; }
-          tbody tr:nth-child(even) { background: #FAFAFA; }
-          td { padding: 12px 14px; font-size: 13px; color: #1A1F16; vertical-align: middle; }
-          .totals-row td { font-weight: 800; font-size: 14px; background: #F1F3EE; border-top: 2px solid #3E4B28; }
-          .footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
-          .footer p { font-size: 11px; color: #9CA3AF; }
-          .watermark { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #D1D5DB; }
-          @media print { body { padding: 24px 32px; } @page { margin: 0.5in; size: A4; } }
+          body { font-family: Arial, sans-serif; background: #fff; color: #1A1F16; font-size: 14px; margin: 0; padding: 0; }
+          .container { width: 100%; max-width: 900px; margin: 0 auto; background: #fff; }
+          
+          /* Header */
+          .header { background-color: #a8b096; padding: 24px; display: flex; align-items: center; justify-content: space-between; }
+          .logo-box { background: #fff; padding: 4px; height: 80px; width: 80px; display: flex; align-items: center; justify-content: center; }
+          .logo-box img { max-height: 100%; max-width: 100%; }
+          .header-text { text-align: center; flex: 1; padding: 0 16px; }
+          .header-text h2 { font-size: 24px; font-weight: 900; color: #1A1F16; margin: 0; line-height: 1.1; }
+          .header-text p.org { font-size: 16px; font-weight: 600; color: #3E4B28; margin: 2px 0 0 0; }
+          .header-text p.doc { font-size: 14px; font-style: italic; font-weight: 600; color: #333; margin: 4px 0 0 0; }
+          .header-text p.addr { font-size: 12px; color: #333; margin: 2px 0 0 0; }
+          .header-right { width: 80px; } 
+
+          .content { padding: 32px; }
+          
+          /* Details Box */
+          .details-box { border: 1px solid rgba(168, 176, 150, 0.5); border-radius: 4px; padding: 20px; margin-bottom: 24px; }
+          .billed-to { border-bottom: 1px solid rgba(168, 176, 150, 0.3); padding-bottom: 16px; margin-bottom: 16px; }
+          .billed-to .label { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin: 0 0 6px 0; }
+          .billed-to .name { font-size: 18px; font-weight: 700; color: #1E293B; margin: 0; text-transform: capitalize; }
+          .billed-to .sub { font-size: 14px; color: #64748B; margin: 6px 0 0 0; }
+          
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          .info-block .label { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin: 0 0 6px 0; }
+          .info-block .value { font-size: 15px; font-weight: 700; color: #1E293B; margin: 0; }
+
+          /* Summary Cards */
+          .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+          .summary-card { border: 1px solid rgba(168, 176, 150, 0.5); border-radius: 4px; padding: 16px 20px; text-align: center; }
+          .summary-card .s-label { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 10px; }
+          .summary-card .s-value { font-size: 24px; font-weight: 700; }
+
+          /* Table */
+          table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+          thead th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748B; border-top: 2px solid #a8b096; border-bottom: 1px solid #a8b096; background: rgba(168, 176, 150, 0.1); }
+          tbody td { padding: 14px 16px; font-size: 14px; color: #1E293B; border-bottom: 1px solid #E5E7EB; vertical-align: top; }
+          .totals-row td { font-weight: 700; font-size: 16px; border-top: 2px solid #a8b096; border-bottom: 2px solid #a8b096; background: rgba(168, 176, 150, 0.1); }
+          
+          .status-badge { padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #fff; display: inline-block; }
+          .status-paid { background: #15B76A; }
+          .status-unpaid { background: #EF4444; }
+          .status-overdue { background: #DC2626; }
+          .status-partial { background: #F59E0B; }
+
+          .footer { margin-top: 40px; font-size: 12px; color: #9CA3AF; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 20px; }
+          
+          @media print { 
+            body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+            .container { border: none; max-width: 100%; }
+            @page { margin: 0.5in; size: A4; } 
+          }
         </style>
       </head>
       <body>
-        <div class="kgf-header">
-          <div class="kgf-left">
-            <img src="/photos/logo1.svg" alt="KGF Logo" class="kgf-logo-img" onerror="this.style.display='none'" />
-            <div>
-              <div class="kgf-org-name">KOKAN GLOBAL FOUNDATION</div>
-              <div class="kgf-org-sub">Educational &amp; Welfare Trust &nbsp;|&nbsp; Reg No: E-3342/R</div>
-              <div class="kgf-org-division">Hostel Management Division</div>
+        <div class="container">
+          <div class="header">
+            <div class="logo-box">
+              <img src="/photos/logo1.svg" alt="KGF Logo" onerror="this.style.display='none'" />
+            </div>
+            <div class="header-text">
+              <h2>KGF Boys Hostel</h2>
+              <p class="org">Kokan Global Foundation</p>
+              <p class="doc">Official Fee Ledger</p>
+              <p class="addr">KGF Hostel, Ground Floor, Admin Block</p>
+            </div>
+            <div class="header-right"></div>
+          </div>
+          
+          <div class="content">
+            <div class="details-box">
+              <div class="billed-to">
+                <p class="label">Student Details</p>
+                <p class="name">${activeStudent.studentName}</p>
+                <p class="sub">ID: ${activeStudent.studentId || "N/A"} | Room: ${activeStudent.roomBedNumber || "Unassigned"}</p>
+              </div>
+              <div class="info-grid">
+                <div class="info-block">
+                  <p class="label">Academic Year</p>
+                  <p class="value">${selectedYear}-${selectedYear + 1}</p>
+                </div>
+                <div class="info-block">
+                  <p class="label">Total Invoices</p>
+                  <p class="value">${activeStudent.allInvoices.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="summary">
+              <div class="summary-card">
+                <div class="s-label">Total Billed</div>
+                <div class="s-value" style="color: #1E293B;">Rs. ${activeStudent.totalFees.toLocaleString("en-IN")}</div>
+              </div>
+              <div class="summary-card">
+                <div class="s-label">Total Paid</div>
+                <div class="s-value" style="color: #15B76A;">Rs. ${activeStudent.paidFees.toLocaleString("en-IN")}</div>
+              </div>
+              <div class="summary-card">
+                <div class="s-label">Outstanding</div>
+                <div class="s-value" style="color: ${activeStudent.pendingFees > 0 ? "#EF4444" : "#15B76A"};">
+                  Rs. ${activeStudent.pendingFees.toLocaleString("en-IN")}
+                </div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Fee Type</th>
+                  <th>Billing Cycle</th>
+                  <th>Due Date</th>
+                  <th style="text-align:right;">Billed (Rs.)</th>
+                  <th style="text-align:right;">Paid (Rs.)</th>
+                  <th style="text-align:right;">Remaining (Rs.)</th>
+                  <th style="text-align:center;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+                <tr class="totals-row">
+                  <td colspan="4">Total</td>
+                  <td style="text-align:right;">${activeStudent.totalFees.toLocaleString("en-IN")}</td>
+                  <td style="text-align:right; color:#15B76A;">${activeStudent.paidFees.toLocaleString("en-IN")}</td>
+                  <td style="text-align:right; color:${activeStudent.pendingFees > 0 ? '#EF4444' : '#15B76A'};">${activeStudent.pendingFees.toLocaleString("en-IN")}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="footer">
+              <p>This is a computer-generated document. No signature required.</p>
+              <p>Generated on: ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</p>
             </div>
           </div>
-          <div class="kgf-contact">
-            <div>📍 Maharashtra, India</div>
-            <div>📞 +91-XXXXXXXXXX</div>
-            <div style="margin-top:6px; font-size:11px; color:#9CA3AF;">
-              Generated: ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
-            </div>
-          </div>
-        </div>
-        <div class="doc-title-strip">
-          <span class="dtitle">Fee Ledger &nbsp;/&nbsp; Official Statement</span>
-          <span class="dmeta">Academic Year ${selectedYear}–${selectedYear + 1} &nbsp;•&nbsp; Hostel Management Division</span>
-        </div>
-        <div class="student-section">
-          <div><div class="label">Student Name</div><div class="value">${activeStudent.studentName}</div></div>
-          <div><div class="label">Student ID</div><div class="value">${activeStudent.studentId || "—"}</div></div>
-          <div><div class="label">Room / Bed</div><div class="value">${activeStudent.roomBedNumber || "Unassigned"}</div></div>
-          <div><div class="label">Total Invoices</div><div class="value">${activeStudent.allInvoices.length}</div></div>
-        </div>
-        <div class="summary">
-          <div class="summary-card">
-            <div class="s-label">Total Billed</div>
-            <div class="s-value" style="color: #1A1F16;">₹${activeStudent.totalFees.toLocaleString("en-IN")}</div>
-          </div>
-          <div class="summary-card">
-            <div class="s-label">Total Paid</div>
-            <div class="s-value" style="color: #059669;">₹${activeStudent.paidFees.toLocaleString("en-IN")}</div>
-          </div>
-          <div class="summary-card">
-            <div class="s-label">Outstanding</div>
-            <div class="s-value" style="color: ${activeStudent.pendingFees > 0 ? "#D97706" : "#059669"};">
-              ₹${activeStudent.pendingFees.toLocaleString("en-IN")}
-            </div>
-          </div>
-        </div>
-        <div class="section-title">Transaction History</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Fee Type</th>
-              <th>Description</th>
-              <th>Due Date</th>
-              <th style="text-align:right;">Billed</th>
-              <th style="text-align:right;">Paid</th>
-              <th style="text-align:right;">Remaining</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-            <tr class="totals-row">
-              <td colspan="4">Total</td>
-              <td style="text-align:right;">₹${activeStudent.totalFees.toLocaleString("en-IN")}</td>
-              <td style="text-align:right; color:#059669;">₹${activeStudent.paidFees.toLocaleString("en-IN")}</td>
-              <td style="text-align:right; color:${activeStudent.pendingFees > 0 ? "#D97706" : "#059669"};">₹${activeStudent.pendingFees.toLocaleString("en-IN")}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="footer">
-          <div>
-            <p>This is a computer-generated document. No signature required.</p>
-            <p style="font-size:11px; color:#9CA3AF; margin-top:4px;">Kokan Global Foundation • Educational &amp; Welfare Trust • Reg No: E-3342/R</p>
-          </div>
-          <p class="watermark">KGF Hostel Mgmt Division</p>
         </div>
         <script>window.onload = function() { setTimeout(function() { window.print(); }, 400); };<\/script>
       </body>
@@ -1631,9 +1675,12 @@ const StudentFees = () => {
                               <button
                                 disabled={submitting}
                                 style={{ ...css.btnPrimary, padding: "8px 16px", fontSize: 11, opacity: submitting ? 0.7 : 1 }}
-                                onClick={() => handleRazorpayPayment(inv)}
+                                onClick={() => {
+                                  setSelectedOnlineInvoice(inv);
+                                  setShowOnlinePaymentModal(true);
+                                }}
                               >
-                                Online
+                                Online (QR)
                               </button>
                             </div>
                           )}
@@ -1790,6 +1837,31 @@ const StudentFees = () => {
                     <div className="text-[10px] text-[#64748B] mb-2">
                       UTR / Ref: {selectedInvoice.transactionId || "-"}
                     </div>
+                    {selectedInvoice.paymentMethod && (
+                      <div className="text-[10px] text-[#64748B] mb-2">
+                        Payment Method: <span className="capitalize">{selectedInvoice.paymentMethod.replace(/_/g, " ")}</span>
+                      </div>
+                    )}
+                    {selectedInvoice.paymentMethod === 'online' && (selectedInvoice.parentScreenshot || selectedInvoice.adminScreenshot) && (
+                      <div className="mt-4 flex gap-4">
+                        {selectedInvoice.parentScreenshot && (
+                          <div className="flex-1 text-center">
+                            <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Student Receipt</p>
+                            <a href={selectedInvoice.parentScreenshot.startsWith('http') ? selectedInvoice.parentScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.parentScreenshot}`} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
+                              <img src={selectedInvoice.parentScreenshot.startsWith('http') ? selectedInvoice.parentScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.parentScreenshot}`} alt="Student Receipt" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
+                            </a>
+                          </div>
+                        )}
+                        {selectedInvoice.adminScreenshot && (
+                          <div className="flex-1 text-center">
+                            <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Admin SMS</p>
+                            <a href={selectedInvoice.adminScreenshot.startsWith('http') ? selectedInvoice.adminScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.adminScreenshot}`} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
+                              <img src={selectedInvoice.adminScreenshot.startsWith('http') ? selectedInvoice.adminScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.adminScreenshot}`} alt="Admin SMS" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
                     <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Invoice Amount</span>
@@ -1950,9 +2022,12 @@ const StudentFees = () => {
                               <button
                                 style={{ ...css.btnPrimary, flex: 1, justifyContent: "center", fontSize: 12 }}
                                 disabled={submitting}
-                                onClick={() => handleRazorpayPayment(selectedInvoice)}
+                                onClick={() => {
+                                  setSelectedOnlineInvoice(selectedInvoice);
+                                  setShowOnlinePaymentModal(true);
+                                }}
                               >
-                                Pay Online
+                                Pay Online (QR)
                               </button>
                             </div>
                           </div>
@@ -1970,6 +2045,31 @@ const StudentFees = () => {
               })()}
             </div>
             </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* ── Admin Online Payment Modal ── */}
+      {showOnlinePaymentModal && selectedOnlineInvoice && (
+        <ModalOverlay onClose={() => {
+          setShowOnlinePaymentModal(false);
+          setSelectedOnlineInvoice(null);
+        }} zIndex={140}>
+          <div className="w-full max-w-5xl h-full max-h-[90vh] bg-[#f4f6f0] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
+            <AdminOnlinePayment 
+              fee={selectedOnlineInvoice}
+              activeStudent={activeStudent || studentFeeStats.find(s => s._id === selectedOnlineInvoice.studentId?._id || s._id === selectedOnlineInvoice.studentId)}
+              onBack={() => {
+                setShowOnlinePaymentModal(false);
+                setSelectedOnlineInvoice(null);
+              }}
+              onSuccess={() => {
+                setShowOnlinePaymentModal(false);
+                setSelectedOnlineInvoice(null);
+                setSelectedInvoice(null);
+                fetchData();
+              }}
+            />
           </div>
         </ModalOverlay>
       )}
