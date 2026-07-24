@@ -17,6 +17,8 @@ import {
   HiOutlineCurrencyRupee,
   HiOutlineDownload,
   HiOutlineEye,
+  HiOutlinePencil,
+  HiOutlineTrash,
 } from "react-icons/hi";
 import {
   FaGraduationCap,
@@ -28,6 +30,7 @@ import {
   MdOutlinePendingActions,
   MdOutlineReceiptLong,
 } from "react-icons/md";
+import { FiPlus, FiX } from "react-icons/fi";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
@@ -175,19 +178,21 @@ const StudentFees = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   // ── Local partial-payment input state (avoids stale DOM getElementById) ───
   const [partialAmt, setPartialAmt] = useState("");
+  const [editingInvoiceId, setEditingInvoiceId] = useState(null);
 
   const [invoiceForm, setInvoiceForm] = useState({
-    amount: "",
-    invoiceType: "hostel_fee",
-    customInvoiceType: "",
+    items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: "" }],
     dueDate: new Date().toISOString().split("T")[0],
     description: "",
+    billingCycleStart: "",
+    billingCycleEnd: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [verifyingOCR, setVerifyingOCR] = useState(false);
   const [ocrError, setOcrError] = useState(null);
   const [ocrSuccess, setOcrSuccess] = useState(null);
   const selectedYear = new Date().getFullYear();
+  const [alertModalMsg, setAlertModalMsg] = useState("");
 
   useEffect(() => { fetchData(); }, []);
 
@@ -273,6 +278,7 @@ const StudentFees = () => {
 
     // ── Billing Cycle Calculation ──────────────────────────────────────────────
     let billingCycleDisplay = "N/A";
+    let cycleStartDate = null;
     if (student.admissionDate) {
       let cycleStart = new Date(student.admissionDate);
       let cycleEnd = new Date(cycleStart);
@@ -285,6 +291,7 @@ const StudentFees = () => {
         cycleEnd.setMonth(cycleEnd.getMonth() + 3);
       }
       
+      cycleStartDate = new Date(cycleStart);
       const formatD = (d) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
       billingCycleDisplay = `${formatD(cycleStart)} - ${formatD(cycleEnd)}`;
     }
@@ -297,6 +304,7 @@ const StudentFees = () => {
       quarterlyFee,
       depositAmount,
       billingCycleDisplay,
+      cycleStartDate,
       totalFees,
       paidFees,
       pendingFees,
@@ -310,6 +318,39 @@ const StudentFees = () => {
     studentFeeStats.find(s => s._id === selectedStudentId),
     [studentFeeStats, selectedStudentId]
   );
+
+  const availableBillingCycles = useMemo(() => {
+    if (!activeStudent || !activeStudent.admissionDate) return [];
+    const cycles = [];
+    let start = new Date(activeStudent.admissionDate);
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1); // Up to 1 year ahead
+
+    while (start < maxDate) {
+      let end = new Date(start);
+      end.setMonth(end.getMonth() + 3); // Assuming 3-month billing cycles
+      
+      const startStr = start.toISOString().split('T')[0];
+      const endStr = end.toISOString().split('T')[0];
+      
+      const isPaid = activeStudent.allInvoices.some(inv => {
+        if (inv.status !== "paid") return false;
+        if (!inv.billingCycleStart) return false;
+        const invStartStr = new Date(inv.billingCycleStart).toISOString().split('T')[0];
+        return invStartStr === startStr;
+      });
+
+      cycles.push({
+        start: startStr,
+        end: endStr,
+        display: `${start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} to ${end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+        isPaid
+      });
+
+      start = new Date(end);
+    }
+    return cycles;
+  }, [activeStudent]);
 
   const filteredStudents = useMemo(() => studentFeeStats.filter(s => {
     const matchesSearch =
@@ -332,36 +373,119 @@ const StudentFees = () => {
     if (!activeStudent) return;
     
     // ── Prevent duplicate security deposit billing ──
-    if (invoiceForm.invoiceType === "security_deposit") {
-      const existingDeposit = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit");
+    const hasSecurityDeposit = invoiceForm.items.some(item => item.invoiceType === "security_deposit");
+    if (hasSecurityDeposit) {
+      const existingDeposit = activeStudent.allInvoices.find(inv => 
+        inv.invoiceType === "security_deposit" || inv.items?.some(i => i.categoryName === "security_deposit")
+      );
       if (existingDeposit && existingDeposit.status === "paid") {
-        toast.error("Security Deposit has already been paid for this student.");
+        setAlertModalMsg("Security Deposit has already been paid for this student. You cannot generate a new invoice for it.");
+        return;
+      }
+    }
+
+    // ── Prevent duplicate hostel fee for the same billing cycle ──
+    const hasHostelFee = invoiceForm.items.some(item => item.invoiceType === "hostel_fee");
+    if (hasHostelFee && invoiceForm.billingCycleStart) {
+      const selectedStart = new Date(invoiceForm.billingCycleStart).getTime();
+      const existingHostelFee = activeStudent.allInvoices.find(inv => {
+        const isHostelFee = inv.invoiceType === "hostel_fee" || inv.items?.some(i => i.categoryName === "hostel_fee");
+        if (!isHostelFee || inv.status !== "paid" || !inv.billingCycleStart) return false;
+        const invStart = new Date(inv.billingCycleStart).getTime();
+        return invStart === selectedStart;
+      });
+      if (existingHostelFee) {
+        setAlertModalMsg("Hostel Fees for this specific billing cycle have already been paid.");
         return;
       }
     }
 
     setSubmitting(true);
     try {
-      await api.post("/api/adminauth/invoices/student", {
-        studentId: activeStudent.studentId,
-        ...invoiceForm,
-        invoiceType: invoiceForm.invoiceType === "other" && invoiceForm.customInvoiceType ? invoiceForm.customInvoiceType : invoiceForm.invoiceType,
-        amount: Number(invoiceForm.amount),
-      });
-      toast.success("Invoice generated successfully");
+      const finalItems = invoiceForm.items.map(item => ({
+        categoryName: item.invoiceType === "other" && item.customInvoiceType ? item.customInvoiceType : item.invoiceType,
+        amount: Number(item.amount || 0)
+      }));
+      const totalAmount = finalItems.reduce((sum, item) => sum + item.amount, 0);
+      const combinedType = finalItems.length === 1 ? finalItems[0].categoryName : "Combined Invoice";
+
+      if (editingInvoiceId) {
+        await api.put(`/api/adminauth/invoices/student/${editingInvoiceId}`, {
+          dueDate: invoiceForm.dueDate,
+          description: invoiceForm.description,
+          invoiceType: combinedType,
+          items: finalItems,
+          amount: totalAmount,
+          billingCycleStart: invoiceForm.billingCycleStart || undefined,
+          billingCycleEnd: invoiceForm.billingCycleEnd || undefined,
+        });
+        toast.success("Invoice updated successfully");
+      } else {
+        await api.post("/api/adminauth/invoices/student", {
+          studentId: activeStudent.studentId,
+          dueDate: invoiceForm.dueDate,
+          description: invoiceForm.description,
+          invoiceType: combinedType,
+          items: finalItems,
+          amount: totalAmount,
+          billingCycleStart: invoiceForm.billingCycleStart || undefined,
+          billingCycleEnd: invoiceForm.billingCycleEnd || undefined,
+        });
+        toast.success("Invoice generated successfully");
+      }
       setShowGenerateModal(false);
+      setEditingInvoiceId(null);
       fetchData();
       setInvoiceForm({
-        amount: "",
-        invoiceType: "hostel_fee",
-        customInvoiceType: "",
+        items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: "" }],
         dueDate: new Date().toISOString().split("T")[0],
         description: "",
+        billingCycleStart: "",
+        billingCycleEnd: "",
       });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to generate invoice");
+      toast.error(error.response?.data?.message || "Failed to save invoice");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditInvoice = (inv) => {
+    setEditingInvoiceId(inv._id);
+    let formItems = inv.items && inv.items.length > 0 
+      ? inv.items.map(i => {
+          let type = i.categoryName;
+          let custom = "";
+          if (!["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(type)) {
+            custom = type;
+            type = "other";
+          }
+          return { invoiceType: type, customInvoiceType: custom, amount: String(i.amount) };
+        })
+      : [{ invoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? inv.invoiceType : "other", customInvoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? "" : (inv.invoiceType || ""), amount: String(inv.amount || "") }];
+    
+    setInvoiceForm({
+      items: formItems,
+      dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      description: inv.description || "",
+      billingCycleStart: inv.billingCycleStart ? new Date(inv.billingCycleStart).toISOString().split('T')[0] : "",
+      billingCycleEnd: inv.billingCycleEnd ? new Date(inv.billingCycleEnd).toISOString().split('T')[0] : ""
+    });
+    setShowGenerateModal(true);
+  };
+
+  const handleDeleteInvoice = async (inv) => {
+    if (window.confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
+      try {
+        await api.delete(`/api/adminauth/invoices/student/${inv._id}`);
+        toast.success("Invoice deleted successfully");
+        if (selectedInvoice && selectedInvoice._id === inv._id) {
+          setSelectedInvoice(null);
+        }
+        fetchData();
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to delete invoice");
+      }
     }
   };
 
@@ -446,11 +570,21 @@ const StudentFees = () => {
   };
 
   // ── Razorpay ──────────────────────────────────────────────────────────────
-  const handleRazorpayPayment = async (invoice) => {
+  const handleRazorpayPayment = async (invoice, customAmount = null) => {
     try {
       setSubmitting(true);
+      const invPaid = invoice.status === "paid" ? (invoice.paidAmount > 0 ? invoice.paidAmount : invoice.amount) : (invoice.paidAmount || 0);
+      const invRemaining = Math.max(0, (invoice.amount || 0) - invPaid);
+      const finalAmount = customAmount ? Number(customAmount) : invRemaining;
+
+      if (!finalAmount || finalAmount <= 0) {
+        toast.error("Invalid amount for online payment");
+        setSubmitting(false);
+        return;
+      }
+
       const orderRes = await api.post("/api/adminauth/razorpay/create-order", {
-        amount: invoice.amount,
+        amount: finalAmount,
         receiptId: invoice.invoiceNumber,
         type: "student_invoice",
       });
@@ -471,6 +605,7 @@ const StudentFees = () => {
               ...response,
               id: invoice._id,
               type: "student_invoice",
+              amountPaid: finalAmount
             });
             if (verifyRes.data.success) {
               toast.success("Payment successful!");
@@ -521,7 +656,7 @@ const StudentFees = () => {
         <tr>
           <td>${inv.invoiceNumber || "—"}</td>
           <td style="text-transform:capitalize;">${inv.invoiceType?.replace(/_/g, " ") || "—"}</td>
-          <td>${inv.description || "—"}</td>
+          <td style="text-transform:capitalize;">${inv.items && inv.items.length > 0 ? inv.items.map(i => i.categoryName.replace(/_/g, ' ')).join(', ') : (inv.description || "—")}</td>
           <td>${new Date(inv.dueDate).toLocaleDateString("en-IN")}</td>
           <td style="text-align:right; font-weight:600;">₹${(inv.amount || 0).toLocaleString("en-IN")}</td>
           <td style="text-align:right; color:#059669; font-weight:600;">₹${paid.toLocaleString("en-IN")}</td>
@@ -696,6 +831,8 @@ const StudentFees = () => {
         .sf-stat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(40,50,30,0.12); }
         .sf-row:hover { background: #F9FAFB !important; }
         .sf-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .inv-row:hover { background: #F9FAFB !important; }
         .inv-number-link { color: #3A6FA6; font-weight: 800; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
         .inv-number-link:hover { color: #4F8CCF; }
@@ -893,7 +1030,14 @@ const StudentFees = () => {
                         </button>
                         <button style={{ ...css.btnPrimary, padding: "10px 18px" }} onClick={() => {
                           setSelectedStudentId(s._id);
-                          setInvoiceForm(f => ({ ...f, amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }));
+                          const start = s.cycleStartDate ? new Date(s.cycleStartDate.getTime() - (s.cycleStartDate.getTimezoneOffset() * 60000)).toISOString().split("T")[0] : "";
+                          let end = "";
+                          if (s.cycleStartDate) {
+                            const e = new Date(s.cycleStartDate);
+                            e.setMonth(e.getMonth() + 3);
+                            end = new Date(e.getTime() - (e.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                          }
+                          setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end }));
                           setShowGenerateModal(true);
                         }}>
                           <HiOutlinePlus size={16} /> Bill
@@ -940,7 +1084,14 @@ const StudentFees = () => {
                   <button style={{ ...css.btnSecondary, flex: 1, justifyContent: "center" }} onClick={() => { setSelectedStudentId(s._id); setShowLedgerModal(true); }}>Statement</button>
                   <button style={{ ...css.btnPrimary, flex: 1, justifyContent: "center" }} onClick={() => {
                     setSelectedStudentId(s._id);
-                    setInvoiceForm(f => ({ ...f, amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }));
+                    const start = s.cycleStartDate ? new Date(s.cycleStartDate.getTime() - (s.cycleStartDate.getTimezoneOffset() * 60000)).toISOString().split("T")[0] : "";
+                    let end = "";
+                    if (s.cycleStartDate) {
+                      const e = new Date(s.cycleStartDate);
+                      e.setMonth(e.getMonth() + 3);
+                      end = new Date(e.getTime() - (e.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+                    }
+                    setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end }));
                     setShowGenerateModal(true);
                   }}>New Bill</button>
                 </div>
@@ -1001,7 +1152,7 @@ const StudentFees = () => {
 
       {/* ── Generate Invoice Modal ── */}
       {showGenerateModal && activeStudent && (
-        <ModalOverlay onClose={() => setShowGenerateModal(false)}>
+        <ModalOverlay onClose={() => setShowGenerateModal(false)} zIndex={120}>
           <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-xl relative flex flex-col border border-[#BEC5AD]/30 sf-fade-up" style={{ fontFamily: "Inter", maxHeight: '90vh' }}>
             <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-6 flex flex-col justify-center relative shrink-0">
               <button onClick={() => setShowGenerateModal(false)} className="absolute top-4 right-4 text-black/70 hover:text-black transition-colors" style={{ background: "transparent", border: "none", cursor: "pointer" }}>
@@ -1011,7 +1162,7 @@ const StudentFees = () => {
               <p className="text-sm text-gray-800 m-0 mt-1 font-medium">Generating invoice for {activeStudent.studentName}</p>
 
             </div>
-            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1, background: "#f4f6f0" }} className="sf-modal-content">
+            <form onSubmit={handleGenerateInvoice} style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1, background: "#f4f6f0" }} className="sf-modal-content hide-scrollbar">
               {/* ── Security Deposit Status ── */}
               {(() => {
                 const depositInv = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit");
@@ -1044,44 +1195,115 @@ const StudentFees = () => {
                   </p>
                 </div>
               )}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <ModalField label="Fee Category">
+              <div className="space-y-4 bg-[#F8FAF5] p-4 rounded-xl border border-[#BEC5AD]/40 mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-[#3E4B28] uppercase tracking-widest">Fee Items</span>
+                  <button type="button" onClick={() => {
+                    setInvoiceForm({
+                      ...invoiceForm,
+                      items: [...invoiceForm.items, { invoiceType: "other", customInvoiceType: "", amount: "" }]
+                    });
+                  }} className="text-[#3E4B28] hover:bg-[#BEC5AD]/30 px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-colors">
+                    <FiPlus size={14} /> Add Item
+                  </button>
+                </div>
+                {invoiceForm.items.map((item, index) => (
+                  <div key={index} className="relative bg-white p-3 rounded-lg border border-[#BEC5AD]/30 shadow-sm">
+                    {invoiceForm.items.length > 1 && (
+                      <button type="button" onClick={() => {
+                        const newItems = invoiceForm.items.filter((_, i) => i !== index);
+                        setInvoiceForm({...invoiceForm, items: newItems});
+                      }} className="absolute -top-2 -right-2 bg-red-50 text-red-600 rounded-full p-1 hover:bg-red-100 border border-red-200 transition-colors z-10" title="Remove Item">
+                        <FiX size={14} />
+                      </button>
+                    )}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                      <ModalField label={`Item ${index + 1} Category`}>
+                        <select 
+                          style={css.input} 
+                          value={item.invoiceType} 
+                          onChange={e => {
+                            const type = e.target.value;
+                            let amt = item.amount;
+                            if (type === "security_deposit") amt = String(activeStudent.depositAmount);
+                            else if (type === "hostel_fee") amt = String(activeStudent.quarterlyFee);
+                            const newItems = [...invoiceForm.items];
+                            newItems[index] = { ...newItems[index], invoiceType: type, amount: amt };
+                            setInvoiceForm({ ...invoiceForm, items: newItems });
+                          }}
+                        >
+                          <option value="hostel_fee">Hostel Fee</option>
+                          <option value="mess_fee">Mess Fee</option>
+                          {(() => {
+                            const isPaid = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit")?.status === "paid";
+                            return (
+                              <option value="security_deposit" disabled={isPaid}>
+                                Security Deposit {isPaid ? "(Paid)" : ""}
+                              </option>
+                            );
+                          })()}
+                          <option value="maintenance_fee">Maintenance</option>
+                          <option value="other">Custom (Other)</option>
+                        </select>
+                      </ModalField>
+                      <ModalField label="Amount (₹)">
+                        <div style={{ position: "relative" }}>
+                          <HiOutlineCurrencyRupee size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
+                          <input style={{ ...css.input, paddingLeft: 44 }} type="number" required value={item.amount} onChange={e => {
+                            const newItems = [...invoiceForm.items];
+                            newItems[index] = { ...newItems[index], amount: e.target.value };
+                            setInvoiceForm({ ...invoiceForm, items: newItems });
+                          }} />
+                        </div>
+                      </ModalField>
+                    </div>
+                    {item.invoiceType === "other" && (
+                      <div className="mt-3">
+                        <ModalField label="Custom Category Name">
+                          <input style={css.input} type="text" placeholder="e.g. Gym Fee, Laundry..." required value={item.customInvoiceType} onChange={e => {
+                            const newItems = [...invoiceForm.items];
+                            newItems[index] = { ...newItems[index], customInvoiceType: e.target.value };
+                            setInvoiceForm({ ...invoiceForm, items: newItems });
+                          }} />
+                        </ModalField>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-4">
+                <ModalField label="Select Billing Cycle">
                   <select 
                     style={css.input} 
-                    value={invoiceForm.invoiceType} 
+                    value={invoiceForm.billingCycleStart ? `${invoiceForm.billingCycleStart}|${invoiceForm.billingCycleEnd}` : ""}
                     onChange={e => {
-                      const type = e.target.value;
-                      let amt = invoiceForm.amount;
-                      if (type === "security_deposit") amt = String(activeStudent.depositAmount);
-                      else if (type === "hostel_fee") amt = String(activeStudent.quarterlyFee);
-                      setInvoiceForm({ ...invoiceForm, invoiceType: type, amount: amt });
+                      const val = e.target.value;
+                      if (!val) {
+                        setInvoiceForm({ ...invoiceForm, billingCycleStart: "", billingCycleEnd: "" });
+                      } else {
+                        const [start, end] = val.split("|");
+                        setInvoiceForm({ ...invoiceForm, billingCycleStart: start, billingCycleEnd: end });
+                      }
                     }}
                   >
-                    <option value="hostel_fee">Hostel Fee</option>
-                    <option value="mess_fee">Mess Fee</option>
-                    {(() => {
-                      const isPaid = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit")?.status === "paid";
-                      return (
-                        <option value="security_deposit" disabled={isPaid}>
-                          Security Deposit {isPaid ? "(Paid)" : ""}
-                        </option>
-                      );
-                    })()}
-                    <option value="maintenance_fee">Maintenance</option>
-                    <option value="other">Custom (Other)</option>
+                    <option value="">-- Custom / No Specific Cycle --</option>
+                    {availableBillingCycles.map((cycle, i) => (
+                      <option key={i} value={`${cycle.start}|${cycle.end}`} disabled={cycle.isPaid} style={{ color: cycle.isPaid ? "#059669" : "inherit" }}>
+                        {cycle.display} {cycle.isPaid ? "✅ (Paid)" : "⏳ (Unpaid)"}
+                      </option>
+                    ))}
                   </select>
                 </ModalField>
-                {invoiceForm.invoiceType === "other" && (
-                  <ModalField label="Custom Category Name">
-                    <input style={css.input} type="text" placeholder="e.g. Gym Fee, Laundry..." required value={invoiceForm.customInvoiceType} onChange={e => setInvoiceForm({ ...invoiceForm, customInvoiceType: e.target.value })} />
-                  </ModalField>
-                )}
-                <ModalField label="Amount (₹)">
-                  <div style={{ position: "relative" }}>
-                    <HiOutlineCurrencyRupee size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
-                    <input style={{ ...css.input, paddingLeft: 44 }} type="number" required value={invoiceForm.amount} onChange={e => setInvoiceForm({ ...invoiceForm, amount: e.target.value })} />
+                {(!invoiceForm.billingCycleStart || availableBillingCycles.length === 0) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <ModalField label="Custom Start Date">
+                      <input style={css.input} type="date" value={invoiceForm.billingCycleStart} onChange={e => setInvoiceForm({ ...invoiceForm, billingCycleStart: e.target.value })} />
+                    </ModalField>
+                    <ModalField label="Custom End Date">
+                      <input style={css.input} type="date" value={invoiceForm.billingCycleEnd} onChange={e => setInvoiceForm({ ...invoiceForm, billingCycleEnd: e.target.value })} />
+                    </ModalField>
                   </div>
-                </ModalField>
+                )}
               </div>
               <ModalField label="Due Date">
                 <input style={css.input} type="date" required value={invoiceForm.dueDate} onChange={e => setInvoiceForm({ ...invoiceForm, dueDate: e.target.value })} />
@@ -1116,8 +1338,16 @@ const StudentFees = () => {
                       <span className="bg-[#EF4444] text-white text-[11px] font-bold px-6 py-1 rounded-sm shadow-sm tracking-wider">UNPAID</span>
                     </div>
 
-                    {/* Details Box */}
+                    {/* Combined Details Box */}
                     <div className="border border-[#a8b096]/50 rounded-sm p-3 mb-4">
+                      {/* Billed To Section */}
+                      <div className="mb-3 pb-3 border-b border-[#a8b096]/30">
+                        <p className="text-[9px] font-bold text-[#64748B] uppercase m-0 mb-1">Billed To</p>
+                        <p className="text-[12px] font-bold text-[#1E293B] m-0 capitalize">{activeStudent?.studentName || "Student Name"}</p>
+                        <p className="text-[10px] text-[#64748B] m-0 mt-0.5">ID: {activeStudent?.studentId || "—"} | Room: {activeStudent?.roomBedNumber || "—"}</p>
+                      </div>
+
+                      {/* Invoice Info Section */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Invoice Number</p>
@@ -1141,20 +1371,102 @@ const StudentFees = () => {
                         <span className="text-[9px] font-bold text-[#64748B] uppercase">Amount</span>
                       </div>
                       <div className="p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-[13px] font-bold text-[#1E293B] m-0 capitalize">{(invoiceForm.invoiceType === "other" ? (invoiceForm.customInvoiceType || "Custom Fee") : invoiceForm.invoiceType).replace(/_/g, " ")}</p>
-                          <p className="text-[13px] font-bold text-[#1E293B] m-0 whitespace-nowrap">Rs. {Number(invoiceForm.amount || 0).toLocaleString("en-IN")}</p>
-                        </div>
-                        <div className="text-[10px] text-[#64748B] mb-4 whitespace-pre-wrap leading-tight">
+                        {invoiceForm.items.map((item, idx) => {
+                          const categoryName = (item.invoiceType === "other" ? (item.customInvoiceType || "Custom Fee") : item.invoiceType).replace(/_/g, " ");
+                          let itemDesc = null;
+                          if (item.invoiceType === "security_deposit") {
+                            itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">One-time refundable security deposit based on admission criteria. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Seater room)</p>;
+                          }
+                          else if (item.invoiceType === "hostel_fee") {
+                            let monthBreakdown = null;
+                            if (invoiceForm.billingCycleStart) {
+                              const months = [];
+                              for (let i = 0; i < 3; i++) {
+                                const start = new Date(invoiceForm.billingCycleStart);
+                                start.setMonth(start.getMonth() + i);
+                                const end = new Date(start);
+                                end.setMonth(end.getMonth() + 1);
+                                end.setDate(end.getDate() - 1);
+                                const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                                months.push(
+                                  <div key={i} className="flex justify-between w-full mt-1">
+                                    <span className="text-[8.5px] font-medium">• {fmt(start)} - {fmt(end)}</span>
+                                    <span className="text-[8.5px] font-medium">Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}</span>
+                                  </div>
+                                );
+                              }
+                              monthBreakdown = <div className="mt-2 pt-1 border-t border-[#a8b096]/20">{months}</div>;
+                            }
+                            itemDesc = (
+                              <div className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight w-full">
+                                <p className="m-0">Quarterly hostel fee allocation for Room {activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Seater room)</p>
+                                {monthBreakdown}
+                              </div>
+                            );
+                          }
+                          else if (item.invoiceType === "mess_fee") {
+                            itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">Standard monthly mess and dining charges.</p>;
+                          }
+                          else if (item.invoiceType === "maintenance_fee") {
+                            itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">Periodic maintenance and facility usage charges.</p>;
+                          }
+
+                          return (
+                            <div key={idx} className="mb-3">
+                              <div className="flex justify-between items-start">
+                                <p className="text-[13px] font-bold text-[#1E293B] m-0 capitalize">{categoryName}</p>
+                                <p className="text-[13px] font-bold text-[#1E293B] m-0 whitespace-nowrap">Rs. {Number(item.amount || 0).toLocaleString("en-IN")}</p>
+                              </div>
+                              {itemDesc}
+                            </div>
+                          );
+                        })}
+                        <div className="text-[10px] text-[#64748B] mb-4 mt-2 whitespace-pre-wrap leading-tight">
                           {invoiceForm.description || "Generated for current billing cycle."}
                         </div>
                         <div className="text-[10px] text-[#64748B] mb-2">
                           UTR / Ref: -
                         </div>
                       </div>
+                      {(() => {
+                        const displayPendingFees = activeStudent?.allInvoices?.reduce((sum, inv) => {
+                          if (inv.status === 'paid' || inv._id === editingInvoiceId) return sum;
+                          return sum + Math.max(0, (inv.amount || 0) - (inv.paidAmount || 0));
+                        }, 0) || 0;
+                        
+                        return displayPendingFees > 0 ? (
+                          <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 pb-2 pt-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[11px] font-bold text-red-600/90 uppercase tracking-wide">Previous Balance (Arrears)</span>
+                              <span className="text-[12px] font-bold text-red-600/90">+ Rs. {displayPendingFees.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className="pl-2 border-l-2 border-red-200 mt-2 space-y-1">
+                              {activeStudent.allInvoices?.filter(inv => inv.status !== 'paid' && inv._id !== editingInvoiceId).map((inv, idx) => {
+                                const pending = (inv.amount || 0) - (inv.paidAmount || 0);
+                                if (pending <= 0) return null;
+                                return (
+                                  <div key={idx} className="flex justify-between text-[9px] text-red-500/80 mb-1">
+                                    <span>• Previous {inv.invoiceType?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} - {new Date(inv.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                    <span>Rs. {pending.toLocaleString("en-IN")}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
                       <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
                         <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Payable</span>
-                        <span className="text-[13px] font-black text-[#1E293B]">Rs. {Number(invoiceForm.amount || 0).toLocaleString("en-IN")}</span>
+                        {(() => {
+                          const displayPendingFees = activeStudent?.allInvoices?.reduce((sum, inv) => {
+                            if (inv.status === 'paid' || inv._id === editingInvoiceId) return sum;
+                            return sum + Math.max(0, (inv.amount || 0) - (inv.paidAmount || 0));
+                          }, 0) || 0;
+                          const currentFormTotal = invoiceForm.items.reduce((s, i) => s + Number(i.amount || 0), 0);
+                          return (
+                            <span className="text-[13px] font-black text-[#1E293B]">Rs. {(currentFormTotal + displayPendingFees).toLocaleString("en-IN")}</span>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -1201,7 +1513,7 @@ const StudentFees = () => {
             </div>
 
             {/* Ledger Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#f4f6f0" }} className="sf-modal-content">
+            <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "#f4f6f0" }} className="sf-modal-content hide-scrollbar">
               {/* Summary Cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 40 }} className="sf-ledger-stats">
                 {[
@@ -1288,6 +1600,25 @@ const StudentFees = () => {
                             <HiOutlineEye size={16} />
                           </button>
 
+                          {inv.status === "pending" && (!inv.paidAmount || inv.paidAmount === 0) && (
+                            <>
+                              <button
+                                style={{ ...css.btnSecondary, padding: "8px 12px", color: T.accent, borderColor: T.accent }}
+                                onClick={() => handleEditInvoice(inv)}
+                                title="Edit Invoice"
+                              >
+                                <HiOutlinePencil size={16} />
+                              </button>
+                              <button
+                                style={{ ...css.btnSecondary, padding: "8px 12px", color: "#DC2626", borderColor: "#FCA5A5" }}
+                                onClick={() => handleDeleteInvoice(inv)}
+                                title="Delete Invoice"
+                              >
+                                <HiOutlineTrash size={16} />
+                              </button>
+                            </>
+                          )}
+
                           {inv.status !== "paid" && (
                             <div style={{ display: "flex", gap: 8 }}>
                               <button
@@ -1331,107 +1662,176 @@ const StudentFees = () => {
       {/* ── Invoice Detail Modal ── */}
       {selectedInvoice && (
         <ModalOverlay onClose={() => setSelectedInvoice(null)}>
-          <div className="sf-fade-up" style={{ ...css.glassCard, width: "100%", maxWidth: 520, maxHeight: "90vh", padding: 0, overflowY: "auto" }}>
-            {/* Invoice Header */}
-            <div style={{
-              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
-              padding: "32px 32px 28px", color: "#fff", position: "relative"
-            }} className="sf-modal-header-main">
-              <button
-                onClick={() => setSelectedInvoice(null)}
-                style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer" }}
-              >
-                <HiOutlineX size={18} color="#fff" />
-              </button>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.7, marginBottom: 6 }}>
-                    KGF Hostel Management
-                  </p>
-                  <p style={{ fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: "-0.01em" }}>
-                    {selectedInvoice.invoiceNumber || "Invoice"}
-                  </p>
-                  {selectedInvoice.description && (
-                    <p style={{ fontSize: 13, opacity: 0.75, margin: "4px 0 0" }}>
-                      {selectedInvoice.description}
-                    </p>
-                  )}
+          <div className="sf-fade-up hide-scrollbar" style={{ ...css.glassCard, width: "100%", maxWidth: 520, maxHeight: "90vh", padding: 0, overflowY: "auto" }}>
+            {/* ── Invoice Details styled like the Preview ── */}
+            <div className="bg-white shadow-md mx-auto w-full" style={{ fontFamily: 'Arial, sans-serif' }}>
+              {/* Header */}
+              <div className="bg-[#a8b096] p-4 flex items-center justify-between h-[100px] relative">
+                <button
+                  onClick={() => setSelectedInvoice(null)}
+                  style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.1)", border: "none", borderRadius: 10, padding: 6, cursor: "pointer" }}
+                >
+                  <HiOutlineX size={18} color="#1A1F16" />
+                </button>
+                <div className="bg-white p-1 h-16 w-16 flex items-center justify-center">
+                  <img src="/photos/logo1.svg" alt="Logo" className="max-h-full max-w-full" onError={(e) => e.target.style.display='none'} />
                 </div>
-                <StatusBadge status={selectedInvoice.status} />
-              </div>
-            </div>
-
-            {/* Invoice Body */}
-            <div style={{ padding: 32 }}>
-              {/* Billed To / Date Row */}
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, marginBottom: 6 }}>Billed To</p>
-                  <p style={{ fontWeight: 800, fontSize: 15, color: T.text, margin: 0 }}>{activeStudent?.studentName}</p>
-                  <p style={{ fontSize: 12, color: T.textMuted, margin: "2px 0 0" }}>
-                    {activeStudent?.studentId} • Room {activeStudent?.roomBedNumber || "N/A"}
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, marginBottom: 6 }}>Due Date</p>
-                  <p style={{ fontWeight: 800, fontSize: 15, color: T.text, margin: 0 }}>
-                    {new Date(selectedInvoice.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
-                  </p>
+                <div className="text-center flex-1 px-2 mt-2">
+                  <h2 className="text-lg font-black text-[#1A1F16] m-0 leading-tight">KGF Boys Hostel</h2>
+                  <p className="text-xs font-semibold text-[#3E4B28] m-0">Kokan Global Foundation</p>
+                  <p className="text-[10px] italic font-semibold text-gray-700 m-0 mt-0.5">Official Invoice</p>
+                  <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Hostel, Ground Floor, Admin Block</p>
                 </div>
               </div>
 
-              {/* ── FIX: Detail grid shows correct paid / remaining ── */}
-              {(() => {
-                const invPaid = selectedInvoice.status === "paid"
-                  ? (selectedInvoice.paidAmount > 0 ? selectedInvoice.paidAmount : selectedInvoice.amount)
-                  : (selectedInvoice.paidAmount || 0);
-                const invRemaining = Math.max(0, (selectedInvoice.amount || 0) - invPaid);
+              {/* Body */}
+              <div className="px-5 pb-5 pt-0 bg-white">
+                
+                {/* Status Badge */}
+                <div className="flex justify-center -mt-3 mb-5 relative z-10">
+                  <span className={`text-white text-[11px] font-bold px-6 py-1 rounded-sm shadow-sm tracking-wider ${selectedInvoice.status === 'paid' ? 'bg-[#10B981]' : selectedInvoice.status === 'pending_verification' ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'}`}>
+                    {selectedInvoice.status.replace(/_/g, " ").toUpperCase()}
+                  </span>
+                </div>
 
-                return (
-                  <>
-                    <div style={{
-                      display: "grid", gridTemplateColumns: "1fr 1fr",
-                      border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
-                      marginBottom: 24
-                    }} className="sf-mobile-amount-box">
-                      {[
-                        { label: "Fee Type", value: selectedInvoice.invoiceType?.replace(/_/g, " ") || "—" },
-                        { label: "Paid So Far", value: formatCurrency(invPaid) },
-                        { label: "Remaining", value: formatCurrency(invRemaining) },
-                        { label: "Payment Method", value: selectedInvoice.paymentMethod || (selectedInvoice.status === "paid" ? "Recorded" : "Awaited") },
-                        { label: "Invoice Date", value: selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString("en-IN") : "—" },
-                        { label: "Academic Year", value: `FY ${selectedYear}–${selectedYear + 1}` },
-                      ].map((item, i) => (
-                        <div key={i} style={{
-                          padding: "14px 18px",
-                          background: i % 2 === 0 ? "#fff" : "#FAFAFA",
-                          borderBottom: i < 4 ? `1px solid ${T.border}` : "none",
-                          borderRight: i % 2 === 0 ? `1px solid ${T.border}` : "none"
-                        }}>
-                          <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: T.textMuted, margin: "0 0 4px" }}>
-                            {item.label}
-                          </p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, textTransform: "capitalize" }}>
-                            {item.value}
-                          </p>
+                {/* Combined Details Box */}
+                <div className="border border-[#a8b096]/50 rounded-sm p-3 mb-4">
+                  {/* Billed To Section */}
+                  <div className="mb-3 pb-3 border-b border-[#a8b096]/30">
+                    <p className="text-[9px] font-bold text-[#64748B] uppercase m-0 mb-1">Billed To</p>
+                    <p className="text-[12px] font-bold text-[#1E293B] m-0 capitalize">{selectedInvoice.studentId?.firstName || activeStudent?.studentName} {selectedInvoice.studentId?.lastName || ""}</p>
+                    <p className="text-[10px] text-[#64748B] m-0 mt-0.5">ID: {selectedInvoice.studentId?.studentId || activeStudent?.studentId || "—"} | Room: {activeStudent?.roomBedNumber || "—"}</p>
+                  </div>
+
+                  {/* Invoice Info Section */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Invoice Number</p>
+                      <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">{selectedInvoice.invoiceNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Date Issued</p>
+                      <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">{new Date(selectedInvoice.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-[9px] font-bold text-[#64748B] uppercase m-0">Due Date</p>
+                    <p className="text-[11px] font-bold text-[#1E293B] m-0 mt-0.5">{new Date(selectedInvoice.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
+
+                {/* Items Box */}
+                <div className="border border-[#a8b096]/50 rounded-sm mb-4">
+                  <div className="flex justify-between border-b border-[#a8b096]/50 bg-[#F8FAF5] p-2 px-3">
+                    <span className="text-[9px] font-bold text-[#64748B] uppercase">Description</span>
+                    <span className="text-[9px] font-bold text-[#64748B] uppercase">Amount</span>
+                  </div>
+                  <div className="p-3">
+                    {selectedInvoice.items && selectedInvoice.items.length > 0 ? selectedInvoice.items.map((item, idx) => {
+                      const categoryName = (item.categoryName || item.invoiceType || "Item").replace(/_/g, " ");
+                      let itemDesc = null;
+                      if (item.categoryName === "security_deposit" || item.invoiceType === "security_deposit") {
+                        itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">One-time refundable security deposit based on admission criteria.</p>;
+                      }
+                      else if (item.categoryName === "hostel_fee" || item.invoiceType === "hostel_fee") {
+                        let monthBreakdown = null;
+                        if (selectedInvoice.billingCycleStart) {
+                          const months = [];
+                          for (let i = 0; i < 3; i++) {
+                            const start = new Date(selectedInvoice.billingCycleStart);
+                            start.setMonth(start.getMonth() + i);
+                            const end = new Date(start);
+                            end.setMonth(end.getMonth() + 1);
+                            end.setDate(end.getDate() - 1);
+                            const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                            months.push(
+                              <div key={i} className="flex justify-between w-full mt-1">
+                                <span className="text-[8.5px] font-medium">• {fmt(start)} - {fmt(end)}</span>
+                                <span className="text-[8.5px] font-medium">Rs. {Math.round(item.amount / 3).toLocaleString("en-IN")}</span>
+                              </div>
+                            );
+                          }
+                          monthBreakdown = <div className="mt-2 pt-1 border-t border-[#a8b096]/20">{months}</div>;
+                        }
+                        itemDesc = (
+                          <div className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight w-full">
+                            <p className="m-0">Quarterly hostel fee allocation.</p>
+                            {monthBreakdown}
+                          </div>
+                        );
+                      }
+                      else if (item.categoryName === "mess_fee" || item.invoiceType === "mess_fee") {
+                        itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">Standard monthly mess and dining charges.</p>;
+                      }
+                      else if (item.categoryName === "maintenance_fee" || item.invoiceType === "maintenance_fee") {
+                        itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">Periodic maintenance and facility usage charges.</p>;
+                      }
+
+                      return (
+                        <div key={idx} className="mb-3">
+                          <div className="flex justify-between items-start">
+                            <p className="text-[13px] font-bold text-[#1E293B] m-0 capitalize">{categoryName}</p>
+                            <p className="text-[13px] font-bold text-[#1E293B] m-0 whitespace-nowrap">Rs. {Number(item.amount || 0).toLocaleString("en-IN")}</p>
+                          </div>
+                          {itemDesc}
                         </div>
-                      ))}
+                      );
+                    }) : (
+                      <div className="mb-3">
+                        <div className="flex justify-between items-start">
+                          <p className="text-[13px] font-bold text-[#1E293B] m-0 capitalize">{selectedInvoice.invoiceType?.replace(/_/g, " ") || "Combined Invoice"}</p>
+                          <p className="text-[13px] font-bold text-[#1E293B] m-0 whitespace-nowrap">Rs. {Number(selectedInvoice.amount || 0).toLocaleString("en-IN")}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-[10px] text-[#64748B] mb-4 mt-2 whitespace-pre-wrap leading-tight">
+                      {selectedInvoice.description || "Generated for current billing cycle."}
                     </div>
-
-                    {/* Amount Box */}
-                    <div style={{
-                      background: "#F1F3EE", borderRadius: 16, padding: "18px 24px",
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
-                      marginBottom: 28
-                    }}>
-                      <p style={{ fontWeight: 700, color: T.textMuted, fontSize: 14, margin: 0 }}>Total Amount</p>
-                      <p style={{ fontWeight: 900, fontSize: 28, color: T.text, margin: 0, letterSpacing: "-0.02em" }}>
-                        {formatCurrency(selectedInvoice.amount)}
-                      </p>
+                    <div className="text-[10px] text-[#64748B] mb-2">
+                      UTR / Ref: {selectedInvoice.transactionId || "-"}
                     </div>
+                  </div>
+                  <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
+                    <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Invoice Amount</span>
+                    <span className="text-[13px] font-black text-[#1E293B]">Rs. {(selectedInvoice.amount || 0).toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
 
-                    {/* Actions */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* ── FIX: Detail grid shows correct paid / remaining ── */}
+                {(() => {
+                  const invPaid = selectedInvoice.status === "paid"
+                    ? (selectedInvoice.paidAmount > 0 ? selectedInvoice.paidAmount : selectedInvoice.amount)
+                    : (selectedInvoice.paidAmount || 0);
+                  const invRemaining = Math.max(0, (selectedInvoice.amount || 0) - invPaid);
+
+                  return (
+                    <>
+                      <div style={{
+                        display: "grid", gridTemplateColumns: "1fr 1fr",
+                        border: `1px solid ${T.border}`, borderRadius: 8, overflow: "hidden",
+                        marginBottom: 24
+                      }}>
+                        {[
+                          { label: "Paid So Far", value: formatCurrency(invPaid) },
+                          { label: "Remaining", value: formatCurrency(invRemaining) },
+                        ].map((item, i) => (
+                          <div key={i} style={{
+                            padding: "10px 14px",
+                            background: i % 2 === 0 ? "#fff" : "#FAFAFA",
+                            borderRight: i === 0 ? `1px solid ${T.border}` : "none"
+                          }}>
+                            <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: T.textMuted, margin: "0 0 2px" }}>
+                              {item.label}
+                            </p>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: 0 }}>
+                              {item.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {selectedInvoice.status !== "paid" && invRemaining > 0 && (
                         selectedInvoice.status === 'pending_verification' ? (
                           <div style={{ background: "#F8FAF5", padding: 20, borderRadius: 20, border: `1.5px solid ${T.accent}40`, marginBottom: 8 }} className="sf-verification-panel animate-fade-in">
@@ -1569,6 +1969,29 @@ const StudentFees = () => {
                 );
               })()}
             </div>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {alertModalMsg && (
+        <ModalOverlay onClose={() => setAlertModalMsg("")} zIndex={130}>
+          <div style={{ ...css.glassCard, maxWidth: "400px", width: "100%", textAlign: "center", padding: "30px 24px" }}>
+            <div style={{ color: T.red, marginBottom: "16px" }}>
+              <HiOutlineExclamationCircle size={48} style={{ margin: "0 auto" }} />
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: "700", color: T.text, marginBottom: "12px" }}>
+              Notice
+            </h3>
+            <p style={{ fontSize: "14px", color: T.textMuted, marginBottom: "24px", lineHeight: "1.5" }}>
+              {alertModalMsg}
+            </p>
+            <button
+              style={{ ...css.btnPrimary, width: "100%", justifyContent: "center" }}
+              onClick={() => setAlertModalMsg("")}
+            >
+              OK
+            </button>
           </div>
         </ModalOverlay>
       )}
@@ -1577,10 +2000,10 @@ const StudentFees = () => {
 };
 
 // ── Reusable Sub-Components ───────────────────────────────────────────────────
-const ModalOverlay = ({ children, onClose }) => (
+const ModalOverlay = ({ children, onClose, zIndex = 110 }) => (
   <div
     style={{
-      position: "fixed", inset: 0, zIndex: 110,
+      position: "fixed", inset: 0, zIndex,
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "20px", background: "rgba(30,40,20,0.4)", backdropFilter: "blur(8px)"
     }}
