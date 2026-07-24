@@ -1842,26 +1842,30 @@ const StudentFees = () => {
                         Payment Method: <span className="capitalize">{selectedInvoice.paymentMethod.replace(/_/g, " ")}</span>
                       </div>
                     )}
-                    {selectedInvoice.paymentMethod === 'online' && (selectedInvoice.parentScreenshot || selectedInvoice.adminScreenshot) && (
-                      <div className="mt-4 flex gap-4">
-                        {selectedInvoice.parentScreenshot && (
-                          <div className="flex-1 text-center">
-                            <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Student Receipt</p>
-                            <a href={selectedInvoice.parentScreenshot.startsWith('http') ? selectedInvoice.parentScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.parentScreenshot}`} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
-                              <img src={selectedInvoice.parentScreenshot.startsWith('http') ? selectedInvoice.parentScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.parentScreenshot}`} alt="Student Receipt" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
-                            </a>
-                          </div>
-                        )}
-                        {selectedInvoice.adminScreenshot && (
-                          <div className="flex-1 text-center">
-                            <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Admin SMS</p>
-                            <a href={selectedInvoice.adminScreenshot.startsWith('http') ? selectedInvoice.adminScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.adminScreenshot}`} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
-                              <img src={selectedInvoice.adminScreenshot.startsWith('http') ? selectedInvoice.adminScreenshot : `${process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000'}${selectedInvoice.adminScreenshot}`} alt="Admin SMS" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {selectedInvoice.paymentMethod === 'online' && (selectedInvoice.parentScreenshot || selectedInvoice.adminScreenshot) && (() => {
+                      const baseUrl = (process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+                      const toUrl = (p) => p.startsWith('http') ? p : `${baseUrl}/${p.replace(/^\/+/, '')}`;
+                      return (
+                        <div className="mt-4 flex gap-4">
+                          {selectedInvoice.parentScreenshot && (
+                            <div className="flex-1 text-center">
+                              <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Student Receipt</p>
+                              <a href={toUrl(selectedInvoice.parentScreenshot)} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
+                                <img src={toUrl(selectedInvoice.parentScreenshot)} alt="Student Receipt" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
+                              </a>
+                            </div>
+                          )}
+                          {selectedInvoice.adminScreenshot && (
+                            <div className="flex-1 text-center">
+                              <p className="text-[10px] font-bold text-[#64748B] uppercase mb-1">Admin SMS</p>
+                              <a href={toUrl(selectedInvoice.adminScreenshot)} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80 transition">
+                                <img src={toUrl(selectedInvoice.adminScreenshot)} alt="Admin SMS" className="w-full h-24 object-contain bg-gray-50 border border-gray-200 rounded-md cursor-pointer" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
                     <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Invoice Amount</span>
@@ -1917,19 +1921,22 @@ const StudentFees = () => {
                                 <p style={{ margin: 0, fontWeight: 700, color: T.text }}>
                                   Submitted UTR: <span style={{ color: "#C2410C", fontFamily: "monospace", fontSize: 13, fontWeight: 800 }}>{selectedInvoice.transactionId}</span>
                                 </p>
-                                {selectedInvoice.parentScreenshot && (
+                                {selectedInvoice.parentScreenshot && (() => {
+                                  const _base = (process.env.NEXT_PUBLIC_PROD_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+                                  const _psUrl = selectedInvoice.parentScreenshot.startsWith('http') ? selectedInvoice.parentScreenshot : `${_base}/${selectedInvoice.parentScreenshot.replace(/^\/+/, '')}`;
+                                  return (
                                   <div style={{ marginTop: 6 }}>
                                     <p style={{ margin: "0 0 4px 0", fontSize: 11, fontWeight: 700, color: T.textMuted }}>Parent Payment Screenshot:</p>
                                     <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                                      <div style={{ width: 80, height: 80, borderRadius: 8, overflow: "hidden", border: `1px solid ${T.border}`, background: "#F3F4F6", cursor: "zoom-in" }} onClick={() => window.open(`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`, '_blank')}>
+                                      <div style={{ width: 80, height: 80, borderRadius: 8, overflow: "hidden", border: `1px solid ${T.border}`, background: "#F3F4F6", cursor: "zoom-in" }} onClick={() => window.open(_psUrl, '_blank')}>
                                         <img 
-                                          src={`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`} 
+                                          src={_psUrl} 
                                           alt="Parent Receipt" 
                                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                         />
                                       </div>
                                       <a 
-                                        href={`${process.env.NEXT_PUBLIC_PROD_API_URL || ''}/${selectedInvoice.parentScreenshot}`} 
+                                        href={_psUrl} 
                                         target="_blank" 
                                         rel="noreferrer"
                                         style={{ fontSize: 11, color: T.accent, fontWeight: 700, textDecoration: "underline" }}
@@ -1938,7 +1945,8 @@ const StudentFees = () => {
                                       </a>
                                     </div>
                                   </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             </div>
 
