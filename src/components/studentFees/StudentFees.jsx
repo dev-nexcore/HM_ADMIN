@@ -242,10 +242,10 @@ const StudentFees = () => {
       `${student.firstName || ""} ${student.lastName || ""}`.trim() ||
       "Unknown Student";
 
-    const monthlyFee =
-      student.roomType === "5" ? 4500 :
-      student.roomType === "4" ? 5000 :
-      student.roomType === "3" ? 5500 : 0;
+    const isWorker = student.studentId?.startsWith("STUW");
+    const monthlyFee = isWorker
+      ? (student.roomType === "5" ? 6000 : student.roomType === "4" ? 6500 : student.roomType === "3" ? 7000 : 0)
+      : (student.roomType === "5" ? 4500 : student.roomType === "4" ? 5000 : student.roomType === "3" ? 5500 : 0);
     
     const depositAmount = monthlyFee * 3;
     const quarterlyFee = monthlyFee * 3;
@@ -1293,7 +1293,7 @@ const StudentFees = () => {
                       <ModalField label="Amount (₹)">
                         <div style={{ position: "relative" }}>
                           <HiOutlineCurrencyRupee size={18} color={T.textMuted} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
-                          <input style={{ ...css.input, paddingLeft: 44 }} type="number" required value={item.amount} onChange={e => {
+                          <input style={{ ...css.input, paddingLeft: 44 }} type="number" required value={item.amount} onWheel={(e) => e.target.blur()} onChange={e => {
                             const newItems = [...invoiceForm.items];
                             newItems[index] = { ...newItems[index], amount: e.target.value };
                             setInvoiceForm({ ...invoiceForm, items: newItems });
@@ -1419,7 +1419,7 @@ const StudentFees = () => {
                           const categoryName = (item.invoiceType === "other" ? (item.customInvoiceType || "Custom Fee") : item.invoiceType).replace(/_/g, " ");
                           let itemDesc = null;
                           if (item.invoiceType === "security_deposit") {
-                            itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">One-time refundable security deposit based on admission criteria. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Seater room)</p>;
+                            itemDesc = <p className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight">One-time refundable security deposit based on admission criteria. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Bed room)</p>;
                           }
                           else if (item.invoiceType === "hostel_fee") {
                             let monthBreakdown = null;
@@ -1443,7 +1443,7 @@ const StudentFees = () => {
                             }
                             itemDesc = (
                               <div className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight w-full">
-                                <p className="m-0">Quarterly hostel fee allocation for Room {activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Seater room)</p>
+                                <p className="m-0">Quarterly hostel fee allocation for Room {activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Bed room)</p>
                                 {monthBreakdown}
                               </div>
                             );
