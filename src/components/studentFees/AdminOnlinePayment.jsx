@@ -27,8 +27,8 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
   const hostelFeeItem = fee?.items?.find(i => i.invoiceType === 'hostel_fee' || i.categoryName === 'hostel_fee');
   const securityFeeItem = fee?.items?.find(i => i.invoiceType === 'security_deposit' || i.categoryName === 'security_deposit');
   
-  const isSecurityDeposit = fee?.invoiceType === 'security_deposit' || fee?.type?.toLowerCase().includes('security') || !!securityFeeItem;
-  const isHostelFee = fee?.invoiceType === 'hostel_fee' || fee?.type?.toLowerCase().includes('hostel') || !!hostelFeeItem;
+  const isSecurityDeposit = fee?.invoiceType === 'security_deposit' || fee?.type?.toLowerCase().includes('security');
+  const isHostelFee = fee?.invoiceType === 'hostel_fee' || fee?.type?.toLowerCase().includes('hostel');
   
   // Calculate remaining amount
   const invPaid = fee?.status === "paid" ? (fee?.paidAmount > 0 ? fee?.paidAmount : fee?.amount) : (fee?.paidAmount || 0);
@@ -364,12 +364,36 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                 <h4 className="text-sm sm:text-base font-bold text-gray-900">Invoice Details</h4>
               </div>
               <div className="space-y-3">
-                {(fee?.items || []).map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-sm font-semibold text-gray-700 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                    <span className="capitalize">{(item.customInvoiceType || item.invoiceType || item.categoryName || 'Fee').replace(/_/g, ' ')}</span>
-                    <span>₹ {Number(item.amount || 0).toLocaleString()}</span>
+                {fee?.items && fee.items.length > 0 ? (
+                  fee.items.map((item, idx) => {
+                    const catName = (item.customInvoiceType || item.invoiceType || item.categoryName || "Item");
+                    const displayName = catName.replace(/_/g, " ");
+                    const catLower = catName.toLowerCase();
+                    return (
+                      <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+                        <div>
+                          <span className="font-bold text-gray-900 block mb-1 text-sm capitalize">{displayName}</span>
+                          {catLower.includes('security') ? (
+                            <span className="text-[11px] text-gray-500 font-medium block">One-time refundable deposit</span>
+                          ) : catLower.includes('hostel') ? (
+                            <span className="text-[11px] text-gray-500 font-medium block">Quarterly hostel fee allocation</span>
+                          ) : (
+                            <span className="text-[11px] text-gray-500 font-medium block">Standard billing charge</span>
+                          )}
+                        </div>
+                        <span className="font-extrabold text-gray-800 text-base sm:text-lg mt-1">₹ {Number(item.amount || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+                    <div>
+                      <span className="font-bold text-gray-900 block mb-0.5 text-sm">Invoice Amount</span>
+                      <span className="text-[11px] text-gray-500 font-medium">Standard billing charge</span>
+                    </div>
+                    <span className="font-extrabold text-gray-800 text-base sm:text-lg">₹ {(fee?.amount || 0).toLocaleString('en-IN')}</span>
                   </div>
-                ))}
+                )}
                 
                 {fee?.description && (
                   <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded-lg border border-gray-200">

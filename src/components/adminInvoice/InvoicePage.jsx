@@ -40,7 +40,7 @@ export default function InvoicePage() {
 
   const filterData = (data, sectionName) => {
     let filtered = [...data];
-    
+
     // Filter by status (activeFilter)
     if (activeFilter === "pending") {
       filtered = filtered.filter(row => row[4] === "Pending" || row[4] === "Overdue");
@@ -51,12 +51,12 @@ export default function InvoicePage() {
     // Filter by search term (Student Name or Room No)
     if (searchTerm.trim() !== "") {
       const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(row => 
+      filtered = filtered.filter(row =>
         row[0].toLowerCase().includes(lowerSearch) || // Student Name
         row[1].toLowerCase().includes(lowerSearch)    // Room No
       );
     }
-    
+
     return filtered;
   };
 
@@ -436,7 +436,7 @@ export default function InvoicePage() {
 
           {/* Total Revenue */}
 
-          <div 
+          <div
             onClick={() => setActiveFilter("revenue")}
             className={`bg-white rounded-2xl p-5 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "revenue" ? "ring-2 ring-offset-2 ring-green-500" : ""}`}
           >
@@ -463,7 +463,7 @@ export default function InvoicePage() {
 
           {/* Pending Payments */}
 
-          <div 
+          <div
             onClick={() => setActiveFilter("pending")}
             className={`bg-white rounded-2xl p-5 border border-orange-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "pending" ? "ring-2 ring-offset-2 ring-orange-500" : ""}`}
           >
@@ -490,7 +490,7 @@ export default function InvoicePage() {
 
           {/* Total Invoices */}
 
-          <div 
+          <div
             onClick={() => setActiveFilter("total")}
             className={`bg-white rounded-2xl p-5 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "total" ? "ring-2 ring-offset-2 ring-blue-500" : ""}`}
           >
@@ -517,7 +517,7 @@ export default function InvoicePage() {
 
           {/* Paid Invoices */}
 
-          <div 
+          <div
             onClick={() => setActiveFilter("paid")}
             className={`bg-white rounded-2xl p-5 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer ${activeFilter === "paid" ? "ring-2 ring-offset-2 ring-purple-500" : ""}`}
           >
@@ -711,7 +711,7 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
         </div>
         {totalPages > 1 && (
           <div className="flex items-center gap-2 bg-white/20 p-1 rounded-lg">
-            <button 
+            <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               className="p-1.5 rounded-md hover:bg-white/30 disabled:opacity-50 text-black transition-all"
@@ -719,7 +719,7 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
               ←
             </button>
             <span className="text-xs font-bold text-black px-2">Page {currentPage} of {totalPages}</span>
-            <button 
+            <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               className="p-1.5 rounded-md hover:bg-white/30 disabled:opacity-50 text-black transition-all"
@@ -797,11 +797,11 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
                   <span className="text-xs font-semibold text-gray-500">{header}:</span>
                   <span className="ml-2 text-sm text-gray-700">
                     {idx === headers.length - 2 ? (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row[idx-1])}`}>
-                        {row[idx-1]}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row[idx - 1])}`}>
+                        {row[idx - 1]}
                       </span>
                     ) : (
-                      row[idx-1]
+                      row[idx - 1]
                     )}
                   </span>
                 </div>
@@ -832,7 +832,7 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
             Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, data.length)}</span> of <span className="font-medium">{data.length}</span> results
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
@@ -850,7 +850,7 @@ function InvoiceSection({ title, headers, data, loading, onView, onDownload }) {
                 </button>
               ))}
             </div>
-            <button 
+            <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
