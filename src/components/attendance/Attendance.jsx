@@ -135,35 +135,42 @@ const Attendance = () => {
   }, [filteredLogs]);
 
   const handleExport = () => {
-    if (groupedFilteredLogs.length === 0) {
-      toast.error('No records to export');
-      return;
+    try {
+      const headers = ['Name', 'ID', 'Category', 'Room/Designation', 'Direction', 'Date', 'Time', 'Device', 'Method'];
+      const csvContent = [
+        headers.join(','),
+        ...groupedFilteredLogs.map(log => {
+          const student = log.studentId;
+          const staff = log.staffId;
+          const warden = log.wardenId;
+          
+          let name = log.employeeCode || "Unknown";
+          if (student && student.firstName) name = `${student.firstName} ${student.lastName || ''}`;
+          else if (staff && staff.firstName) name = `${staff.firstName} ${staff.lastName || ''}`;
+          else if (warden && warden.firstName) name = `${warden.firstName} ${warden.lastName || ''}`;
+          
+          const id = student?.studentId || staff?.staffId || warden?.wardenId || log.employeeCode || '';
+          const room = activeTab === "staff" ? (staff?.designation || (warden ? "Warden" : "Staff")) : (student?.roomBedNumber?.roomNo || "-");
+          const date = log.timestamp ? new Date(log.timestamp).toLocaleDateString('en-IN') : "-";
+          const time = log.timestamp ? new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-";
+          
+          return `"${name}","${id}","${activeTab || ''}","${room}","${log.direction || ''}","${date}","${time}","${log.deviceName || ''}","${log.verificationType || ''}"`;
+        })
+      ].join('\n');
+      
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Attendance_${selectedDate || 'Export'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error('Failed to export data');
     }
-    const headers = ['Name', 'ID', 'Category', 'Room/Designation', 'Direction', 'Date', 'Time', 'Device', 'Method'];
-    const csvContent = [
-      headers.join(','),
-      ...groupedFilteredLogs.map(log => {
-        const student = log.studentId;
-        const staff = log.staffId;
-        const warden = log.wardenId;
-        const name = student ? `${student.firstName} ${student.lastName}` : (staff ? `${staff.firstName} ${staff.lastName}` : (warden ? `${warden.firstName} ${warden.lastName}` : (log.employeeCode || "Unknown")));
-        const id = student?.studentId || staff?.staffId || warden?.wardenId || log.employeeCode || '';
-        const room = activeTab === "staff" ? (staff?.designation || (warden ? "Warden" : "Staff")) : (student?.roomBedNumber?.roomNo || "-");
-        const date = new Date(log.timestamp).toLocaleDateString('en-IN');
-        const time = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        return `"${name}","${id}","${activeTab}","${room}","${log.direction}","${date}","${time}","${log.deviceName}","${log.verificationType}"`;
-      })
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Attendance_${selectedDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (

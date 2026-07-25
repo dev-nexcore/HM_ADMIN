@@ -125,10 +125,11 @@ const StaffAllotment = () => {
   };
 
   const validateStaffForm = (data) => {
-    if (!data.firstName.trim() || !/^[A-Za-z\s]+$/.test(data.firstName)) return "First Name must contain only letters and is required.";
-    if (!data.lastName.trim() || !/^[A-Za-z\s]+$/.test(data.lastName)) return "Last Name must contain only letters and is required.";
-    if (!data.emailId.trim() || !/\S+@\S+\.\S+/.test(data.emailId)) return "Valid Email is required.";
-    if (data.salary === "" || Number(data.salary) < 0) return "Salary Amount cannot be negative.";
+    if (!data.firstName || !data.firstName.trim() || !/^[A-Za-z\s]+$/.test(data.firstName)) return "First Name must contain only letters and is required.";
+    if (!data.lastName || !data.lastName.trim() || !/^[A-Za-z\s]+$/.test(data.lastName)) return "Last Name must contain only letters and is required.";
+    const email = data.emailId || data.email || "";
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) return "Valid Email is required.";
+    if (data.salary === "" || data.salary === undefined || data.salary === null || Number(data.salary) < 0) return "Salary Amount cannot be negative.";
     return null;
   };
 
@@ -496,7 +497,7 @@ const StaffAllotment = () => {
                       <div className="flex items-center justify-center gap-3">
                         <button onClick={() => { setSelectedWarden(person); setShowViewModal(true); }} className="text-gray-400 hover:text-blue-500 transition-colors"><Eye size={18} /></button>
                         <button onClick={() => { 
-                          activeTab === "warden" ? setEditFormData(person) : setEditFormData(person); 
+                          setEditFormData({ ...person, emailId: person.email }); 
                           setSelectedId(person.id); setShowEditModal(true); 
                         }} className="text-gray-400 hover:text-emerald-500 transition-colors"><Edit2 size={18} /></button>
                         <button onClick={() => { setSelectedId(person.id); setShowDeleteModal(true); }} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
