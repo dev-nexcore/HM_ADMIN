@@ -84,7 +84,8 @@ export default function LeaveRequestsPage() {
         reason:        leave.reason,
         status:        leave.status,
         adminComments: leave.adminComments || "",
-        wardenComments: leave.wardenComments || ""
+        wardenComments: leave.wardenComments || "",
+        parentComment: leave.parentComment || ""
       }));
 
       // Sort by latest first
@@ -422,6 +423,15 @@ export default function LeaveRequestsPage() {
                     </div>
                   </div>
                 </div>
+
+                {selectedLeave.parentComment && (
+                  <div className="mb-6">
+                    <p className="text-xs font-bold text-purple-500 uppercase tracking-wider mb-2">Parent Feedback</p>
+                    <div className="text-sm font-medium text-purple-800 bg-purple-50 px-4 py-3.5 rounded-xl border border-purple-200 shadow-sm whitespace-pre-wrap italic">
+                      "{selectedLeave.parentComment}"
+                    </div>
+                  </div>
+                )}
 
                 {selectedLeave.wardenComments && (
                   <div className="mb-6">

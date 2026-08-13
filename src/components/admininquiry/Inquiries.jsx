@@ -33,6 +33,9 @@ const Inquiries = () => {
   const [inquiryToDelete, setInquiryToDelete] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [inquiryToView, setInquiryToView] = useState(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [inquiryToReject, setInquiryToReject] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     setCurrentPage(1);
@@ -57,9 +60,13 @@ const Inquiries = () => {
     }
   };
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, reason = '') => {
     try {
-      const res = await api.put(`/api/inquiries/${id}/status`, { status });
+      const payload = { status };
+      if (status === 'rejected') {
+        payload.rejectReason = reason;
+      }
+      const res = await api.put(`/api/inquiries/${id}/status`, payload);
       if (res.data.success) {
         toast.success(`Status updated to ${status}`);
         fetchInquiries();
@@ -68,6 +75,24 @@ const Inquiries = () => {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
     }
+  };
+
+  const handleRejectClick = (item) => {
+    setInquiryToReject(item);
+    setRejectReason('');
+    setIsRejectModalOpen(true);
+  };
+
+  const confirmReject = async () => {
+    if (!inquiryToReject) return;
+    if (!rejectReason.trim()) {
+      toast.error('Please enter a reject reason');
+      return;
+    }
+    await updateStatus(inquiryToReject._id, 'rejected', rejectReason);
+    setIsRejectModalOpen(false);
+    setInquiryToReject(null);
+    setRejectReason('');
   };
 
   const deleteInquiry = (id) => {
@@ -249,7 +274,7 @@ const Inquiries = () => {
                             <div className="w-px h-4 bg-gray-300" />
                             <button onClick={() => updateStatus(item._id, 'converted')} className="text-emerald-500 hover:text-emerald-700 transition-colors" title="Mark as Converted"><ExternalLink size={18} /></button>
                             <div className="w-px h-4 bg-gray-300" />
-                            <button onClick={() => updateStatus(item._id, 'rejected')} className="text-rose-500 hover:text-rose-700 transition-colors" title="Mark as Rejected"><XCircle size={18} /></button>
+                            <button onClick={() => handleRejectClick(item)} className="text-rose-500 hover:text-rose-700 transition-colors" title="Mark as Rejected"><XCircle size={18} /></button>
                             <div className="w-px h-4 bg-gray-300" />
                             <button onClick={() => deleteInquiry(item._id)} className="text-red-500 hover:text-red-700 transition-colors" title="Delete"><Trash2 size={18} /></button>
                           </div>
@@ -296,7 +321,7 @@ const Inquiries = () => {
                         <button onClick={() => { setInquiryToView(item); setIsViewModalOpen(true); }} className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors text-sm" title="View"><Eye size={16} /></button>
                         <button onClick={() => updateStatus(item._id, 'contacted')} className="flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors text-sm" title="Contacted"><CheckCircle size={16} /></button>
                         <button onClick={() => updateStatus(item._id, 'converted')} className="flex items-center gap-1 text-emerald-500 hover:text-emerald-700 transition-colors text-sm" title="Converted"><ExternalLink size={16} /></button>
-                        <button onClick={() => updateStatus(item._id, 'rejected')} className="flex items-center gap-1 text-rose-500 hover:text-rose-700 transition-colors text-sm" title="Rejected"><XCircle size={16} /></button>
+                        <button onClick={() => handleRejectClick(item)} className="flex items-center gap-1 text-rose-500 hover:text-rose-700 transition-colors text-sm" title="Rejected"><XCircle size={16} /></button>
                       </div>
                       <button onClick={() => deleteInquiry(item._id)} className="flex items-center gap-1 text-red-500 hover:text-red-700 transition-colors text-sm" title="Delete"><Trash2 size={16} /></button>
                     </div>
@@ -396,6 +421,12 @@ const Inquiries = () => {
                       {new Date(inquiryToView.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
+                  {inquiryToView.status === 'rejected' && inquiryToView.rejectReason && (
+                    <div className="col-span-1 md:col-span-2">
+                      <p className="text-sm font-semibold text-rose-600 mb-1">Reject Reason</p>
+                      <p className="text-sm font-medium text-rose-700 bg-rose-50 px-3 py-2 rounded-lg border border-rose-100">{inquiryToView.rejectReason}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {inquiryToView.message && (
@@ -406,6 +437,49 @@ const Inquiries = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Confirmation Modal */}
+        {isRejectModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+            <div className="bg-white rounded-[20px] p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200" style={{ fontFamily: "Poppins" }}>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-rose-500">
+                    <XCircle size={24} />
+                  </div>
+                  <h3 className="text-xl font-bold text-black">Reject Inquiry</h3>
+                </div>
+                <p className="text-sm text-gray-500 mb-4">
+                  Please provide a reason for rejecting this inquiry from <span className="font-bold text-gray-700">{inquiryToReject?.name}</span>.
+                </p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                  className="w-full p-3 border border-gray-200 rounded-xl mb-6 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all text-sm resize-none h-24"
+                ></textarea>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setIsRejectModalOpen(false);
+                      setInquiryToReject(null);
+                      setRejectReason('');
+                    }}
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmReject}
+                    className="flex-1 px-4 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-rose-500/30"
+                  >
+                    Confirm Reject
+                  </button>
+                </div>
               </div>
             </div>
           </div>

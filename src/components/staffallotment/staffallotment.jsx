@@ -37,13 +37,13 @@ const StaffAllotment = () => {
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", wardenId: "", contactNumber: "",
     emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
-    aadharCard: null, panCard: null,
+    aadharCard: null, panCard: null, referredBy: "",
   });
 
   const [editFormData, setEditFormData] = useState({
     firstName: "", lastName: "", wardenId: "", contactNumber: "",
     emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
-    aadharCard: null, panCard: null,
+    aadharCard: null, panCard: null, referredBy: "",
   });
 
   const [wardens, setWardens] = useState([]);
@@ -65,6 +65,7 @@ const StaffAllotment = () => {
         wardenId: warden.wardenId, salary: warden.salary || 0,
         isAddedToBiometric: warden.isAddedToBiometric,
         aadharCard: warden.aadharCard, panCard: warden.panCard,
+        referredBy: warden.referredBy || "",
       }));
       setWardens(formattedData);
     } catch (error) { console.error(error); }
@@ -82,6 +83,7 @@ const StaffAllotment = () => {
         salary: staff.salary || 0, status: staff.status || 'Approved',
         isAddedToBiometric: staff.isAddedToBiometric,
         aadharCard: staff.aadharCard, panCard: staff.panCard,
+        referredBy: staff.referredBy || "",
       }));
       setStaffs(formattedData);
     } catch (error) { console.error(error); }
@@ -148,7 +150,7 @@ const StaffAllotment = () => {
     setFormData({
       firstName: "", lastName: "", wardenId: "", contactNumber: "",
       emailId: "", designation: "", otherDesignation: "", shiftStart: "", shiftEnd: "", salary: "",
-      aadharCard: null, panCard: null,
+      aadharCard: null, panCard: null, referredBy: "",
     });
   };
 
@@ -256,8 +258,24 @@ const StaffAllotment = () => {
     { label: "Total Staff", value: staffs.length },
     { label: "Watchmen", value: staffs.filter((s) => s.designation === "Watchman").length },
     { label: "Cleaners", value: staffs.filter((s) => s.designation === "Cleaner").length },
-    { label: "Others", value: staffs.filter((s) => s.designation === "Other" || !["Watchman", "Cleaner"].includes(s.designation)).length },
   ];
+
+  const customDesignations = staffs.reduce((acc, s) => {
+    const d = s.designation;
+    if (d && d !== "Watchman" && d !== "Cleaner" && d !== "Other") {
+      acc[d] = (acc[d] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  Object.entries(customDesignations).forEach(([d, count]) => {
+    staffStats.push({ label: d + (d.endsWith('s') ? '' : 's'), value: count });
+  });
+
+  const exactOthers = staffs.filter((s) => s.designation === "Other" || !s.designation).length;
+  if (exactOthers > 0) {
+    staffStats.push({ label: "Others", value: exactOthers });
+  }
 
   const statsToRender = activeTab === "warden" ? wardenStats : staffStats;
 
@@ -374,6 +392,10 @@ const StaffAllotment = () => {
               <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Salary Amount (₹)</label>
               <input type="text" name="salary" value={formData.salary} onChange={handleInputChange} placeholder="15000" className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm" />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Referred By</label>
+              <input type="text" name="referredBy" value={formData.referredBy} onChange={handleInputChange} placeholder="E.g. Ali" className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm" />
+            </div>
 
             {activeTab === "staff" && (
               <>
@@ -395,9 +417,15 @@ const StaffAllotment = () => {
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Shift Timings</label>
                   <div className="flex gap-2">
-                    <input type="time" name="shiftStart" value={formData.shiftStart} onChange={handleInputChange} className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] text-sm" />
+                    <div className="relative w-full">
+                      <input type="time" name="shiftStart" value={formData.shiftStart} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={handleInputChange} className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] text-sm cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                      <Clock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
                     <span className="self-center font-bold text-gray-400">to</span>
-                    <input type="time" name="shiftEnd" value={formData.shiftEnd} onChange={handleInputChange} className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] text-sm" />
+                    <div className="relative w-full">
+                      <input type="time" name="shiftEnd" value={formData.shiftEnd} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={handleInputChange} className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] text-sm cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                      <Clock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
               </>
@@ -497,7 +525,13 @@ const StaffAllotment = () => {
                       <div className="flex items-center justify-center gap-3">
                         <button onClick={() => { setSelectedWarden(person); setShowViewModal(true); }} className="text-gray-400 hover:text-blue-500 transition-colors"><Eye size={18} /></button>
                         <button onClick={() => { 
-                          setEditFormData({ ...person, emailId: person.email }); 
+                          const isStandard = ["Watchman", "Cleaner"].includes(person.designation) || !person.designation;
+                          setEditFormData({ 
+                            ...person, 
+                            emailId: person.email,
+                            designation: isStandard ? person.designation : "Other",
+                            otherDesignation: isStandard ? "" : person.designation
+                          }); 
                           setSelectedId(person.id); setShowEditModal(true); 
                         }} className="text-gray-400 hover:text-emerald-500 transition-colors"><Edit2 size={18} /></button>
                         <button onClick={() => { setSelectedId(person.id); setShowDeleteModal(true); }} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
@@ -543,6 +577,10 @@ const StaffAllotment = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-gray-500 uppercase">Email Address</span>
                     <span className="text-sm font-semibold text-gray-800">{selectedWarden.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-gray-500 uppercase">Referred By</span>
+                    <span className="text-sm font-semibold text-gray-800">{selectedWarden.referredBy || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-gray-500 uppercase">Contact Number</span>
@@ -673,6 +711,10 @@ const StaffAllotment = () => {
                   <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Salary</label>
                   <input type="text" name="salary" value={editFormData.salary} onChange={handleEditInputChange} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#4F8CCF] text-sm font-semibold" />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Referred By</label>
+                  <input type="text" name="referredBy" value={editFormData.referredBy} onChange={handleEditInputChange} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#4F8CCF] text-sm font-semibold" />
+                </div>
                 
                 {activeTab === "staff" && (
                   <>
@@ -684,11 +726,24 @@ const StaffAllotment = () => {
                         <option value="Other">Other</option>
                       </select>
                     </div>
+                    {editFormData.designation === "Other" && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Specify Designation</label>
+                        <input type="text" name="otherDesignation" value={editFormData.otherDesignation} onChange={handleEditInputChange} placeholder="e.g. Cook" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#4F8CCF] text-sm font-semibold" />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Shift Timings</label>
                       <div className="flex gap-2">
-                        <input type="time" name="shiftStart" value={editFormData.shiftStart} onChange={handleEditInputChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-                        <input type="time" name="shiftEnd" value={editFormData.shiftEnd} onChange={handleEditInputChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                        <div className="relative w-full">
+                          <input type="time" name="shiftStart" value={editFormData.shiftStart} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={handleEditInputChange} className="w-full pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                          <Clock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                        </div>
+                        <span className="self-center font-bold text-gray-400">to</span>
+                        <div className="relative w-full">
+                          <input type="time" name="shiftEnd" value={editFormData.shiftEnd} onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={handleEditInputChange} className="w-full pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                          <Clock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                        </div>
                       </div>
                     </div>
                   </>

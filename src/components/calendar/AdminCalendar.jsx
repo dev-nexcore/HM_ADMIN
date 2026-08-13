@@ -17,7 +17,7 @@ export default function AdminCalendar() {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newHoliday, setNewHoliday] = useState({ date: "", title: "", type: "Other" });
+  const [newHoliday, setNewHoliday] = useState({ date: "", title: "", type: "Other", isPaid: true });
 
   const fetchHolidays = async () => {
     setLoading(true);
@@ -71,7 +71,7 @@ export default function AdminCalendar() {
       if (res.data.success) {
         toast.success("Holiday added successfully");
         setShowAddModal(false);
-        setNewHoliday({ date: "", title: "", type: "Other" });
+        setNewHoliday({ date: "", title: "", type: "Other", isPaid: true });
         fetchHolidays();
       }
     } catch (err) {
@@ -125,11 +125,13 @@ export default function AdminCalendar() {
           
           <div className="mt-1 space-y-1 overflow-y-auto max-h-[60px]">
             {dayHolidays.map(h => (
-              <div key={h._id} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded truncate flex justify-between items-center group/item font-bold">
-                <span title={h.title}>{h.title}</span>
+              <div key={h._id} className={`text-[10px] border px-2 py-1 rounded flex justify-between items-center group/item font-bold ${h.isPaid !== false ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                <span className="truncate" title={`${h.title} (${h.isPaid !== false ? 'Paid' : 'Unpaid'})`}>
+                  {h.title} <span className="opacity-70 font-medium text-[8px] ml-0.5">({h.isPaid !== false ? 'Paid' : 'Unpaid'})</span>
+                </span>
                 <button 
                   onClick={() => handleDeleteHoliday(h._id)}
-                  className="opacity-0 group-hover/item:opacity-100 text-red-500 ml-1 shrink-0 hover:text-red-700 transition-colors"
+                  className="opacity-0 group-hover/item:opacity-100 text-red-500 ml-1 shrink-0 hover:text-red-700 transition-colors bg-white/50 rounded-full"
                 >
                   <HiOutlineTrash size={12}/>
                 </button>
@@ -248,6 +250,17 @@ export default function AdminCalendar() {
                   <option value="National">National</option>
                   <option value="Festival">Festival</option>
                   <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Holiday Compensation</label>
+                <select 
+                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] text-sm"
+                  value={newHoliday.isPaid}
+                  onChange={e => setNewHoliday({...newHoliday, isPaid: e.target.value === "true"})}
+                >
+                  <option value="true">Paid Holiday</option>
+                  <option value="false">Unpaid Holiday</option>
                 </select>
               </div>
               

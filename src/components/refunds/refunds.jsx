@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Filter, X, Calendar, DollarSign, User, Clock, CheckCircle, XCircle, AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { Search, Filter, X, Calendar, DollarSign, User, Clock, CheckCircle, XCircle, AlertCircle, CreditCard, Loader2, Eye } from "lucide-react";
 import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -46,6 +46,20 @@ const Refunds = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Details Modal states
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Process Refund states
+  const [processData, setProcessData] = useState({
+    status: "",
+    adminNotes: "",
+    paymentMethod: "",
+    deduction: "",
+    deductionReason: ""
+  });
+  const [processing, setProcessing] = useState(false);
+
   const fetchRefunds = async () => {
     try {
       setLoading(true);
@@ -55,7 +69,7 @@ const Refunds = () => {
           id: r.refundId,
           date: new Date(r.date).toLocaleDateString("en-IN").replace(/\//g, '-'),
           recipientName: r.recipientName,
-          studentId: "N/A", // Backend doesn't return student ID string by default in mapping, fallback to N/A
+          studentId: r.studentId || "N/A",
           amount: `₹${r.amount}`,
           reason: r.reason,
           status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
@@ -73,6 +87,28 @@ const Refunds = () => {
       toast.error("Failed to fetch refunds");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProcessRefund = async () => {
+    try {
+      setProcessing(true);
+      await api.put(`/api/adminauth/refunds/${selectedRefund.id}/status`, {
+        status: processData.status,
+        adminNotes: processData.adminNotes,
+        paymentMethod: processData.paymentMethod,
+        deduction: processData.deduction,
+        deductionReason: processData.deductionReason
+      });
+      toast.success(`Refund marked as ${processData.status}`);
+      setShowDetailsModal(false);
+      setProcessData({ status: "", adminNotes: "", paymentMethod: "", deduction: "", deductionReason: "" });
+      fetchRefunds();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to process refund");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -667,13 +703,9 @@ icon: <XCircle size={18} />,
                     <th className="px-6 py-4 text-sm font-bold text-[#374151]">Refund ID</th>
                     <th className="px-6 py-4 text-sm font-bold text-[#374151]">Date</th>
                     <th className="px-6 py-4 text-sm font-bold text-[#374151]">Student Name</th>
-                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Fees</th>
-                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Security Deposit</th>
-                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Deduction</th>
                     <th className="px-6 py-4 text-sm font-bold text-[#374151]">Refund Amount</th>
-                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Reason</th>
                     <th className="px-6 py-4 text-sm font-bold text-[#374151]">Status</th>
-                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Processed By</th>
+                    <th className="px-6 py-4 text-sm font-bold text-[#374151]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
@@ -686,23 +718,18 @@ icon: <XCircle size={18} />,
                           {refund.recipientName}
                           <div className="text-xs text-gray-500 font-normal">{refund.studentId}</div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">₹{refund.fees}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">₹{refund.securityDeposit}</td>
-                        <td className="px-4 py-3 text-sm text-red-600">
-                          ₹{refund.deduction}
-                          {refund.deductionReason && (
-                            <div className="text-[10px] text-gray-500 italic leading-tight">{refund.deductionReason}</div>
-                          )}
-                        </td>
                         <td className="px-4 py-3 text-sm font-bold text-gray-800">{refund.amount}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{refund.reason}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(refund.status)}`}>
                             {getStatusIcon(refund.status)}
                             {refund.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{refund.processedBy}</td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="View Details">
+                            <Eye size={18} />
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
@@ -754,34 +781,12 @@ icon: <XCircle size={18} />,
                     <p className="text-xs text-gray-500">ID: {refund.studentId}</p>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div>
-                      <span className="text-xs font-semibold text-gray-500">Fees</span>
-                      <p className="text-sm">₹{refund.fees}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-gray-500">Security Deposit</span>
-                      <p className="text-sm text-gray-800">₹{refund.securityDeposit}</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Deduction</span>
-                    <p className="text-sm text-red-600 font-medium">₹{refund.deduction}</p>
-                    {refund.deductionReason && (
-                      <p className="text-[10px] text-gray-500 italic mt-0.5">{refund.deductionReason}</p>
-                    )}
-                  </div>
-                  
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Refund Reason</span>
-                    <p className="text-sm">{refund.reason}</p>
-                  </div>
-                  
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500">Processed By</span>
-                    <p className="text-sm">{refund.processedBy}</p>
-                  </div>
+                  <button 
+                    onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }}
+                    className="w-full mt-2 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex justify-center items-center gap-2 hover:bg-blue-100 transition-colors"
+                  >
+                    <Eye size={16} /> View Details
+                  </button>
                 </div>
               ))
             ) : (
@@ -958,6 +963,220 @@ icon: <XCircle size={18} />,
           </div>
         )}
       </div>
+      
+      {/* Details Modal */}
+      {showDetailsModal && selectedRefund && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <AlertCircle className="text-blue-500" size={24} />
+                Refund Details
+              </h3>
+              <button 
+                onClick={() => setShowDetailsModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6 font-sans">
+              {/* Header Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Refund ID</span>
+                  <p className="font-mono text-sm font-bold text-gray-800 mt-1">{selectedRefund.id}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Date</span>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{selectedRefund.date}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Status</span>
+                  <div className="mt-1">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(selectedRefund.status)}`}>
+                      {selectedRefund.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Total Amount</span>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{selectedRefund.amount}</p>
+                </div>
+              </div>
+
+              {/* Student Info */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Student Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-gray-500">Name</span>
+                    <p className="font-medium text-gray-800">{selectedRefund.recipientName}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Student ID</span>
+                    <p className="font-medium text-gray-800">{selectedRefund.studentId}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Breakdown */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Financial Breakdown</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-xs text-gray-500">Fees</span>
+                    <p className="font-medium text-gray-800">₹{selectedRefund.fees}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Security Deposit</span>
+                    <p className="font-medium text-gray-800">
+                      {selectedRefund.securityDeposit !== 0 && selectedRefund.securityDeposit !== "0"
+                        ? `₹${selectedRefund.securityDeposit}` 
+                        : selectedRefund.amount}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Deduction</span>
+                    <p className="font-medium text-red-600">₹{selectedRefund.deduction}</p>
+                  </div>
+                </div>
+                {selectedRefund.deductionReason && (
+                  <div className="mt-3 bg-red-50 p-3 rounded border border-red-100">
+                    <span className="text-xs text-red-800 font-semibold block mb-1">Deduction Reason</span>
+                    <p className="text-sm text-red-700 italic">{selectedRefund.deductionReason}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Refund Reason */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Reason for Refund</h4>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{selectedRefund.reason}</p>
+                </div>
+              </div>
+
+              {/* Processing Info */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Processing Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-gray-500">Processed By</span>
+                    <p className="font-medium text-gray-800">{selectedRefund.processedBy || "N/A"}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Processed Date</span>
+                    <p className="font-medium text-gray-800">{selectedRefund.processedDate || "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Process Refund Action for Pending Status */}
+              {selectedRefund.status === 'Pending' && (
+                <div className="border-t border-gray-100 pt-6 mt-6">
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">Process Refund</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Action</label>
+                      <select
+                        value={processData.status}
+                        onChange={(e) => setProcessData({...processData, status: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      >
+                        <option value="">Select Action</option>
+                        <option value="completed">Approve (Completed)</option>
+                        <option value="rejected">Reject</option>
+                      </select>
+                    </div>
+                    {processData.status === 'completed' && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Payment Method</label>
+                            <select
+                              value={processData.paymentMethod}
+                              onChange={(e) => setProcessData({...processData, paymentMethod: e.target.value})}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            >
+                              <option value="">Select Payment Method</option>
+                              <option value="Cheque">Cheque</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Deduction Amount (₹)</label>
+                            <input
+                              type="number"
+                              value={processData.deduction}
+                              onChange={(e) => setProcessData({...processData, deduction: e.target.value})}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              placeholder="0"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+
+                        {processData.deduction > 0 && (
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Reason for Deduction</label>
+                            <input
+                              type="text"
+                              value={processData.deductionReason}
+                              onChange={(e) => setProcessData({...processData, deductionReason: e.target.value})}
+                              className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                              placeholder="E.g., Damages, unpaid dues..."
+                            />
+                          </div>
+                        )}
+
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mt-4 flex justify-between items-center">
+                          <span className="text-green-800 font-bold">Final Refund Total:</span>
+                          <span className="text-xl font-black text-green-700">
+                            ₹{Math.max(0, parseInt(selectedRefund.amount.replace(/\D/g, '')) - (parseInt(processData.deduction) || 0)).toLocaleString()}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Admin Notes (Optional)</label>
+                      <textarea
+                        value={processData.adminNotes}
+                        onChange={(e) => setProcessData({...processData, adminNotes: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        rows="2"
+                        placeholder="Add any notes regarding this action..."
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+              <button 
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setProcessData({ status: "", adminNotes: "", paymentMethod: "", deduction: "", deductionReason: "" });
+                }}
+                className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg transition-colors"
+              >
+                Close
+              </button>
+              {selectedRefund.status === 'Pending' && (
+                <button 
+                  onClick={handleProcessRefund}
+                  disabled={processing || !processData.status || (processData.status === 'completed' && !processData.paymentMethod)}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {processing ? 'Processing...' : 'Process Refund'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer
         position="top-right"
         autoClose={3000}

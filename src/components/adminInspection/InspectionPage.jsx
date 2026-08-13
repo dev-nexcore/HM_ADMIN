@@ -8,6 +8,17 @@ import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const PREDEFINED_LOCATIONS = [
+  "Room No 101", "Room No 102", "Room No 103", "Room No 104", "Room No 105",
+  "Room No 106", "Room No 107", "Room No 108", "Room No 109", "Room No 110",
+  "Room No 201", "Room No 202", "Room No 203", "Room No 204", "Room No 205",
+  "Room No 206", "Room No 207", "Room No 208", "Room No 209", "Room No 210",
+  "Gym", "Prayer Room", "Kitchen Room", "Dining Room", "Study Room",
+  "Conference Room", "Store Room", "Washing Machine Room",
+  "Corridor- 1st Floor", "Corridor- 2nd Floor", "Corridor- 3rd Floor",
+  "Wash Rooms", "Staircase", "Ground Floor", "Terrace"
+];
+
 const statusStyles = {
   Scheduled: "bg-yellow-100 text-yellow-800",
   Completed: "bg-green-100 text-green-800",
@@ -35,10 +46,13 @@ export default function InspectionPage() {
     scheduled: 0,
     completed: 0,
     cancelled: 0,
-    cancelled: 0,
     areas: 0
   });
   const [activeFilter, setActiveFilter] = useState("total");
+  const [activeTab, setActiveTab] = useState("issue");
+  const [templates, setTemplates] = useState([]);
+  const [templateForm, setTemplateForm] = useState({ title: "", target: "", area: "", instructions: "" });
+  const [templateLoading, setTemplateLoading] = useState(false);
 
   const displayedInspections = upcomingInspections.filter(inspection => {
     if (activeFilter === "scheduled") return inspection.status === "Scheduled";
@@ -66,6 +80,27 @@ export default function InspectionPage() {
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch inspections' };
+    }
+  };
+
+  const fetchTemplatesAPI = async () => {
+    try {
+      const response = await api.get(`/api/adminauth/inspection-templates`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      return { templates: [] };
+    }
+  };
+
+  const createTemplateAPI = async (templateData) => {
+    try {
+      const response = await api.post(`/api/adminauth/inspection-templates`, templateData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to create template' };
     }
   };
 
@@ -110,9 +145,13 @@ export default function InspectionPage() {
     const loadInspections = async () => {
       try {
         setFetchLoading(true);
-        const response = await fetchInspectionsAPI();
-        const inspections = response.inspections || [];
+        const [inspectionsRes, templatesRes] = await Promise.all([
+          fetchInspectionsAPI(),
+          fetchTemplatesAPI()
+        ]);
+        const inspections = inspectionsRes.inspections || [];
         setUpcomingInspections(inspections);
+        setTemplates(templatesRes.templates || []);
         calculateStats(inspections);
       } catch (error) {
         console.error('Error loading inspections:', error);
@@ -189,6 +228,22 @@ icon: <MapPin size={18} />,
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === "title") {
+      const selectedTemplate = templates.find(t => t.title === value);
+      if (selectedTemplate) {
+        setFormData((prev) => ({
+          ...prev,
+          title: value,
+          target: selectedTemplate.target || prev.target,
+          area: selectedTemplate.area || prev.area,
+          instructions: selectedTemplate.instructions || prev.instructions
+        }));
+        setErrors((prevErrors) => ({ ...prevErrors, title: "" }));
+        return;
+      }
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
   };
@@ -202,6 +257,23 @@ icon: <MapPin size={18} />,
     if (!formData.time) newErrors.time = "Time is required.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleTemplateSubmit = async (e) => {
+    e.preventDefault();
+    setTemplateLoading(true);
+    try {
+      await createTemplateAPI(templateForm);
+      toast.success("Template created successfully");
+      const templatesRes = await fetchTemplatesAPI();
+      setTemplates(templatesRes.templates || []);
+      setActiveTab("issue");
+      setTemplateForm({ title: "", target: "", area: "", instructions: "" });
+    } catch (error) {
+      toast.error(error.message || "Failed to create template");
+    } finally {
+      setTemplateLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -404,7 +476,93 @@ Generated on: ${new Date().toLocaleString()}
 </div>
 
 
-        {/* Form */}
+        {/* Tabs */}
+        <div className="hidden sm:flex mb-4 gap-3 overflow-x-auto pb-2 custom-scrollbar whitespace-nowrap">
+          {["issue", "template"].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-[12px] font-semibold transition-colors text-sm ${activeTab === tab ? "bg-[#BEC5AD] text-black shadow-md border border-[#4F8CCF]/50" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`} style={{ fontFamily: "Poppins" }}>
+              {tab === "issue" ? "Issue Inspection" : "Create Template"}
+            </button>
+          ))}
+        </div>
+        <div className="sm:hidden mb-4 relative h-[45px] w-full">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="w-full h-full px-4 bg-[#BEC5AD] rounded-[12px] outline-none cursor-pointer appearance-none text-[14px] font-semibold text-black shadow-md border border-[#4F8CCF]/50"
+            style={{ WebkitAppearance: "none", fontFamily: "Poppins" }}
+          >
+            <option value="issue">Issue Inspection</option>
+            <option value="template">Create Template</option>
+          </select>
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+
+        {activeTab === "template" && (
+          <div className="w-full">
+            <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-10 border border-[#BEC5AD]/30">
+              <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-black font-[Poppins]">
+                    Create New Template
+                  </h2>
+                </div>
+              </div>
+              <form onSubmit={handleTemplateSubmit} className="p-4 sm:p-6 lg:p-8 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Template Title *</label>
+                  <input 
+                    type="text" 
+                    value={templateForm.title} 
+                    onChange={(e) => setTemplateForm({...templateForm, title: e.target.value})} 
+                    placeholder="e.g. Weekly Hygiene Check" 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-[#4F8CCF]" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Default Target (Optional)</label>
+                  <input 
+                    type="text" 
+                    value={templateForm.target} 
+                    onChange={(e) => setTemplateForm({...templateForm, target: e.target.value})} 
+                    placeholder="e.g. All Rooms" 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-[#4F8CCF]" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Default Area (Optional)</label>
+                  <input 
+                    type="text" 
+                    value={templateForm.area} 
+                    onChange={(e) => setTemplateForm({...templateForm, area: e.target.value})} 
+                    placeholder="e.g. Ground Floor" 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-[#4F8CCF]" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Default Instructions (Optional)</label>
+                  <textarea 
+                    value={templateForm.instructions} 
+                    onChange={(e) => setTemplateForm({...templateForm, instructions: e.target.value})} 
+                    placeholder="e.g. Check for cleanliness, damage, etc." 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-[#4F8CCF] h-24 resize-none" 
+                  />
+                </div>
+                <div className="flex gap-4 pt-4 border-t border-gray-100">
+                  <button type="submit" disabled={templateLoading} className={`px-6 py-2 bg-[#2D332F] text-white font-medium rounded-lg hover:bg-black transition-colors shadow-md text-sm ${templateLoading ? 'opacity-50' : ''}`}>
+                    {templateLoading ? 'Saving...' : 'Save Template'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "issue" && (
         <div className="bg-[#f4f6f0] rounded-2xl shadow-lg overflow-hidden mb-10 border border-[#BEC5AD]/30">
           <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
@@ -419,9 +577,11 @@ Generated on: ${new Date().toLocaleString()}
           >
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="title" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
-                  Inspection Title
-                </label>
+                <div className="flex justify-between items-center mb-1 ml-2">
+                  <label htmlFor="title" className="text-black font-medium text-[18px] font-[Poppins] leading-none">
+                    Inspection Title
+                  </label>
+                </div>
                 <div className="relative shadow-[0px_4px_10px_rgba(0,0,0,0.25)] rounded-[10px] bg-white">
                   <select
                     name="title"
@@ -431,16 +591,9 @@ Generated on: ${new Date().toLocaleString()}
                     disabled={loading}
                   >
                     <option value="" disabled hidden>Select Title</option>
-                    <option value="Monthly Room Check">Monthly Room Check</option>
-                    <option value="Sanitation Check">Sanitation Check</option>
-                    <option value="Safety Inspection">Safety Inspection</option>
-                    <option value="Maintenance Check">Maintenance Check</option>
-                    <option value="Night Roll Call">Night Roll Call</option>
-                    <option value="Mess Food Inspection">Mess Food Inspection</option>
-                    <option value="Electrical Safety Check">Electrical Safety Check</option>
-                    <option value="Asset Verification">Asset Verification</option>
-                    <option value="Student Discipline Check">Student Discipline Check</option>
-                    <option value="Furniture Condition Check">Furniture Condition Check</option>
+                    {templates.map(t => (
+                      <option key={t._id} value={t.title}>{t.title}</option>
+                    ))}
                   </select>
                   <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
                     <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -455,7 +608,7 @@ Generated on: ${new Date().toLocaleString()}
 
               <div>
                 <label htmlFor="target" className="block mb-1 text-black ml-2" style={{ fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" }}>
-                  Target Warden/Area
+                  Target Audience/Warden
                 </label>
                 <input
                   name="target"
@@ -487,13 +640,9 @@ Generated on: ${new Date().toLocaleString()}
                     disabled={loading}
                   >
                     <option value="" disabled hidden>Select Area</option>
-                    <option value="Dormitory">Dormitory</option>
-                    <option value="Block A">Block A</option>
-                    <option value="Block B">Block B</option>
-                    <option value="Block C">Block C</option>
-                    <option value="Common Areas">Common Areas</option>
-                    <option value="Kitchen">Kitchen</option>
-                    <option value="Bathrooms">Bathrooms</option>
+                    {PREDEFINED_LOCATIONS.map((loc) => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
                   </select>
                   <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2">
                     <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -614,8 +763,9 @@ Generated on: ${new Date().toLocaleString()}
             </div>
           </form>
         </div>
+        )}
 
-        {/* Inspection Table */}
+      {/* Inspection Table */}
         <InspectionTable
           upcomingInspections={displayedInspections}
           fetchLoading={fetchLoading}
@@ -672,6 +822,7 @@ Generated on: ${new Date().toLocaleString()}
           onDelete={handleDeleteInspection}
         />
       )}
+
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -883,5 +1034,4 @@ function InspectionTable({
       </div>
     </div>
   );
-
 }
