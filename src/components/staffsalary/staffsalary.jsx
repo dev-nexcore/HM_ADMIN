@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react"
 import api from "../../lib/api"
 import toast, { Toaster } from "react-hot-toast"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 import {
   HiOutlineUsers,
   HiOutlineCurrencyRupee,
@@ -50,12 +52,13 @@ const numberToWords = (num) => {
 
 // ── Print/PDF HTML builder ────────────────────────────────────────────────────
 const buildPayslipHTML = (salary, monthName, year) => {
+  const isPaid = salary?.status === 'paid';
   const netWords      = numberToWords(salary?.netSalary || 0);
   const payDate       = salary?.paymentDate ? new Date(salary.paymentDate).toLocaleDateString('en-GB') : 'Processing';
   const accountDisplay = salary?.accountNumber ? `XXXX${salary.accountNumber.slice(-4)}` : 'N/A';
   const empId         = salary?.employeeId || `#${salary?._id?.slice(-6).toUpperCase() || 'N/A'}`;
-  const basicFmt      = (salary?.basicSalary || 0).toLocaleString('en-IN');
-  const netFmt        = (salary?.netSalary   || 0).toLocaleString('en-IN');
+  
+  const formatAmt = (amt) => (amt || 0).toLocaleString('en-IN');
   const sigName       = salary?.processedByName && !salary.processedByName.includes('undefined')
     ? salary.processedByName : 'Authorized Admin';
 
@@ -67,209 +70,201 @@ const buildPayslipHTML = (salary, monthName, year) => {
   <title>Salary Slip – ${salary?.staffName || ''} – ${monthName} ${year}</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-      background:#fff;color:#111827;
-      padding:32px;max-width:800px;margin:0 auto;
-      -webkit-print-color-adjust:exact!important;
-      print-color-adjust:exact!important;
+    @page { size: A4; margin: 0; }
+    html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      padding: 15mm; 
+      color: #1A1F16; 
+      background: white;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
+    
+    .header-main { 
+      display: flex; justify-content: space-between; align-items: center; 
+      padding-bottom: 20px; border-bottom: 1px solid #E5E7EB; margin-bottom: 30px;
+    }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-logo { width: 75px; height: 75px; object-fit: contain; }
+    .brand-name { font-size: 28px; font-weight: 900; color: #111827; margin: 0; line-height: 1.1; text-transform: uppercase; letter-spacing: -0.02em; }
+    .trust-info { font-size: 13px; font-weight: 700; color: #8A6D3B; margin: 6px 0 2px 0; text-transform: uppercase; }
+    .division-info { font-size: 13px; font-weight: 700; color: #4F8CCF; margin: 0; text-transform: uppercase; }
+    
+    .header-right { text-align: right; font-size: 12px; color: #64748B; line-height: 1.6; }
+    .contact-item { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 4px; }
+    
+    .invoice-type-banner { 
+      background: #F8FAF5; padding: 15px 25px; border-radius: 12px; margin-bottom: 30px;
+      display: flex; justify-content: space-between; align-items: center; border: 1px solid #7A8B5E20;
+    }
+    .invoice-title { font-size: 16px; font-weight: 800; color: #7A8B5E; text-transform: uppercase; letter-spacing: 1px; }
+    .status-badge { display: inline-block; padding: 6px 14px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .paid { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .pending { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 
-    /* ── KGF HEADER ── */
-    .kgf-header{
-      display:flex;justify-content:space-between;align-items:flex-start;
-      border-bottom:3px solid #2563eb;padding-bottom:24px;margin-bottom:28px;
-      gap:16px;flex-wrap:wrap;
-    }
-    .kgf-left{display:flex;align-items:flex-start;gap:16px;}
-    .kgf-logo{
-      width:80px;height:80px;object-fit:contain;flex-shrink:0;
-    }
-    .kgf-org-name{
-      font-size:22px;font-weight:900;color:#111827;
-      letter-spacing:-0.03em;line-height:1.1;
-    }
-    .kgf-org-sub{
-      font-size:10px;font-weight:700;color:#2563eb;
-      text-transform:uppercase;letter-spacing:0.06em;margin-top:5px;
-    }
-    .kgf-org-division{
-      font-size:10px;font-weight:600;color:#6b7280;
-      text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;
-    }
-    .kgf-meta{display:flex;gap:16px;margin-top:8px;font-size:10px;color:#9ca3af;font-weight:600;}
-    .kgf-right{text-align:right;flex-shrink:0;}
-    .doc-badge{
-      display:inline-block;background:#2563eb;color:#fff;
-      padding:5px 16px;border-radius:8px;font-size:9px;
-      font-weight:900;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;
-    }
-    .period-label{font-size:9px;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;}
-    .period-value{font-size:15px;font-weight:900;color:#111827;margin-top:2px;}
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+    .section-label { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+    .info-val { font-weight: 700; color: #1A1F16; }
 
-    /* ── INFO GRID ── */
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:28px;}
-    .section-label{font-size:9px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px;}
-    .info-row{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:10px;}
-    .info-key{color:#6b7280;width:96px;flex-shrink:0;font-size:12px;}
-    .info-val{font-weight:800;color:#111827;font-size:13px;}
+    .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .table th { background: #F1F5F9; text-align: left; padding: 12px 15px; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; }
+    .table td { padding: 12px 15px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #1E293B; }
+    .table td.amt { text-align: right; font-weight: 700; }
+    .table th.amt { text-align: right; }
 
-    /* ── EARNINGS TABLE ── */
-    .earnings-table{width:100%;border-collapse:collapse;border:2px solid #f3f4f6;border-radius:14px;overflow:hidden;margin-bottom:24px;}
-    .earnings-table thead{background:#f9fafb;}
-    .earnings-table th{padding:12px 20px;font-size:9px;font-weight:900;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;text-align:left;}
-    .earnings-table th:not(:first-child){text-align:right;}
-    .earnings-table td{padding:14px 20px;font-size:13px;border-top:2px solid #f9fafb;}
-    .earnings-table td:not(:first-child){text-align:right;}
-    .row-label{font-weight:700;color:#374151;font-style:italic;}
-    .row-earning{font-weight:900;color:#111827;}
-    .row-deduction{color:#d1d5db;}
+    .totals-section { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .words-box { max-width: 300px; font-size: 11px; color: #64748B; line-height: 1.5; font-weight: 600; }
+    .totals-box { width: 300px; }
+    .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #E2E8F0; font-size: 13px;}
+    .grand-total { border-top: 2px solid #1A1F16; margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 800; color: #4A5D23; }
 
-    /* ── NET PAY ── */
-    .net-box{
-      display:flex;justify-content:space-between;align-items:center;
-      background:#eff6ff;border:2px solid #bfdbfe;border-radius:20px;
-      padding:24px 28px;margin-bottom:28px;gap:16px;flex-wrap:wrap;
-    }
-    .net-words-label{font-size:9px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
-    .net-words-text{font-size:12px;font-weight:900;color:#1e3a8a;text-transform:uppercase;font-style:italic;}
-    .net-amount-label{font-size:9px;font-weight:900;color:#60a5fa;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;text-align:right;}
-    .net-amount{font-size:38px;font-weight:900;color:#2563eb;text-align:right;letter-spacing:-1px;}
-
-    /* ── FOOTER ── */
-    .doc-footer-row{display:flex;justify-content:space-between;align-items:flex-end;padding-top:28px;margin-top:8px;gap:20px;flex-wrap:wrap;}
-    .sig-line{width:180px;height:1px;background:#e5e7eb;margin:0 auto 8px;}
-    .sig-name{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#111827;}
-    .sig-role{font-size:8px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-    .sig-org{font-size:8px;color:#9ca3af;font-style:italic;margin-top:1px;}
-    .doc-footer{text-align:center;font-size:8px;color:#9ca3af;text-transform:uppercase;font-weight:700;letter-spacing:1px;padding-top:20px;border-top:1px solid #f3f4f6;margin-top:16px;line-height:1.7;}
-
-    @page{size:A4;margin:12mm;}
-    @media print{body{padding:24px 32px;}}
+    .footer { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #E2E8F0; padding-top: 20px; }
   </style>
 </head>
 <body>
-
-  <!-- KGF Branded Header -->
-  <div class="kgf-header">
-    <div class="kgf-left">
-      <img src="/photos/logo1.svg" alt="KGF Logo" class="kgf-logo" onerror="this.style.display='none'" />
+  <div class="header-main">
+    <div class="header-left">
+      <img src="/photos/logo1.svg" class="header-logo" alt="KGF Logo">
       <div>
-        <div class="kgf-org-name">KOKAN GLOBAL FOUNDATION</div>
-        <div class="kgf-org-sub">Educational &amp; Welfare Trust &nbsp;|&nbsp; Reg No: E-3342/R</div>
-        <div class="kgf-org-division">Hostel Management Division</div>
-        <div class="kgf-meta">
-          <span>📍 Maharashtra, India</span>
-          <span>📞 +91-XXXXXXXXXX</span>
-        </div>
+        <h1 class="brand-name" style="color: #0F172A;">KGF BOYS HOSTEL</h1>
+        <p class="trust-info" style="color: #6a5e15;">BY KOKAN GLOBAL FOUNDATION</p>
+        <p class="division-info" style="color: #4A6E94;">HOSTEL MANAGEMENT DIVISION</p>
       </div>
     </div>
-    <div class="kgf-right">
-      <div class="doc-badge">Salary Certificate</div>
-      <div class="period-label">Pay Period</div>
-      <div class="period-value">${monthName}, ${year}</div>
+    <div class="header-right">
+      <div class="contact-item"><span style="color: #DC2626; font-size: 14px;">📍</span> Maharashtra, India</div>
+      <div class="contact-item"><span style="color: #DC2626; font-size: 14px;">📞</span> +91-7510012346</div>
+      <div style="margin-top: 10px; font-weight: 800; color: #1E293B; display: flex; flex-direction: column; align-items: flex-end;">
+        <span>Generated:</span>
+        <span style="color: #0F172A; margin-top: 2px;">${new Date().toLocaleDateString('en-GB')}</span>
+      </div>
     </div>
   </div>
 
-  <!-- Divider strip -->
-  <div style="background:#2563eb;height:3px;border-radius:4px;margin-bottom:28px;"></div>
+  <div class="invoice-type-banner">
+    <div class="invoice-title">Salary Slip / Remittance</div>
+    <div class="status-badge ${isPaid ? 'paid' : 'pending'}">${salary?.status || 'Pending'}</div>
+  </div>
 
   <div class="info-grid">
     <div>
       <div class="section-label">Employee Details</div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">👤</span>
-        <span class="info-key">Name:</span>
-        <span class="info-val">${(salary?.staffName || '').toUpperCase()}</span>
-      </div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">🏢</span>
-        <span class="info-key">Designation:</span>
-        <span class="info-val">${salary?.role || 'Warden'}</span>
-      </div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">#</span>
-        <span class="info-key">Emp ID:</span>
-        <span class="info-val" style="font-family:monospace;font-style:italic">${empId}</span>
-      </div>
+      <div class="info-row"><span>Name:</span><span class="info-val">${(salary?.staffName || '').toUpperCase()}</span></div>
+      <div class="info-row"><span>Designation:</span><span class="info-val">${salary?.role || 'Warden'}</span></div>
+      <div class="info-row"><span>Emp ID:</span><span class="info-val" style="font-family:monospace;">${empId}</span></div>
     </div>
     <div>
       <div class="section-label">Payment Details</div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">📅</span>
-        <span class="info-key">Pay Date:</span>
-        <span class="info-val">${payDate}</span>
+      <div class="info-row"><span>Pay Period:</span><span class="info-val">${monthName} ${year}</span></div>
+      <div class="info-row"><span>Pay Date:</span><span class="info-val">${payDate}</span></div>
+      <div class="info-row"><span>Bank:</span><span class="info-val">${(salary?.bankName || 'Direct Transfer').toUpperCase()}</span></div>
+      ${salary?.paymentMethod === 'cheque' ? `
+      <div class="info-row"><span>Cheque No:</span><span class="info-val" style="font-family:monospace">${salary.chequeNumber || 'N/A'}</span></div>
+      <div class="info-row"><span>Cheque Date:</span><span class="info-val">${salary.chequeDate ? new Date(salary.chequeDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
+      ` : `
+      <div class="info-row"><span>Account:</span><span class="info-val" style="font-family:monospace">${accountDisplay}</span></div>
+      `}
+    </div>
+  </div>
+
+  <div style="background: #F8FAF5; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 30px; width: 350px;">
+    <div style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Attendance & Salary Calculation</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #64748B;">
+        <span>TOTAL DAYS</span>
+        <span style="color: #1A1F16; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2px 8px; background: white;">${salary?.totalDays || 0}</span>
       </div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">🏦</span>
-        <span class="info-key">Bank:</span>
-        <span class="info-val">${(salary?.bankName || 'Direct Transfer').toUpperCase()}</span>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #64748B;">
+        <span>ATTENDANCE</span>
+        <span style="color: #1A1F16; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2px 8px; background: white;">${salary?.attendanceDays || 0}</span>
       </div>
-      <div class="info-row">
-        <span style="color:#d1d5db;">💳</span>
-        <span class="info-key">Account:</span>
-        <span class="info-val" style="font-family:monospace">${accountDisplay}</span>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #10B981;">
+        <span>PAID HOLIDAYS</span>
+        <span style="border: 1px solid #A7F3D0; border-radius: 4px; padding: 2px 8px; background: white;">${salary?.paidHolidays || 0}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #64748B;">
+        <span>ABSENCES</span>
+        <span style="color: #EF4444; border: 1px solid #FECACA; border-radius: 4px; padding: 2px 8px; background: white;">${salary?.unpaidLeaves || 0}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #EF4444; border-top: 1px solid #E2E8F0; padding-top: 8px; margin-top: 4px;">
+        <span>ABSENCE DEDUCTION (₹)</span>
+        <span style="border: 1px solid #FECACA; border-radius: 4px; padding: 2px 8px; background: white;">${salary?.basicSalary && salary?.totalDays ? Math.round((salary.basicSalary / salary.totalDays) * (salary.unpaidLeaves || 0)) : 0}</span>
       </div>
     </div>
   </div>
 
-  <table class="earnings-table">
+  <table class="table">
     <thead>
       <tr>
-        <th>Description</th>
-        <th>Earnings</th>
-        <th>Deductions</th>
+        <th style="width: 40%">Earnings & Allowances</th>
+        <th class="amt">Amount</th>
+        <th style="width: 40%; padding-left: 30px;">Deductions</th>
+        <th class="amt">Amount</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="row-label">Basic Salary</td>
-        <td class="row-earning">₹${basicFmt}</td>
-        <td class="row-deduction">₹0.00</td>
+        <td>Basic Salary</td>
+        <td class="amt" style="color: #15803d;">₹${formatAmt(salary?.basicSalary)}</td>
+        <td style="padding-left: 30px;">Provident Fund (PF)</td>
+        <td class="amt" style="color: #dc2626;">₹${formatAmt(salary?.pf)}</td>
       </tr>
       <tr>
-        <td class="row-label">Allowances</td>
-        <td class="row-earning">₹${(salary?.allowances || 0).toLocaleString('en-IN')}</td>
-        <td class="row-deduction">₹0.00</td>
+        <td>Allowances</td>
+        <td class="amt" style="color: #15803d;">₹${formatAmt(salary?.allowances)}</td>
+        <td style="padding-left: 30px;">Tax Deductions</td>
+        <td class="amt" style="color: #dc2626;">₹${formatAmt(salary?.tax)}</td>
       </tr>
-      <tr style="background:#fafafa">
-        <td class="row-label">Total</td>
-        <td class="row-earning">₹${netFmt}</td>
-        <td class="row-deduction">₹${(salary?.deductions || 0).toLocaleString('en-IN')}</td>
+      <tr>
+        <td></td>
+        <td></td>
+        <td style="padding-left: 30px;">Loan Deductions</td>
+        <td class="amt" style="color: #dc2626;">₹${formatAmt(salary?.loanDeduction)}</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td></td>
+        <td style="padding-left: 30px;">Other Deductions</td>
+        <td class="amt" style="color: #dc2626;">₹${formatAmt(salary?.deductions)}</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="net-box">
-    <div>
-      <div class="net-words-label">Net Payout In Words</div>
-      <div class="net-words-text">${netWords}</div>
+  <div class="totals-section">
+    <div class="words-box">
+      <div style="text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-size: 10px;">Net Payout (In Words)</div>
+      ${netWords}
     </div>
-    <div>
-      <div class="net-amount-label">Take Home Pay</div>
-      <div class="net-amount">₹${netFmt}</div>
+    <div class="totals-box">
+      <div class="total-row">
+        <span style="color: #64748B;">Total Earnings</span>
+        <span style="font-weight: 700;">₹${formatAmt((salary?.basicSalary||0) + (salary?.allowances||0))}</span>
+      </div>
+      <div class="total-row">
+        <span style="color: #64748B;">Total Deductions</span>
+        <span style="font-weight: 700; color: #DC2626;">- ₹${formatAmt((salary?.pf||0) + (salary?.tax||0) + (salary?.loanDeduction||0) + (salary?.deductions||0))}</span>
+      </div>
+      <div class="total-row grand-total">
+        <span>Take Home Pay</span>
+        <span>₹${formatAmt(salary?.netSalary)}</span>
+      </div>
     </div>
   </div>
 
-  <div class="doc-footer-row">
+  <div class="footer">
     <div>
-      <p style="font-size:9px;font-weight:900;color:#d1d5db;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Verification</p>
-      <p style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#16a34a;">✅ Digital Record Verified</p>
+      <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;margin-bottom:4px;">Verification</div>
+      <div style="color:#059669;font-weight:800;font-size:12px;">✓ Digital Record Verified</div>
+      <div style="font-size:9px; color:#94A3B8; margin-top: 10px;">This is a system generated document. No physical signature is required.</div>
     </div>
     <div style="text-align:center;">
-      <div class="sig-line"></div>
-      <div class="sig-name">${sigName}</div>
-      <div class="sig-role">Authorized Signatory</div>
-      <div class="sig-org">Kokan Global Foundation (HM)</div>
+      <div style="width:160px; height:1px; background:#CBD5E1; margin:0 auto 8px;"></div>
+      <div style="font-size:13px;font-weight:900;">${sigName}</div>
+      <div style="font-size:10px;color:#64748B;font-weight:700;">Authorized Signatory</div>
     </div>
   </div>
-
-  <div class="doc-footer">
-    This is a computer generated certificate and does not require a physical seal.<br/>
-    © ${year} Kokan Global Foundation – All Rights Reserved.
-  </div>
-
-  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
 </body>
 </html>`;
 };
@@ -300,10 +295,15 @@ export default function StaffSalaryContent() {
   const [selectedSalary, setSelectedSalary] = useState(null)
   const [searchTerm, setSearchTerm]         = useState("")
   const [totals, setTotals]                 = useState({ totalPayroll: 0, totalPayout: 0 })
+  const [showChequeModal, setShowChequeModal] = useState(false)
+  const [chequeSalary, setChequeSalary]     = useState(null)
+  const [chequeFormData, setChequeFormData] = useState({ bankName: "", chequeNumber: "", chequeDate: "", chequeImage: null })
+  const [showViewChequeModal, setShowViewChequeModal] = useState(false)
+  const [viewChequeData, setViewChequeData] = useState(null)
 
   const [formData, setFormData] = useState({
     staffId: "", amountToPay: "", paymentMethod: "bank_transfer",
-    allowances: 0, otherDeductions: 0, bankName: "", accountNumber: "", ifscCode: "",
+    allowances: 0, otherDeductions: 0, tax: 0, pf: 0, loanDeduction: 0, bankName: "", accountNumber: "", ifscCode: "",
     baseSalaryRaw: 0, presentDays: 0, daysInMonth: 0, absentDeduction: 0, paidHolidays: 0, actualAttendance: 0, absentDaysRaw: 0, isCalculating: false
   })
 
@@ -433,7 +433,7 @@ export default function StaffSalaryContent() {
         bankName: formData.bankName,
         accountNumber: formData.accountNumber,
         ifscCode: formData.ifscCode,
-        tax: 0, pf: 0, loanDeduction: 0,
+        tax: Number(formData.tax) || 0, pf: Number(formData.pf) || 0, loanDeduction: Number(formData.loanDeduction) || 0,
         totalDays: formData.daysInMonth,
         attendanceDays: formData.actualAttendance,
         paidHolidays: formData.paidHolidays,
@@ -443,7 +443,7 @@ export default function StaffSalaryContent() {
         toast.success("Salary processed successfully")
         setShowProcessSalary(false)
         fetchSalaries()
-        setFormData({ staffId:"", amountToPay:"", paymentMethod:"bank_transfer", allowances:0, otherDeductions:0, bankName:"", accountNumber:"", ifscCode:"", absentDeduction: 0, presentDays: 0, daysInMonth: 0 })
+        setFormData({ staffId:"", amountToPay:"", paymentMethod:"bank_transfer", allowances:0, otherDeductions:0, tax:0, pf:0, loanDeduction:0, bankName:"", accountNumber:"", ifscCode:"", absentDeduction: 0, presentDays: 0, daysInMonth: 0 })
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process salary")
@@ -457,6 +457,39 @@ export default function StaffSalaryContent() {
       fetchSalaries()
     } catch { toast.error("Failed to update status") }
   }
+
+  const handleChequeSubmit = async (e) => {
+    e.preventDefault();
+    if (!chequeFormData.chequeNumber || !chequeFormData.chequeDate || !chequeFormData.bankName) {
+      toast.error("Please fill all cheque details");
+      return;
+    }
+    setProcessing(true);
+    try {
+      const payload = new FormData();
+      payload.append('status', 'paid');
+      payload.append('paymentMethod', 'cheque');
+      payload.append('bankName', chequeFormData.bankName);
+      payload.append('chequeNumber', chequeFormData.chequeNumber);
+      payload.append('chequeDate', chequeFormData.chequeDate);
+      if (chequeFormData.chequeImage) {
+        payload.append('chequeImage', chequeFormData.chequeImage);
+      }
+
+      await api.put(`/api/adminauth/salary/${chequeSalary._id}/status`, payload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      toast.success(`Salary marked as paid (Cheque)`);
+      fetchSalaries();
+      setShowChequeModal(false);
+      setChequeSalary(null);
+      setChequeFormData({ bankName: "", chequeNumber: "", chequeDate: "", chequeImage: null });
+    } catch {
+      toast.error("Failed to process cheque payment");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const handleRazorpayPayment = async (salary) => {
     try {
@@ -648,15 +681,17 @@ export default function StaffSalaryContent() {
                   <div className="flex items-center justify-end gap-2">
                     {salary.status==='pending' && (
                       <div className="flex gap-2 border-r border-gray-200 pr-3 mr-1">
-                        <button onClick={() => handleUpdateStatus(salary._id,'paid', 'cash')}
-                          className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white rounded text-xs font-bold hover:bg-green-600 transition-colors" title="Mark as Paid (Cash)">
-                          <HiOutlineCheckCircle size={14}/> Cash
-                        </button>
-                        <button onClick={() => handleRazorpayPayment(salary)}
-                          className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-bold shadow-sm" title="Pay Online">
-                          <HiOutlineCurrencyRupee size={14}/> Online
+                        <button onClick={() => { setChequeSalary(salary); setShowChequeModal(true); }}
+                          className="flex items-center gap-1 px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors text-xs font-bold shadow-sm" title="Pay via Cheque">
+                          <FaUniversity size={12}/> Cheque
                         </button>
                       </div>
+                    )}
+                    {salary.status === 'paid' && salary.paymentMethod === 'cheque' && (
+                      <button onClick={() => { setViewChequeData(salary); setShowViewChequeModal(true); }}
+                        className="px-3 py-1.5 bg-[#f4f6f0] text-gray-700 hover:bg-[#e4e7dd] rounded-lg text-xs font-bold transition-colors border border-[#BEC5AD] flex items-center gap-1">
+                        <FaUniversity size={12}/> View Cheque
+                      </button>
                     )}
                     <button onClick={() => { setSelectedSalary(salary); setShowPayslipModal(true); }}
                       className="px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-bold transition-colors border border-blue-200">
@@ -673,185 +708,197 @@ export default function StaffSalaryContent() {
     </>
   )
 
-  // ── Payslip Preview (React modal — uses react-icons) ─────────────────────
-  const PayslipPreview = ({ salary }) => (
-    <div className="p-4 sm:p-8 space-y-5 bg-white text-gray-900 w-full mx-auto" style={{ maxWidth: 760 }}>
-
-      {/* ── KGF Header ── */}
-      <div className="flex flex-col xs:flex-row justify-between items-start border-b-[3px] border-blue-600 pb-6 gap-4">
-        <div className="flex items-start gap-4">
-          <img
-            src="/photos/logo1.svg"
-            alt="KGF Logo"
-            className="w-16 h-16 object-contain shrink-0"
-            onError={e => { e.currentTarget.style.display = 'none' }}
-          />
+  // ── Payslip Preview (React modal) ──────────────────────────────────────────
+  // ── Payslip Preview (React modal) ──────────────────────────────────────────
+  const PayslipPreview = ({ salary }) => {
+    const isPaid = salary?.status === 'paid';
+    return (
+    <div className="bg-white text-gray-900 w-full mx-auto relative shadow-sm border border-gray-100" style={{ maxWidth: 800, fontFamily: 'Inter, sans-serif' }}>
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row justify-between items-center pb-6 border-b border-gray-200 mb-8 px-8 pt-8">
+        <div className="flex items-center gap-5">
+          <img src="/photos/logo1.svg" alt="KGF Logo" className="w-[75px] h-[75px] object-contain shrink-0" onError={e => { e.currentTarget.style.display = 'none' }} />
           <div>
-            <h1 className="text-lg sm:text-2xl font-black text-gray-900 leading-none tracking-tight">
-              KOKAN GLOBAL FOUNDATION
-            </h1>
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1.5">
-              Educational &amp; Welfare Trust &nbsp;|&nbsp; Reg No: E-3342/R
+            <h1 className="text-[28px] font-black text-[#0F172A] uppercase leading-[1.1] tracking-[-0.02em]">KGF BOYS HOSTEL</h1>
+            <p className="text-[13px] text-[#6a5e15] font-bold uppercase mt-1.5">by Kokan Global Foundation</p>
+            <p className="text-[13px] text-[#4A6E94] font-bold uppercase mt-0.5">Hostel Management Division</p>
+          </div>
+        </div>
+        <div className="mt-4 sm:mt-0 text-left sm:text-right text-[12px] text-[#64748B] leading-relaxed">
+          <div className="flex justify-start sm:justify-end items-center gap-2 mb-1"><span className="text-red-600 text-sm">📍</span> Maharashtra, India</div>
+          <div className="flex justify-start sm:justify-end items-center gap-2 mb-1"><span className="text-red-600 text-sm">📞</span> +91-7510012346</div>
+          <div className="mt-2 text-[12px] flex flex-col justify-end sm:items-end">
+            <span className="font-extrabold text-gray-800">Generated:</span> 
+            <span className="font-bold text-[#0F172A] mt-0.5">{new Date().toLocaleDateString('en-GB')}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-8 pb-8">
+        {/* ── Invoice Banner ── */}
+        <div className="bg-[#F8FAF5] px-6 py-4 rounded-xl mb-8 flex justify-between items-center border border-[#7A8B5E]/20">
+          <div className="text-[16px] font-black text-[#7A8B5E] uppercase tracking-widest">Salary Slip / Remittance</div>
+          <div className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${isPaid ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
+            {salary?.status || 'Pending'}
+          </div>
+        </div>
+
+        {/* ── Info Grid ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+          {/* Employee */}
+          <div>
+            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Employee Details</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Name:</span><span className="font-bold text-gray-900">{salary?.staffName?.toUpperCase()}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Designation:</span><span className="font-bold text-gray-900">{salary?.role || 'Warden'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Emp ID:</span><span className="font-mono font-bold text-gray-900">{salary?.employeeId || `#${salary?._id?.slice(-6).toUpperCase()}`}</span></div>
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div>
+            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Payment Details</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Pay Period:</span><span className="font-bold text-gray-900">{currentMonthName} {selectedYear}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Pay Date:</span><span className="font-bold text-gray-900">{salary?.paymentDate ? new Date(salary.paymentDate).toLocaleDateString('en-GB') : 'Processing'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600 font-medium">Bank:</span><span className="font-bold text-gray-900">{(salary?.bankName || 'Direct Transfer').toUpperCase()}</span></div>
+              {salary?.paymentMethod === 'cheque' ? (
+                <>
+                  <div className="flex justify-between"><span className="text-gray-600 font-medium">Cheque No:</span><span className="font-mono font-bold text-gray-900">{salary.chequeNumber || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-600 font-medium">Cheque Date:</span><span className="font-bold text-gray-900">{salary.chequeDate ? new Date(salary.chequeDate).toLocaleDateString('en-GB') : 'N/A'}</span></div>
+                </>
+              ) : (
+                <div className="flex justify-between"><span className="text-gray-600 font-medium">Account:</span><span className="font-mono font-bold text-gray-900">{salary?.accountNumber ? `XXXX${salary.accountNumber.slice(-4)}` : 'N/A'}</span></div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Calculation Box ── */}
+        <div className="mb-8">
+          <div className="bg-[#F8FAF5] border border-gray-200 rounded-xl p-5 shadow-sm max-w-sm">
+            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Attendance & Salary Calculation</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center py-1">
+                <span className="text-gray-600 font-bold uppercase tracking-wider text-xs">Total Days</span>
+                <span className="font-bold text-gray-900 border border-gray-200 rounded px-3 py-1 bg-white">{salary?.totalDays || 0}</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-gray-600 font-bold uppercase tracking-wider text-xs">Attendance</span>
+                <span className="font-bold text-gray-900 border border-gray-200 rounded px-3 py-1 bg-white">{salary?.attendanceDays || 0}</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-[#10b981] font-bold uppercase tracking-wider text-xs">Paid Holidays</span>
+                <span className="font-bold text-[#10b981] border border-green-200 rounded px-3 py-1 bg-white">{salary?.paidHolidays || 0}</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-gray-600 font-bold uppercase tracking-wider text-xs">Absences</span>
+                <span className="font-bold text-red-600 border border-red-200 rounded px-3 py-1 bg-white">{salary?.unpaidLeaves || 0}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 mt-2 border-t border-gray-200">
+                <span className="text-red-600 font-black uppercase tracking-wider text-xs">Absence Deduction (₹)</span>
+                <span className="font-bold text-red-600 border border-red-200 rounded px-3 py-1 bg-white">
+                  {salary?.basicSalary && salary?.totalDays ? Math.round((salary.basicSalary / salary.totalDays) * (salary.unpaidLeaves || 0)) : 0}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Table ── */}
+        <div className="mb-8">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold tracking-widest">
+                <th className="p-3 w-5/12">Earnings & Allowances</th>
+                <th className="p-3 text-right">Amount</th>
+                <th className="p-3 w-5/12 pl-6 border-l-2 border-white">Deductions</th>
+                <th className="p-3 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              <tr>
+                <td className="p-3 font-medium text-gray-800">Basic Salary</td>
+                <td className="p-3 text-right font-bold text-green-700">₹{(salary?.basicSalary||0).toLocaleString('en-IN')}</td>
+                <td className="p-3 pl-6 text-gray-600 border-l border-gray-100">Provident Fund (PF)</td>
+                <td className="p-3 text-right font-bold text-red-600">₹{(salary?.pf||0).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium text-gray-800">Allowances</td>
+                <td className="p-3 text-right font-bold text-green-700">₹{(salary?.allowances || 0).toLocaleString('en-IN')}</td>
+                <td className="p-3 pl-6 text-gray-600 border-l border-gray-100">Tax Deductions</td>
+                <td className="p-3 text-right font-bold text-red-600">₹{(salary?.tax||0).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td className="p-3"></td>
+                <td className="p-3 text-right"></td>
+                <td className="p-3 pl-6 text-gray-600 border-l border-gray-100">Loan Deductions</td>
+                <td className="p-3 text-right font-bold text-red-600">₹{(salary?.loanDeduction||0).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td className="p-3 border-b border-gray-200"></td>
+                <td className="p-3 text-right border-b border-gray-200"></td>
+                <td className="p-3 pl-6 text-gray-600 border-l border-gray-100 border-b border-gray-200">Other Deductions</td>
+                <td className="p-3 text-right font-bold text-red-600 border-b border-gray-200">₹{(salary?.deductions||0).toLocaleString('en-IN')}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Totals ── */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
+          <div className="max-w-xs pt-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Net Payout (In Words)</p>
+            <p className="text-[11px] font-bold text-gray-600 capitalize leading-relaxed">
+              {numberToWords(salary?.netSalary || 0)}
             </p>
-            <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest mt-0.5">
-              Hostel Management Division
+          </div>
+          <div className="w-full sm:w-72">
+            <div className="flex justify-between py-2 text-sm">
+              <span className="text-gray-500 font-medium">Total Earnings</span>
+              <span className="font-bold text-gray-900">₹{((salary?.basicSalary||0) + (salary?.allowances||0)).toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between py-2 text-sm border-t border-gray-100">
+              <span className="text-gray-500 font-medium">Total Deductions</span>
+              <span className="font-bold text-red-600">- ₹{((salary?.pf||0) + (salary?.tax||0) + (salary?.loanDeduction||0) + (salary?.deductions||0)).toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between pt-4 mt-2 border-t-2 border-gray-900 text-lg">
+              <span className="font-black text-[#4A5D23]">Take Home Pay</span>
+              <span className="font-black text-gray-900">₹{(salary?.netSalary||0).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cheque Image (If exists) */}
+        {salary?.paymentMethod === 'cheque' && salary?.chequeImage && (
+          <div className="mt-10 pt-6 border-t border-gray-100">
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Attached Cheque Reference</h4>
+             <div className="w-full max-w-sm border border-gray-200 rounded-lg p-2 bg-gray-50">
+               <img src={`http://localhost:5000${salary.chequeImage}`} alt="Cheque Scan" className="w-full h-auto rounded" />
+             </div>
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        <div className="mt-16 pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-end gap-8">
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Verification</p>
+            <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+              <HiOutlineBadgeCheck size={16} /> Digital Record Verified
+            </div>
+            <p className="text-[9px] text-gray-400 mt-3 font-medium">This is a system generated document. No physical signature is required.</p>
+          </div>
+          <div className="text-center">
+            <div className="w-40 h-[1px] bg-gray-300 mx-auto mb-2" />
+            <p className="text-xs font-black text-gray-900 tracking-wider">
+              {salary?.processedByName && !salary.processedByName.includes('undefined') ? salary.processedByName : 'Authorized Admin'}
             </p>
-            <div className="flex flex-wrap gap-4 mt-2 text-[10px] text-gray-400 font-semibold">
-              <span className="flex items-center gap-1">
-                <HiOutlineLocationMarker size={11} /> Maharashtra, India
-              </span>
-              <span className="flex items-center gap-1">
-                <HiOutlinePhone size={11} /> +91-XXXXXXXXXX
-              </span>
-            </div>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Authorized Signatory</p>
           </div>
         </div>
-
-        {/* Badge + period */}
-        <div className="text-left xs:text-right shrink-0">
-          <div className="inline-block bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest mb-2">
-            Salary Certificate
-          </div>
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pay Period</p>
-          <p className="text-sm font-black text-gray-900 mt-0.5">{currentMonthName}, {selectedYear}</p>
-        </div>
-      </div>
-
-      {/* ── Blue divider strip ── */}
-      <div className="h-1 bg-blue-600 rounded-full -mt-2" />
-
-      {/* ── Employee & Payment Info ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
-        {/* Employee */}
-        <div>
-          <h4 className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] border-b border-gray-100 pb-1.5 mb-3">
-            Employee Details
-          </h4>
-          {[
-            { Icon: HiOutlineUser,         label: "Name",        value: salary?.staffName?.toUpperCase(), mono: false },
-            { Icon: HiOutlineOfficeBuilding,label: "Designation", value: salary?.role || 'Warden',        mono: false },
-            { Icon: HiOutlineHashtag,      label: "Emp ID",      value: salary?.employeeId || `#${salary?._id?.slice(-6).toUpperCase()}`, mono: true  },
-          ].map(({ Icon, label, value, mono }) => (
-            <div key={label} className="flex items-center gap-2 text-xs mb-2.5">
-              <Icon size={14} className="text-gray-300 shrink-0" />
-              <span className="text-gray-500 w-24 shrink-0">{label}:</span>
-              <span className={`font-bold text-gray-900 truncate ${mono ? 'font-mono italic' : ''}`}>{value}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Payment */}
-        <div>
-          <h4 className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] border-b border-gray-100 pb-1.5 mb-3">
-            Payment Details
-          </h4>
-          {[
-            { Icon: HiOutlineCalendar,  label: "Pay Date", value: salary?.paymentDate ? new Date(salary.paymentDate).toLocaleDateString('en-GB') : 'Processing', mono: false },
-            { Icon: HiOutlineLibrary,   label: "Bank",     value: (salary?.bankName || 'Direct Transfer').toUpperCase(), mono: false },
-            { Icon: HiOutlineCreditCard,label: "Account",  value: salary?.accountNumber ? `XXXX${salary.accountNumber.slice(-4)}` : 'N/A', mono: true },
-          ].map(({ Icon, label, value, mono }) => (
-            <div key={label} className="flex items-center gap-2 text-xs mb-2.5">
-              <Icon size={14} className="text-gray-300 shrink-0" />
-              <span className="text-gray-500 w-24 shrink-0">{label}:</span>
-              <span className={`font-bold text-gray-900 truncate ${mono ? 'font-mono' : ''}`}>{value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Attendance Summary ── */}
-      <div className="border-2 border-gray-100 rounded-xl p-4 sm:p-5 mt-6 mb-6 bg-gray-50/30">
-        <h4 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Attendance Breakdown</h4>
-        <div className="grid grid-cols-2 xs:grid-cols-4 gap-4 text-center">
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Days</p>
-            <p className="text-lg font-black text-gray-900">{salary?.totalDays || 0}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Attendance</p>
-            <p className="text-lg font-black text-gray-900">{salary?.attendanceDays || 0}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Paid Holidays</p>
-            <p className="text-lg font-black text-green-700">{salary?.paidHolidays || 0}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Absences</p>
-            <p className="text-lg font-black text-red-600">{salary?.unpaidLeaves || 0}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Earnings Table ── */}
-      <div className="border-2 border-gray-100 rounded-xl overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-gray-50 text-gray-500 uppercase text-[9px] font-black tracking-widest">
-            <tr>
-              <th className="px-4 sm:px-5 py-3 text-left">Description</th>
-              <th className="px-4 sm:px-5 py-3 text-right">Earnings</th>
-              <th className="px-4 sm:px-5 py-3 text-right">Deductions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-2 divide-gray-50">
-            <tr>
-              <td className="px-4 sm:px-5 py-3 font-bold text-gray-700 italic">Basic Salary</td>
-              <td className="px-4 sm:px-5 py-3 text-right font-black text-gray-900">₹{salary?.basicSalary?.toLocaleString('en-IN')}</td>
-              <td className="px-4 sm:px-5 py-3 text-right text-gray-300">₹0.00</td>
-            </tr>
-            <tr>
-              <td className="px-4 sm:px-5 py-3 font-bold text-gray-700 italic">Allowances</td>
-              <td className="px-4 sm:px-5 py-3 text-right font-black text-gray-900">₹{(salary?.allowances||0).toLocaleString('en-IN')}</td>
-              <td className="px-4 sm:px-5 py-3 text-right text-gray-300">₹0.00</td>
-            </tr>
-            <tr className="bg-gray-50/50">
-              <td className="px-4 sm:px-5 py-3 font-bold text-gray-700 italic">Total</td>
-              <td className="px-4 sm:px-5 py-3 text-right font-black text-gray-900">₹{salary?.netSalary?.toLocaleString('en-IN')}</td>
-              <td className="px-4 sm:px-5 py-3 text-right text-gray-300">₹{(salary?.deductions||0).toLocaleString('en-IN')}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Net Pay Box ── */}
-      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center bg-blue-50 p-4 sm:p-6 rounded-2xl border-2 border-blue-100 gap-3">
-        <div>
-          <p className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Net Payout In Words</p>
-          <p className="text-xs font-black text-blue-900 uppercase italic leading-tight max-w-xs">
-            {numberToWords(salary?.netSalary || 0)}
-          </p>
-        </div>
-        <div className="text-left xs:text-right">
-          <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Take Home Pay</p>
-          <p className="text-3xl sm:text-4xl font-black text-blue-600 tracking-tighter">
-            ₹{salary?.netSalary?.toLocaleString('en-IN')}
-          </p>
-        </div>
-      </div>
-
-      {/* ── Footer ── */}
-      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-end pt-6 gap-6">
-        <div>
-          <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Verification</p>
-          <div className="flex items-center gap-1.5 text-green-600 font-bold text-xs">
-            <HiOutlineBadgeCheck size={14} /> Digital Record Verified
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="w-40 h-px bg-gray-200 mx-auto mb-2" />
-          <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
-            {salary?.processedByName && !salary.processedByName.includes('undefined') ? salary.processedByName : 'Authorized Admin'}
-          </p>
-          <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">Authorized Signatory</p>
-          <p className="text-[8px] text-gray-400 italic mt-0.5">Kokan Global Foundation (HM)</p>
-        </div>
-      </div>
-
-      <div className="text-[8px] text-gray-400 text-center uppercase font-bold tracking-widest pt-4 border-t border-gray-50 leading-relaxed">
-        Computer generated certificate · No physical seal required<br />
-        © {selectedYear} Kokan Global Foundation – All Rights Reserved.
       </div>
     </div>
-  )
+  )};
 
   return (
     <div className="pl-1 pr-2 sm:pl-2 sm:pr-4 bg-white min-h-screen mt-4 font-sans">
@@ -933,6 +980,8 @@ export default function StaffSalaryContent() {
         )}
 
         {showProcessSalary && renderProcessSalaryModal()}
+        {showChequeModal && renderChequeModal()}
+        {showViewChequeModal && renderViewChequeModal()}
       </div>
     </div>
   )
@@ -1001,6 +1050,30 @@ export default function StaffSalaryContent() {
                       className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Tax (₹)</label>
+                    <input type="number" value={formData.tax}
+                      onChange={e => setFormData(prev => ({ ...prev, tax: e.target.value }))}
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">PF (₹)</label>
+                    <input type="number" value={formData.pf}
+                      onChange={e => setFormData(prev => ({ ...prev, pf: e.target.value }))}
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Loan Deduction (₹)</label>
+                    <input type="number" value={formData.loanDeduction}
+                      onChange={e => setFormData(prev => ({ ...prev, loanDeduction: e.target.value }))}
+                      className="w-full px-3 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-[#BEC5AD] transition-all text-gray-600 font-medium" />
+                  </div>
+                </div>
                 
                 {formData.isCalculating && (
                   <div className="bg-white shadow-sm rounded-xl p-3 border border-gray-200 flex items-center justify-center animate-pulse">
@@ -1012,33 +1085,25 @@ export default function StaffSalaryContent() {
                   <div className="bg-white shadow-sm rounded-xl p-4 border border-gray-200 space-y-3">
                     <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
                       <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Total Days</span>
-                      <span className="font-bold text-gray-900">{formData.daysInMonth}</span>
+                      <input type="number" className="w-16 text-right font-bold text-gray-900 border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#BEC5AD]" value={formData.daysInMonth} onChange={e => setFormData(prev => ({...prev, daysInMonth: e.target.value}))} />
                     </div>
                     
                     <div className="flex justify-between items-center text-sm pt-1">
                       <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Attendance</span>
-                      <span className="font-bold text-gray-900">{formData.actualAttendance}</span>
+                      <input type="number" className="w-16 text-right font-bold text-gray-900 border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#BEC5AD]" value={formData.actualAttendance} onChange={e => setFormData(prev => ({...prev, actualAttendance: e.target.value}))} />
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="font-bold text-[#10b981] uppercase tracking-wider text-xs">Paid Holidays</span>
-                      <span className="font-bold text-[#10b981]">{formData.paidHolidays || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-3">
-                      <span className="font-bold text-[#3b82f6] uppercase tracking-wider text-xs">Total Paid Days</span>
-                      <span className="font-bold text-[#3b82f6]">{formData.presentDays}</span>
+                      <input type="number" className="w-16 text-right font-bold text-[#10b981] border border-green-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-green-400" value={formData.paidHolidays} onChange={e => setFormData(prev => ({...prev, paidHolidays: e.target.value}))} />
                     </div>
                     
-                    <div className="flex justify-between items-center text-sm pt-1">
-                      <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Leaves</span>
-                      <span className="font-bold text-gray-900 whitespace-nowrap">0</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm text-red-600 pt-1">
-                      <span className="font-bold uppercase tracking-wider text-xs">Absences</span>
-                      <span className="font-bold text-red-600 whitespace-nowrap">{formData.absentDaysRaw}</span>
+                    <div className="flex justify-between items-center text-sm pt-1 border-t border-gray-100 mt-1">
+                      <span className="font-semibold text-gray-600 uppercase tracking-wider text-xs">Absences</span>
+                      <input type="number" className="w-16 text-right font-bold text-red-600 border border-red-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-red-400" value={formData.absentDaysRaw} onChange={e => setFormData(prev => ({...prev, absentDaysRaw: e.target.value}))} />
                     </div>
                     <div className="flex justify-between items-center text-sm text-red-600 border-t border-red-50 pt-2 mt-1">
-                      <span className="font-bold uppercase tracking-wider text-xs">Deduction</span>
-                      <span className="font-bold text-red-600 whitespace-nowrap">-₹{formData.absentDeduction}</span>
+                      <span className="font-bold uppercase tracking-wider text-xs">Absence Deduction (₹)</span>
+                      <input type="number" className="w-24 text-right font-bold text-red-600 border border-red-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-red-400" value={formData.absentDeduction} onChange={e => setFormData(prev => ({...prev, absentDeduction: e.target.value}))} />
                     </div>
                   </div>
                 )}
@@ -1046,7 +1111,7 @@ export default function StaffSalaryContent() {
                 <div className="bg-white shadow-sm rounded-xl p-3 border border-gray-200 flex justify-between items-center mt-2">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Net Salary</span>
                   <span className="text-lg font-bold text-gray-900">
-                    ₹{((Number(formData.amountToPay) || 0) + (Number(formData.allowances) || 0) - (Number(formData.otherDeductions) || 0) - (Number(formData.absentDeduction) || 0)).toLocaleString('en-IN')}
+                    ₹{((Number(formData.amountToPay) || 0) + (Number(formData.allowances) || 0) - (Number(formData.otherDeductions) || 0) - (Number(formData.tax) || 0) - (Number(formData.pf) || 0) - (Number(formData.loanDeduction) || 0) - (Number(formData.absentDeduction) || 0)).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -1093,5 +1158,176 @@ export default function StaffSalaryContent() {
         </div>
       </div>
     )
+  }
+
+  // ── Cheque Payment Modal ──────────────────────────────────────────────────
+  function renderChequeModal() {
+    if (!showChequeModal || !chequeSalary) return null;
+    return (
+      <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-[#f4f6f0] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative border border-[#BEC5AD]/30 flex flex-col max-h-[90vh]" style={{ fontFamily: 'Inter' }}>
+          <div className="bg-gradient-to-r from-amber-500 to-amber-400 p-6 flex justify-between items-center text-white relative overflow-hidden shrink-0">
+            <div className="absolute -right-6 -top-6 text-white/20">
+              <FaUniversity size={100} />
+            </div>
+            <div className="relative z-10">
+              <h2 className="text-xl font-bold">Issue Cheque</h2>
+              <p className="text-sm font-medium text-amber-50 opacity-90 mt-1">Payment for {chequeSalary.staffName}</p>
+            </div>
+            <button type="button" onClick={() => { setShowChequeModal(false); setChequeSalary(null); }} className="p-2 hover:bg-white/20 rounded-full transition-colors relative z-10">
+              <HiOutlineX size={20} />
+            </button>
+          </div>
+          
+          <form onSubmit={handleChequeSubmit} className="p-6 space-y-5 bg-white m-2 rounded-2xl shadow-sm border border-gray-100 overflow-y-auto">
+            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex justify-between items-center">
+              <span className="text-sm font-bold text-amber-800">Net Amount</span>
+              <span className="text-xl font-black text-amber-600">₹{chequeSalary.netSalary.toLocaleString('en-IN')}</span>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Bank Name</label>
+              <input type="text" value={chequeFormData.bankName} required
+                onChange={e => setChequeFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                placeholder="e.g. State Bank of India"
+                className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-all text-gray-800 font-bold" />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Cheque Number</label>
+              <input type="text" value={chequeFormData.chequeNumber} required
+                onChange={e => setChequeFormData(prev => ({ ...prev, chequeNumber: e.target.value }))}
+                placeholder="6-digit cheque number"
+                maxLength={6}
+                className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-all text-gray-800 font-bold tracking-widest" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Cheque Date</label>
+              <div className="relative">
+                <DatePicker 
+                  selected={chequeFormData.chequeDate ? new Date(chequeFormData.chequeDate) : null} 
+                  onChange={date => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      setChequeFormData(prev => ({ ...prev, chequeDate: `${year}-${month}-${day}` }));
+                    } else {
+                      setChequeFormData(prev => ({ ...prev, chequeDate: "" }));
+                    }
+                  }} 
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="DD/MM/YYYY"
+                  required
+                  className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-all text-gray-800 font-bold"
+                  wrapperClassName="w-full"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Upload Cheque Photo (Optional)</label>
+              <input type="file" id="cheque-upload" accept="image/*"
+                onChange={e => setChequeFormData(prev => ({ ...prev, chequeImage: e.target.files[0] }))}
+                className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-all text-gray-800 font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
+              {chequeFormData.chequeImage && (
+                <div className="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50 h-40 flex items-center justify-center">
+                  <img 
+                    src={URL.createObjectURL(chequeFormData.chequeImage)} 
+                    alt="Cheque Preview" 
+                    className="max-h-full max-w-full object-contain" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChequeFormData(prev => ({ ...prev, chequeImage: null }));
+                      const fileInput = document.getElementById('cheque-upload');
+                      if (fileInput) fileInput.value = '';
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-sm"
+                  >
+                    <HiOutlineX size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-4 mt-6 pt-2">
+              <button type="button" onClick={() => { setShowChequeModal(false); setChequeSalary(null); }}
+                className="flex-1 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold py-3 hover:bg-gray-50 transition-colors shadow-sm">
+                Cancel
+              </button>
+              <button type="submit" disabled={processing}
+                className="flex-1 bg-amber-500 text-white rounded-xl font-bold py-3 hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50">
+                {processing ? "Saving..." : "Confirm & Pay"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ── View Cheque Modal ─────────────────────────────────────────────────────
+  function renderViewChequeModal() {
+    if (!viewChequeData) return null;
+    return (
+      <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-[100] p-4">
+        <div className="bg-[#f4f6f0] rounded-2xl shadow-xl overflow-hidden w-full max-w-lg relative flex flex-col border border-[#BEC5AD]/30" style={{ fontFamily: 'Inter', maxHeight: '90vh' }}>
+          
+          <div className="bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] px-6 py-4 flex justify-between items-center shrink-0">
+            <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+              <FaUniversity /> Cheque Details
+            </h2>
+            <button onClick={() => { setShowViewChequeModal(false); setViewChequeData(null); }} className="text-black/70 hover:text-black transition-colors">
+              <HiOutlineX size={24} />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-sm text-gray-500 font-semibold">Bank Name:</span>
+                <span className="text-sm font-bold text-gray-900">{viewChequeData.bankName || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-sm text-gray-500 font-semibold">Cheque Number:</span>
+                <span className="text-sm font-mono font-bold text-gray-900">{viewChequeData.chequeNumber || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500 font-semibold">Cheque Date:</span>
+                <span className="text-sm font-bold text-gray-900">{viewChequeData.chequeDate ? new Date(viewChequeData.chequeDate).toLocaleDateString('en-GB') : 'N/A'}</span>
+              </div>
+            </div>
+
+            {viewChequeData.chequeImage ? (
+              <div className="mt-4">
+                <h3 className="text-sm font-bold text-gray-700 mb-2">Cheque Photo</h3>
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-white p-2">
+                  <img 
+                    src={viewChequeData.chequeImage.startsWith('http') ? viewChequeData.chequeImage : `${(api.defaults.baseURL || 'http://localhost:5000').replace(/\/$/, '')}${viewChequeData.chequeImage.startsWith('/') ? '' : '/'}${viewChequeData.chequeImage}`} 
+                    alt="Cheque" 
+                    className="w-full h-auto object-contain max-h-[300px]"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
+                No cheque photo available.
+              </div>
+            )}
+            
+            <div className="pt-4">
+              <button type="button" onClick={() => { setShowViewChequeModal(false); setViewChequeData(null); }}
+                className="w-full bg-white text-gray-700 border border-gray-200 rounded-xl font-bold py-3 hover:bg-gray-50 transition-colors shadow-sm">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 }

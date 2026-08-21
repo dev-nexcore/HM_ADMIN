@@ -22,6 +22,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
   const [detectedAmount, setDetectedAmount] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [notes, setNotes] = useState('');
+  const [paymentOption, setPaymentOption] = useState('current'); // 'current' or 'full'
 
   // Extract specific item amounts if available
   const hostelFeeItem = fee?.items?.find(i => i.invoiceType === 'hostel_fee' || i.categoryName === 'hostel_fee');
@@ -40,7 +41,26 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
   if (isSecurityDeposit && securityFeeItem) breakdownAmount = Number(securityFeeItem.amount);
   else if (isHostelFee && hostelFeeItem) breakdownAmount = Number(hostelFeeItem.amount);
 
-  const monthlyBase = Math.round(breakdownAmount / 3);
+  let displayPendingFees = 0;
+  if (activeStudent?.allInvoices) {
+    displayPendingFees = activeStudent.allInvoices.filter(i => i.status !== "paid" && i._id !== fee._id).reduce((s, i) => s + (i.amount || 0) - (i.paidAmount || 0), 0);
+  } else if (activeStudent?.totalFees !== undefined && activeStudent?.paidFees !== undefined) {
+    const globalPending = Math.max(0, activeStudent.totalFees - activeStudent.paidFees);
+    displayPendingFees = Math.max(0, globalPending - totalAmount);
+  }
+  const grandTotal = totalAmount + displayPendingFees;
+  const expectedAmountDisplay = paymentOption === 'current' ? totalAmount : grandTotal;
+
+  let numMonths = 1;
+  if (fee?.billingCycleStart && fee?.billingCycleEnd) {
+    const s = new Date(fee.billingCycleStart);
+    const e = new Date(fee.billingCycleEnd);
+    numMonths = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.44)));
+  } else if (isHostelFee || isSecurityDeposit) {
+    numMonths = 3;
+  }
+
+  const monthlyBase = Math.round(breakdownAmount / numMonths);
   
   const handleScreenshotChange = async (e, type) => {
     const file = e.target.files[0];
@@ -97,7 +117,8 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
 
       // We can check amount matching on the student receipt (or whichever one has amount)
       if (detectedAmounts && detectedAmounts.length > 0) {
-        const amtMatched = detectedAmounts.some(amt => Math.abs(amt - totalAmount) < 2);
+        const expectedAmount = paymentOption === 'current' ? totalAmount : grandTotal;
+        const amtMatched = detectedAmounts.some(amt => Math.abs(amt - expectedAmount) < 2);
         
         // Let's store amount match globally if at least one matches, or check specifically for student receipt
         if (amtMatched || isAmountMatched) {
@@ -107,7 +128,8 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
         } else {
            setIsAmountMatched(false);
            setDetectedAmount(detectedAmounts[0]);
-           toast.error(`Amount mismatch! Detected ${detectedAmounts[0]} but expected ${totalAmount}`);
+           const expectedAmount = paymentOption === 'current' ? totalAmount : grandTotal;
+           toast.error(`Amount mismatch! Detected ${detectedAmounts[0]} but expected ${expectedAmount}`);
         }
       } else {
         if (isAmountMatched === null) {
@@ -146,26 +168,8 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
     }
   };
 
-  const baseDate = fee?.billingCycleStart ? new Date(fee.billingCycleStart) : new Date();
   const formatDate = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const todayStr = formatDate(new Date());
-
-  const m1Start = new Date(baseDate);
-  const m1End = new Date(baseDate);
-  m1End.setMonth(m1End.getMonth() + 1);
-  m1End.setDate(m1End.getDate() - 1);
-
-  const m2Start = new Date(baseDate);
-  m2Start.setMonth(m2Start.getMonth() + 1);
-  const m2End = new Date(baseDate);
-  m2End.setMonth(m2End.getMonth() + 2);
-  m2End.setDate(m2End.getDate() - 1);
-
-  const m3Start = new Date(baseDate);
-  m3Start.setMonth(m3Start.getMonth() + 2);
-  const m3End = new Date(baseDate);
-  m3End.setMonth(m3End.getMonth() + 3);
-  m3End.setDate(m3End.getDate() - 1);
 
   const handleProceedToPay = async () => {
     if (!fee) {
@@ -195,9 +199,10 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
 
     try {
       setProcessing(true);
+      const expectedAmount = paymentOption === 'current' ? totalAmount : grandTotal;
       
       const response = await api.put(`/api/adminauth/invoices/student/${fee._id}/status`, {
-        paidAmountToAdd: totalAmount,
+        paidAmountToAdd: expectedAmount,
         paymentMethod: 'online',
         transactionId: studentUtr.trim(),
         notes: notes.trim(),
@@ -251,7 +256,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
         <div className="bg-white rounded-2xl px-4 sm:px-8 py-6 sm:py-8 shadow-sm border border-gray-200 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-2 bg-[#4F8DCF]" />
           <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">
-            Payment Summary — {isSecurityDeposit ? 'Security Deposit' : isHostelFee ? 'Hostel Fee (Quarterly)' : 'Invoice Payment'}
+            Payment Summary — {isSecurityDeposit ? 'Security Deposit' : isHostelFee ? `Hostel Fee (${numMonths === 3 ? 'Quarterly' : numMonths === 1 ? 'Monthly' : 'Custom'})` : 'Invoice Payment'}
           </h3>
 
           {isSecurityDeposit ? (
@@ -295,7 +300,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                   <h4 className="text-sm sm:text-base font-bold text-gray-900">Hostel Fee — Monthly Calculation Breakdown</h4>
                 </div>
                 <span className="text-xs bg-blue-50 text-blue-700 font-extrabold px-3 py-1 rounded-full border border-blue-200 self-start sm:self-auto">
-                  Quarterly Cycle (3 Months)
+                  {numMonths === 3 ? "Quarterly Cycle (3 Months)" : numMonths === 1 ? "Monthly Cycle (1 Month)" : `Custom Cycle (${numMonths} Months)`}
                 </span>
               </div>
 
@@ -306,41 +311,35 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm overflow-hidden text-xs sm:text-sm font-medium text-gray-600">
-                  <div className="flex justify-between items-center p-4 hover:bg-gray-50/60 transition">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">1</span>
-                      <div>
-                        <span className="font-semibold text-gray-800 block">Month 1</span>
-                        <span className="text-[10px] text-gray-400">{formatDate(m1Start)} → {formatDate(m1End)}</span>
-                      </div>
-                    </div>
-                    <span className="font-bold text-gray-900">₹ {monthlyBase.toLocaleString()}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-4 hover:bg-gray-50/60 transition">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">2</span>
-                      <div>
-                        <span className="font-semibold text-gray-800 block">Month 2</span>
-                        <span className="text-[10px] text-gray-400">{formatDate(m2Start)} → {formatDate(m2End)}</span>
-                      </div>
-                    </div>
-                    <span className="font-bold text-gray-900">₹ {monthlyBase.toLocaleString()}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-4 hover:bg-gray-50/60 transition">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">3</span>
-                      <div>
-                        <span className="font-semibold text-gray-800 block">Month 3</span>
-                        <span className="text-[10px] text-gray-400">{formatDate(m3Start)} → {formatDate(m3End)}</span>
-                      </div>
-                    </div>
-                    <span className="font-bold text-gray-900">₹ {monthlyBase.toLocaleString()}</span>
-                  </div>
+                  {(() => {
+                    const monthsUi = [];
+                    const baseDate = fee?.billingCycleStart ? new Date(fee.billingCycleStart) : new Date();
+                    const formatDate = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    
+                    for (let i = 0; i < numMonths; i++) {
+                      const start = new Date(baseDate);
+                      start.setMonth(start.getMonth() + i);
+                      const end = new Date(start);
+                      end.setMonth(end.getMonth() + 1);
+                      end.setDate(end.getDate() - 1);
+                      monthsUi.push(
+                        <div key={i} className="flex justify-between items-center p-4 hover:bg-gray-50/60 transition">
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">{i + 1}</span>
+                            <div>
+                              <span className="font-semibold text-gray-800 block">Month {i + 1}</span>
+                              <span className="text-[10px] text-gray-400">{formatDate(start)} → {formatDate(end)}</span>
+                            </div>
+                          </div>
+                          <span className="font-bold text-gray-900">₹ {monthlyBase.toLocaleString()}</span>
+                        </div>
+                      );
+                    }
+                    return monthsUi;
+                  })()}
 
                   <div className="flex justify-between items-center p-4 bg-blue-50/40">
-                    <span className="font-extrabold text-gray-800 text-sm">Total (3 Months × ₹ {monthlyBase.toLocaleString()})</span>
+                    <span className="font-extrabold text-gray-800 text-sm">Total ({numMonths} Month{numMonths > 1 ? "s" : ""} × ₹ {monthlyBase.toLocaleString()})</span>
                     <span className="font-extrabold text-[#4F8DCF] text-base">₹ {totalAmount.toLocaleString()}</span>
                   </div>
                 </div>
@@ -351,7 +350,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                     <p className="text-base sm:text-lg font-extrabold text-gray-900">Quarterly Billing ({todayStr})</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Payable</p>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Current Invoice Amount</p>
                     <p className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#4F8DCF]">₹ {totalAmount.toLocaleString()}</p>
                   </div>
                 </div>
@@ -401,19 +400,61 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                     <p className="whitespace-pre-wrap">{fee.description}</p>
                   </div>
                 )}
-                
-                <div className="flex justify-between items-center p-4 sm:p-5 bg-blue-50/50 rounded-2xl border border-blue-200 mt-4">
-                  <div>
-                    <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">Total Amount</p>
-                    <p className="text-base font-extrabold text-gray-900">Due for this invoice</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl md:text-3xl font-extrabold text-blue-600">₹ {totalAmount.toLocaleString()}</p>
-                  </div>
-                </div>
               </div>
             </div>
           )}
+
+          <div className="mb-6 space-y-3">
+            <h4 className="text-sm font-bold text-gray-900 px-1 mb-2">Select Payment Amount</h4>
+            
+            <div 
+              onClick={() => setPaymentOption('current')}
+              className={`flex justify-between items-center p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all ${paymentOption === 'current' ? 'bg-blue-50/80 border-[#4F8DCF] shadow-sm' : 'bg-gray-50 border-gray-200 hover:border-[#4F8DCF]/40 hover:bg-gray-50/80'}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${paymentOption === 'current' ? 'border-[#4F8DCF]' : 'border-gray-300'}`}>
+                  {paymentOption === 'current' && <div className="w-2.5 h-2.5 rounded-full bg-[#4F8DCF]" />}
+                </div>
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${paymentOption === 'current' ? 'text-blue-600' : 'text-gray-500'}`}>Pay Current Invoice</p>
+                  <p className="text-base sm:text-lg font-extrabold text-gray-900">₹ {totalAmount.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {displayPendingFees > 0 && (
+              <div 
+                onClick={() => setPaymentOption('full')}
+                className={`flex flex-col p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all ${paymentOption === 'full' ? 'bg-gray-900 border-gray-800 shadow-md' : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${paymentOption === 'full' ? 'border-white' : 'border-gray-300'}`}>
+                      {paymentOption === 'full' && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${paymentOption === 'full' ? 'text-gray-300' : 'text-gray-500'}`}>Pay Total Outstanding</p>
+                      <p className={`text-base sm:text-lg font-extrabold ${paymentOption === 'full' ? 'text-white' : 'text-gray-900'}`}>₹ {grandTotal.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                     <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full ${paymentOption === 'full' ? 'bg-red-500/20 text-red-200' : 'bg-red-50 text-red-600 border border-red-100'}`}>+ ₹ {displayPendingFees.toLocaleString()} Arrears</span>
+                  </div>
+                </div>
+                
+                {activeStudent?.allInvoices && (
+                  <div className={`mt-4 pt-3 border-t pl-9 flex flex-col gap-2 ${paymentOption === 'full' ? 'border-gray-700 text-gray-300' : 'border-gray-200 text-gray-500'}`}>
+                    {activeStudent.allInvoices.filter(i => i.status !== "paid" && i._id !== fee._id).map((inv, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs">
+                        <span>• {inv.invoiceType?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} - {new Date(inv.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <span className="font-semibold">₹ {(inv.amount - (inv.paidAmount || 0)).toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {fee && (
             <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 px-2 font-semibold pt-3 border-t border-gray-100">
@@ -451,7 +492,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                     <div className="w-40 h-40 relative flex items-center justify-center bg-gray-50 rounded-xl mb-2 border border-gray-100">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                          `upi://pay?pa=7510012346@ybl&pn=KGF HOSTEL OFFICIAL&am=${totalAmount}&cu=INR&tn=Hostel Fee Payment`
+                          `upi://pay?pa=7510012346@ybl&pn=KGF HOSTEL OFFICIAL&am=${expectedAmountDisplay}&cu=INR&tn=Hostel Fee Payment`
                         )}`}
                         alt="KGF Hostel Official Dynamic QR Code"
                         className="w-32 h-32 object-contain"
@@ -461,7 +502,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                     <p className="text-[10px] text-gray-500 font-semibold">UPI ID: 7510012346@ybl</p>
                     <div className="mt-2 text-center bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 w-full">
                       <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Amount to Pay</p>
-                      <p className="text-sm font-extrabold text-gray-900">₹ {totalAmount.toLocaleString()}</p>
+                      <p className="text-sm font-extrabold text-gray-900">₹ {expectedAmountDisplay.toLocaleString()}</p>
                     </div>
                   </div>
 
@@ -470,7 +511,7 @@ export default function AdminOnlinePayment({ fee, activeStudent, onBack, onSucce
                       <p className="font-bold mb-1">Instructions:</p>
                       <ol className="list-decimal list-inside space-y-1 font-medium">
                         <li>Ask the student/parent to open their UPI app.</li>
-                        <li>Have them scan the QR code (amount <strong>₹ {totalAmount.toLocaleString()}</strong> is pre-filled).</li>
+                        <li>Have them scan the QR code (amount <strong>₹ {expectedAmountDisplay.toLocaleString()}</strong> is pre-filled).</li>
                         <li>After they pay, enter the 12-digit UTR below and confirm.</li>
                       </ol>
                     </div>

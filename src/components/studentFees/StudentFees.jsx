@@ -190,6 +190,7 @@ const StudentFees = () => {
     description: "",
     billingCycleStart: "",
     billingCycleEnd: "",
+    cycleMode: "custom",
   });
   const [submitting, setSubmitting] = useState(false);
   const [verifyingOCR, setVerifyingOCR] = useState(false);
@@ -197,6 +198,8 @@ const StudentFees = () => {
   const [ocrSuccess, setOcrSuccess] = useState(null);
   const selectedYear = new Date().getFullYear();
   const [alertModalMsg, setAlertModalMsg] = useState("");
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -324,36 +327,64 @@ const StudentFees = () => {
   );
 
   const availableBillingCycles = useMemo(() => {
-    if (!activeStudent || !activeStudent.admissionDate) return [];
-    const cycles = [];
-    let start = new Date(activeStudent.admissionDate);
+    if (!activeStudent || !activeStudent.admissionDate) return { quarterly: [], monthly: [] };
+    
+    const checkPaid = (cycleStartStr, cycleEndStr) => {
+      const cStart = new Date(cycleStartStr).getTime();
+      const cEnd = new Date(cycleEndStr).getTime();
+      
+      return activeStudent.allInvoices.some(inv => {
+        if (inv.status !== "paid") return false;
+        if (!inv.billingCycleStart || !inv.billingCycleEnd) return false;
+        
+        const invStart = new Date(inv.billingCycleStart).getTime();
+        const invEnd = new Date(inv.billingCycleEnd).getTime();
+        
+        // A cycle is considered paid if it overlaps with any already paid invoice
+        return Math.max(cStart, invStart) < Math.min(cEnd, invEnd);
+      });
+    };
+
     const maxDate = new Date();
     maxDate.setFullYear(maxDate.getFullYear() + 1); // Up to 1 year ahead
 
-    while (start < maxDate) {
-      let end = new Date(start);
-      end.setMonth(end.getMonth() + 3); // Assuming 3-month billing cycles
+    const quarterly = [];
+    let startQ = new Date(activeStudent.admissionDate);
+    while (startQ < maxDate) {
+      let endQ = new Date(startQ);
+      endQ.setMonth(endQ.getMonth() + 3);
       
-      const startStr = start.toISOString().split('T')[0];
-      const endStr = end.toISOString().split('T')[0];
+      const startStr = startQ.toISOString().split('T')[0];
+      const endStr = endQ.toISOString().split('T')[0];
       
-      const isPaid = activeStudent.allInvoices.some(inv => {
-        if (inv.status !== "paid") return false;
-        if (!inv.billingCycleStart) return false;
-        const invStartStr = new Date(inv.billingCycleStart).toISOString().split('T')[0];
-        return invStartStr === startStr;
-      });
-
-      cycles.push({
+      quarterly.push({
         start: startStr,
         end: endStr,
-        display: `${start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} to ${end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
-        isPaid
+        display: `${startQ.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} to ${endQ.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+        isPaid: checkPaid(startStr, endStr)
       });
-
-      start = new Date(end);
+      startQ = new Date(endQ);
     }
-    return cycles;
+
+    const monthly = [];
+    let startM = new Date(activeStudent.admissionDate);
+    while (startM < maxDate) {
+      let endM = new Date(startM);
+      endM.setMonth(endM.getMonth() + 1);
+      
+      const startStr = startM.toISOString().split('T')[0];
+      const endStr = endM.toISOString().split('T')[0];
+      
+      monthly.push({
+        start: startStr,
+        end: endStr,
+        display: `${startM.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} to ${endM.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+        isPaid: checkPaid(startStr, endStr)
+      });
+      startM = new Date(endM);
+    }
+
+    return { quarterly, monthly };
   }, [activeStudent]);
 
   const filteredStudents = useMemo(() => studentFeeStats.filter(s => {
@@ -408,7 +439,8 @@ const StudentFees = () => {
     try {
       const finalItems = invoiceForm.items.map(item => ({
         categoryName: item.invoiceType === "other" && item.customInvoiceType ? item.customInvoiceType : item.invoiceType,
-        amount: Number(item.amount || 0)
+        amount: Number(item.amount || 0),
+        description: item.itemDescription || ""
       }));
       const totalAmount = finalItems.reduce((sum, item) => sum + item.amount, 0);
       const combinedType = finalItems.length === 1 ? finalItems[0].categoryName : "Combined Invoice";
@@ -441,11 +473,12 @@ const StudentFees = () => {
       setEditingInvoiceId(null);
       fetchData();
       setInvoiceForm({
-        items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: "" }],
+        items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: "", itemDescription: "" }],
         dueDate: new Date().toISOString().split("T")[0],
         description: "",
         billingCycleStart: "",
         billingCycleEnd: "",
+        cycleMode: "custom",
       });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save invoice");
@@ -464,32 +497,41 @@ const StudentFees = () => {
             custom = type;
             type = "other";
           }
-          return { invoiceType: type, customInvoiceType: custom, amount: String(i.amount) };
+          return { invoiceType: type, customInvoiceType: custom, amount: String(i.amount), itemDescription: i.description || "" };
         })
-      : [{ invoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? inv.invoiceType : "other", customInvoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? "" : (inv.invoiceType || ""), amount: String(inv.amount || "") }];
+      : [{ invoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? inv.invoiceType : "other", customInvoiceType: ["hostel_fee", "security_deposit", "mess_fee", "maintenance_fee"].includes(inv.invoiceType) ? "" : (inv.invoiceType || ""), amount: String(inv.amount || ""), itemDescription: "" }];
     
     setInvoiceForm({
       items: formItems,
       dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       description: inv.description || "",
       billingCycleStart: inv.billingCycleStart ? new Date(inv.billingCycleStart).toISOString().split('T')[0] : "",
-      billingCycleEnd: inv.billingCycleEnd ? new Date(inv.billingCycleEnd).toISOString().split('T')[0] : ""
+      billingCycleEnd: inv.billingCycleEnd ? new Date(inv.billingCycleEnd).toISOString().split('T')[0] : "",
+      cycleMode: "custom"
     });
     setShowGenerateModal(true);
   };
 
-  const handleDeleteInvoice = async (inv) => {
-    if (window.confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
-      try {
-        await api.delete(`/api/adminauth/invoices/student/${inv._id}`);
-        toast.success("Invoice deleted successfully");
-        if (selectedInvoice && selectedInvoice._id === inv._id) {
-          setSelectedInvoice(null);
-        }
-        fetchData();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to delete invoice");
+  const handleDeleteInvoice = (inv) => {
+    setDeleteConfirmModal({ invoice: inv });
+  };
+
+  const executeDeleteInvoice = async () => {
+    if (!deleteConfirmModal) return;
+    const inv = deleteConfirmModal.invoice;
+    try {
+      setSubmitting(true);
+      await api.delete(`/api/adminauth/invoices/student/${inv._id}`);
+      toast.success("Invoice deleted successfully");
+      if (selectedInvoice && selectedInvoice._id === inv._id) {
+        setSelectedInvoice(null);
       }
+      fetchData();
+      setDeleteConfirmModal(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete invoice");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -520,7 +562,13 @@ const StudentFees = () => {
 
   // ── FIX: Mark full invoice as paid via Cash ──────────────────────────────
   // Now sends paidAmountToAdd = full remaining balance so paidAmount is set correctly.
-  const handleMarkFullyPaid = async (invoice, method = "cash") => {
+  const handleMarkFullyPaid = (invoice, method = "cash") => {
+    setConfirmModal({ invoice, method });
+  };
+
+  const executeMarkFullyPaid = async () => {
+    if (!confirmModal) return;
+    const { invoice, method } = confirmModal;
     const remaining = (invoice.amount || 0) - (invoice.paidAmount || 0);
     try {
       setSubmitting(true);
@@ -532,6 +580,7 @@ const StudentFees = () => {
       toast.success(`Marked as paid (${method})`);
       setSelectedInvoice(null);
       await fetchData();
+      setConfirmModal(null);
     } catch (err) {
       console.error("Update status error:", err);
       toast.error("Failed to update status");
@@ -761,9 +810,9 @@ const StudentFees = () => {
             </div>
             <div class="header-text">
               <h2>KGF Boys Hostel</h2>
-              <p class="org">Kokan Global Foundation</p>
+              <p class="org">by Kokan Global Foundation</p>
               <p class="doc">Official Fee Ledger</p>
-              <p class="addr">KGF Hostel, Ground Floor, Admin Block</p>
+              <p class="addr">KGF Boys Hostel Panvel</p>
             </div>
             <div class="header-right"></div>
           </div>
@@ -1081,7 +1130,7 @@ const StudentFees = () => {
                             e.setMonth(e.getMonth() + 3);
                             end = new Date(e.getTime() - (e.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
                           }
-                          setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end }));
+                          setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end, cycleMode: "3m" }));
                           setShowGenerateModal(true);
                         }}>
                           <HiOutlinePlus size={16} /> Bill
@@ -1135,7 +1184,7 @@ const StudentFees = () => {
                       e.setMonth(e.getMonth() + 3);
                       end = new Date(e.getTime() - (e.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
                     }
-                    setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end }));
+                    setInvoiceForm(f => ({ ...f, items: [{ invoiceType: "hostel_fee", customInvoiceType: "", amount: s.quarterlyFee > 0 ? String(s.quarterlyFee) : "" }], billingCycleStart: start, billingCycleEnd: end, cycleMode: "3m" }));
                     setShowGenerateModal(true);
                   }}>New Bill</button>
                 </div>
@@ -1277,7 +1326,6 @@ const StudentFees = () => {
                           }}
                         >
                           <option value="hostel_fee">Hostel Fee</option>
-                          <option value="mess_fee">Mess Fee</option>
                           {(() => {
                             const isPaid = activeStudent.allInvoices.find(inv => inv.invoiceType === "security_deposit")?.status === "paid";
                             return (
@@ -1286,7 +1334,6 @@ const StudentFees = () => {
                               </option>
                             );
                           })()}
-                          <option value="maintenance_fee">Maintenance</option>
                           <option value="other">Custom (Other)</option>
                         </select>
                       </ModalField>
@@ -1312,45 +1359,163 @@ const StudentFees = () => {
                         </ModalField>
                       </div>
                     )}
+                    {item.invoiceType === "hostel_fee" && (
+                      <div className="mt-3">
+                        <ModalField label="Custom Description (Optional)">
+                          <textarea 
+                            style={{ ...css.input, height: "60px", resize: "none" }} 
+                            placeholder="Leave blank to use the default calculated description..." 
+                            value={item.itemDescription || ""} 
+                            onChange={e => {
+                              const newItems = [...invoiceForm.items];
+                              newItems[index] = { ...newItems[index], itemDescription: e.target.value };
+                              setInvoiceForm({ ...invoiceForm, items: newItems });
+                            }} 
+                          />
+                        </ModalField>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="space-y-4">
-                <ModalField label="Select Billing Cycle">
-                  <select 
-                    style={css.input} 
-                    value={invoiceForm.billingCycleStart ? `${invoiceForm.billingCycleStart}|${invoiceForm.billingCycleEnd}` : ""}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (!val) {
-                        setInvoiceForm({ ...invoiceForm, billingCycleStart: "", billingCycleEnd: "" });
-                      } else {
-                        const [start, end] = val.split("|");
-                        setInvoiceForm({ ...invoiceForm, billingCycleStart: start, billingCycleEnd: end });
+              {(() => {
+                const hasHostelFee = invoiceForm.items.some(item => item.invoiceType === "hostel_fee");
+                if (!hasHostelFee) return null;
+                
+                const updateHostelFeeByMode = (mode, startStr = "", endStr = "") => {
+                  let newAmount = null;
+                  if (mode === "3m") {
+                    newAmount = String(activeStudent?.quarterlyFee || (activeStudent?.monthlyFee ? activeStudent.monthlyFee * 3 : ""));
+                  } else if (mode === "1m") {
+                    newAmount = String(activeStudent?.monthlyFee || "");
+                  } else if (mode === "custom" && startStr && endStr) {
+                    const s = new Date(startStr);
+                    const e = new Date(endStr);
+                    const numMonths = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.44)));
+                    newAmount = String(activeStudent?.monthlyFee ? activeStudent.monthlyFee * numMonths : "");
+                  }
+                  
+                  setInvoiceForm(prev => {
+                    const newItems = prev.items.map(item => {
+                      if (item.invoiceType === "hostel_fee" && newAmount !== null) {
+                        return { ...item, amount: newAmount };
                       }
-                    }}
-                  >
-                    <option value="">-- Custom / No Specific Cycle --</option>
-                    {availableBillingCycles.map((cycle, i) => (
-                      <option key={i} value={`${cycle.start}|${cycle.end}`} disabled={cycle.isPaid} style={{ color: cycle.isPaid ? "#059669" : "inherit" }}>
-                        {cycle.display} {cycle.isPaid ? "✅ (Paid)" : "⏳ (Unpaid)"}
-                      </option>
-                    ))}
-                  </select>
-                </ModalField>
-                {(!invoiceForm.billingCycleStart || availableBillingCycles.length === 0) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <ModalField label="Custom Start Date">
-                      <input style={css.input} type="date" value={invoiceForm.billingCycleStart} onChange={e => setInvoiceForm({ ...invoiceForm, billingCycleStart: e.target.value })} />
+                      return item;
+                    });
+                    return { 
+                      ...prev, 
+                      cycleMode: mode, 
+                      billingCycleStart: startStr, 
+                      billingCycleEnd: endStr, 
+                      items: newItems 
+                    };
+                  });
+                };
+                
+                return (
+                  <div className="space-y-4">
+                    <ModalField label="Billing Cycle Type">
+                      <div style={{ display: "flex", gap: "16px", marginTop: "4px" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                          <input 
+                            type="radio" 
+                            name="cycleMode" 
+                            value="3m" 
+                            checked={invoiceForm.cycleMode === "3m"} 
+                            onChange={() => updateHostelFeeByMode("3m")} 
+                          />
+                          3 Months (Quarterly)
+                        </label>
+                        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                          <input 
+                            type="radio" 
+                            name="cycleMode" 
+                            value="1m" 
+                            checked={invoiceForm.cycleMode === "1m"} 
+                            onChange={() => updateHostelFeeByMode("1m")} 
+                          />
+                          1 Month (Monthly)
+                        </label>
+                        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                          <input 
+                            type="radio" 
+                            name="cycleMode" 
+                            value="custom" 
+                            checked={invoiceForm.cycleMode === "custom"} 
+                            onChange={() => updateHostelFeeByMode("custom")} 
+                          />
+                          Custom
+                        </label>
+                      </div>
                     </ModalField>
-                    <ModalField label="Custom End Date">
-                      <input style={css.input} type="date" value={invoiceForm.billingCycleEnd} onChange={e => setInvoiceForm({ ...invoiceForm, billingCycleEnd: e.target.value })} />
-                    </ModalField>
+
+                    {invoiceForm.cycleMode !== "custom" && (
+                      <ModalField label={`Select ${invoiceForm.cycleMode === "3m" ? "3-Month" : "1-Month"} Cycle`}>
+                        <select 
+                          style={css.input} 
+                          value={invoiceForm.billingCycleStart ? `${invoiceForm.billingCycleStart}|${invoiceForm.billingCycleEnd}` : ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (!val) {
+                              updateHostelFeeByMode(invoiceForm.cycleMode);
+                            } else {
+                              const [start, end] = val.split("|");
+                              updateHostelFeeByMode(invoiceForm.cycleMode, start, end);
+                            }
+                          }}
+                        >
+                          <option value="">-- Select Cycle --</option>
+                          {availableBillingCycles[invoiceForm.cycleMode === "3m" ? "quarterly" : "monthly"]?.map((cycle, i) => (
+                            <option key={i} value={`${cycle.start}|${cycle.end}`} disabled={cycle.isPaid} style={{ color: cycle.isPaid ? "#059669" : "inherit" }}>
+                              {cycle.display} {cycle.isPaid ? "✅ (Paid)" : "⏳ (Unpaid)"}
+                            </option>
+                          ))}
+                        </select>
+                      </ModalField>
+                    )}
+
+                    {invoiceForm.cycleMode === "custom" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <ModalField label="Custom Start Date">
+                          <DatePicker
+                            selected={invoiceForm.billingCycleStart ? new Date(invoiceForm.billingCycleStart) : null}
+                            onChange={date => {
+                              const dateStr = date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0] : "";
+                              updateHostelFeeByMode("custom", dateStr, invoiceForm.billingCycleEnd);
+                            }}
+                            dateFormat="dd/MM/yyyy"
+                            customInput={<input style={css.input} />}
+                            placeholderText="dd/mm/yyyy"
+                          />
+                        </ModalField>
+                        <ModalField label="Custom End Date">
+                          <DatePicker
+                            selected={invoiceForm.billingCycleEnd ? new Date(invoiceForm.billingCycleEnd) : null}
+                            onChange={date => {
+                              const dateStr = date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0] : "";
+                              updateHostelFeeByMode("custom", invoiceForm.billingCycleStart, dateStr);
+                            }}
+                            dateFormat="dd/MM/yyyy"
+                            customInput={<input style={css.input} />}
+                            placeholderText="dd/mm/yyyy"
+                          />
+                        </ModalField>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
               <ModalField label="Due Date">
-                <input style={css.input} type="date" required value={invoiceForm.dueDate} onChange={e => setInvoiceForm({ ...invoiceForm, dueDate: e.target.value })} />
+                <DatePicker
+                  selected={invoiceForm.dueDate ? new Date(invoiceForm.dueDate) : null}
+                  onChange={date => {
+                    const dateStr = date ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0] : "";
+                    setInvoiceForm({ ...invoiceForm, dueDate: dateStr });
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  customInput={<input style={css.input} />}
+                  placeholderText="dd/mm/yyyy"
+                />
               </ModalField>
               <ModalField label="Administrative Notes">
                 <textarea style={{ ...css.input, height: 100, resize: "none" }} placeholder="Optional notes for this demand..."
@@ -1368,9 +1533,9 @@ const StudentFees = () => {
                     </div>
                     <div className="text-center flex-1 px-2">
                       <h2 className="text-lg font-black text-[#1A1F16] m-0 leading-tight">KGF Boys Hostel</h2>
-                      <p className="text-xs font-semibold text-[#3E4B28] m-0">Kokan Global Foundation</p>
+                      <p className="text-xs font-semibold text-[#3E4B28] m-0">by Kokan Global Foundation</p>
                       <p className="text-[10px] italic font-semibold text-gray-700 m-0 mt-0.5">Official Invoice</p>
-                      <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Hostel, Ground Floor, Admin Block</p>
+                      <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Boys Hostel Panvel</p>
                     </div>
                   </div>
 
@@ -1423,9 +1588,17 @@ const StudentFees = () => {
                           }
                           else if (item.invoiceType === "hostel_fee") {
                             let monthBreakdown = null;
+                            let numMonths = 1;
+                            if (invoiceForm.cycleMode === "3m") numMonths = 3;
+                            else if (invoiceForm.cycleMode === "1m") numMonths = 1;
+                            else if (invoiceForm.billingCycleStart && invoiceForm.billingCycleEnd) {
+                              const s = new Date(invoiceForm.billingCycleStart);
+                              const e = new Date(invoiceForm.billingCycleEnd);
+                              numMonths = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.44)));
+                            }
                             if (invoiceForm.billingCycleStart) {
                               const months = [];
-                              for (let i = 0; i < 3; i++) {
+                              for (let i = 0; i < numMonths; i++) {
                                 const start = new Date(invoiceForm.billingCycleStart);
                                 start.setMonth(start.getMonth() + i);
                                 const end = new Date(start);
@@ -1443,7 +1616,7 @@ const StudentFees = () => {
                             }
                             itemDesc = (
                               <div className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight w-full">
-                                <p className="m-0">Quarterly hostel fee allocation for Room {activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. {activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × 3 months for a {activeStudent?.roomType}-Bed room)</p>
+                                <p className="m-0">{item.itemDescription || `${numMonths === 3 ? "Quarterly" : (numMonths === 1 ? "Monthly" : "Custom")} hostel fee allocation for Room ${activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. ${activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × ${numMonths} month${numMonths > 1 ? "s" : ""} for a ${activeStudent?.roomType}-Bed room)`}</p>
                                 {monthBreakdown}
                               </div>
                             );
@@ -1588,6 +1761,8 @@ const StudentFees = () => {
                     ? (inv.paidAmount > 0 ? inv.paidAmount : inv.amount)
                     : (inv.paidAmount || 0);
                   const invRemaining = Math.max(0, (inv.amount || 0) - invPaid);
+                  const rowArrears = activeStudent.allInvoices.filter(i => i.status !== "paid" && i._id !== inv._id).reduce((s, i) => s + (i.amount || 0) - (i.paidAmount || 0), 0);
+                  const rowTotalPayable = invRemaining + rowArrears;
 
                   return (
                     <div key={idx} className="inv-row" style={{
@@ -1631,9 +1806,17 @@ const StudentFees = () => {
                             <p style={{ fontWeight: 800, color: T.green, fontSize: 14, margin: 0 }}>{formatCurrency(invPaid)}</p>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <p style={{ fontSize: 10, color: invRemaining > 0 ? T.orange : T.green, fontWeight: 700, margin: 0 }}>DUE</p>
+                            <p style={{ fontSize: 10, color: invRemaining > 0 ? T.orange : T.green, fontWeight: 700, margin: 0 }}>{rowArrears > 0 ? "THIS INVOICE" : "DUE"}</p>
                             <p style={{ fontWeight: 900, color: invRemaining > 0 ? T.orange : T.green, fontSize: 14, margin: 0 }}>{formatCurrency(invRemaining)}</p>
                           </div>
+                          
+                          {rowArrears > 0 && invRemaining > 0 && (
+                            <div style={{ textAlign: "right", borderLeft: `2px dashed ${T.border}`, paddingLeft: 24 }}>
+                              <p style={{ fontSize: 10, color: T.accent, fontWeight: 800, margin: 0, textTransform: "uppercase" }}>Total Payable</p>
+                              <p style={{ fontWeight: 900, color: T.accent, fontSize: 16, margin: 0 }}>{formatCurrency(rowTotalPayable)}</p>
+                            </div>
+                          )}
+                          
                           <StatusBadge status={inv.status} />
 
                           <button
@@ -1725,9 +1908,9 @@ const StudentFees = () => {
                 </div>
                 <div className="text-center flex-1 px-2 mt-2">
                   <h2 className="text-lg font-black text-[#1A1F16] m-0 leading-tight">KGF Boys Hostel</h2>
-                  <p className="text-xs font-semibold text-[#3E4B28] m-0">Kokan Global Foundation</p>
+                  <p className="text-xs font-semibold text-[#3E4B28] m-0">by Kokan Global Foundation</p>
                   <p className="text-[10px] italic font-semibold text-gray-700 m-0 mt-0.5">Official Invoice</p>
-                  <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Hostel, Ground Floor, Admin Block</p>
+                  <p className="text-[8px] text-gray-800 m-0 leading-tight">KGF Boys Hostel Panvel</p>
                 </div>
               </div>
 
@@ -1782,9 +1965,18 @@ const StudentFees = () => {
                       }
                       else if (item.categoryName === "hostel_fee" || item.invoiceType === "hostel_fee") {
                         let monthBreakdown = null;
+                        let numMonths = 1;
+                        if (selectedInvoice.billingCycleStart && selectedInvoice.billingCycleEnd) {
+                          const s = new Date(selectedInvoice.billingCycleStart);
+                          const e = new Date(selectedInvoice.billingCycleEnd);
+                          numMonths = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.44)));
+                        } else if (selectedInvoice.billingCycleStart) {
+                          numMonths = 3; // Legacy default for older invoices without end dates
+                        }
+
                         if (selectedInvoice.billingCycleStart) {
                           const months = [];
-                          for (let i = 0; i < 3; i++) {
+                          for (let i = 0; i < numMonths; i++) {
                             const start = new Date(selectedInvoice.billingCycleStart);
                             start.setMonth(start.getMonth() + i);
                             const end = new Date(start);
@@ -1794,15 +1986,16 @@ const StudentFees = () => {
                             months.push(
                               <div key={i} className="flex justify-between w-full mt-1">
                                 <span className="text-[8.5px] font-medium">• {fmt(start)} - {fmt(end)}</span>
-                                <span className="text-[8.5px] font-medium">Rs. {Math.round(item.amount / 3).toLocaleString("en-IN")}</span>
+                                <span className="text-[8.5px] font-medium">Rs. {Math.round(item.amount / numMonths).toLocaleString("en-IN")}</span>
                               </div>
                             );
                           }
                           monthBreakdown = <div className="mt-2 pt-1 border-t border-[#a8b096]/20">{months}</div>;
                         }
+                        const defaultDesc = `${numMonths === 3 ? "Quarterly" : (numMonths === 1 ? "Monthly" : "Custom")} hostel fee allocation for Room ${activeStudent?.roomBedNumber || "N/A"}. (Calculation: Rs. ${activeStudent?.monthlyFee?.toLocaleString("en-IN")}/month × ${numMonths} month${numMonths > 1 ? "s" : ""} for a ${activeStudent?.roomType}-Bed room)`;
                         itemDesc = (
                           <div className="text-[9px] text-[#64748B] m-0 mt-0.5 leading-tight w-full">
-                            <p className="m-0">Quarterly hostel fee allocation.</p>
+                            <p className="m-0">{item.description || defaultDesc}</p>
                             {monthBreakdown}
                           </div>
                         );
@@ -1868,9 +2061,41 @@ const StudentFees = () => {
                     })()}
                   </div>
                   <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
-                    <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Invoice Amount</span>
+                    <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Current Invoice Amount</span>
                     <span className="text-[13px] font-black text-[#1E293B]">Rs. {(selectedInvoice.amount || 0).toLocaleString("en-IN")}</span>
                   </div>
+                  {(() => {
+                    const displayPendingFees = activeStudent?.allInvoices
+                      ? activeStudent.allInvoices.filter(i => i.status !== "paid" && i._id !== selectedInvoice._id).reduce((s, i) => s + (i.amount || 0) - (i.paidAmount || 0), 0)
+                      : 0;
+                    const allPending = activeStudent?.allInvoices ? activeStudent.allInvoices.filter(i => i.status !== "paid" && i._id !== selectedInvoice._id) : [];
+
+                    if (displayPendingFees > 0) {
+                      return (
+                        <>
+                          <div className="border-t border-[#a8b096]/50 bg-[#Fef2f2] p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[11px] font-bold text-red-600/90 uppercase tracking-wide">Previous Balance (Arrears)</span>
+                              <span className="text-[11px] font-bold text-red-600/90">+ Rs. {displayPendingFees.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className="pl-2 border-l-2 border-red-600/20 flex flex-col gap-1">
+                              {allPending.map((inv, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-[10px] text-red-600/70">
+                                  <span>• Previous {inv.invoiceType?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} - {new Date(inv.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                  <span>Rs. {(inv.amount - (inv.paidAmount || 0)).toLocaleString("en-IN")}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="border-t border-[#a8b096]/50 bg-[#F8FAF5] p-3 flex justify-between items-center">
+                            <span className="text-xs font-black text-[#1E293B] uppercase tracking-wide">Total Payable</span>
+                            <span className="text-[13px] font-black text-[#1E293B]">Rs. {((selectedInvoice.amount || 0) + displayPendingFees).toLocaleString("en-IN")}</span>
+                          </div>
+                        </>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
 
                 {/* ── FIX: Detail grid shows correct paid / remaining ── */}
@@ -1888,8 +2113,8 @@ const StudentFees = () => {
                         marginBottom: 24
                       }}>
                         {[
-                          { label: "Paid So Far", value: formatCurrency(invPaid) },
-                          { label: "Remaining", value: formatCurrency(invRemaining) },
+                          { label: "Paid (This Invoice)", value: formatCurrency(invPaid) },
+                          { label: "Due (This Invoice)", value: formatCurrency(invRemaining) },
                         ].map((item, i) => (
                           <div key={i} style={{
                             padding: "10px 14px",
@@ -2100,6 +2325,70 @@ const StudentFees = () => {
             >
               OK
             </button>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {confirmModal && (
+        <ModalOverlay onClose={() => !submitting && setConfirmModal(null)} zIndex={130}>
+          <div style={{ ...css.glassCard, maxWidth: "400px", width: "100%", textAlign: "center", padding: "30px 24px" }}>
+            <div style={{ color: T.accent, marginBottom: "16px" }}>
+              <HiOutlineExclamationCircle size={48} style={{ margin: "0 auto" }} />
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: "700", color: T.text, marginBottom: "12px" }}>
+              Confirm Payment
+            </h3>
+            <p style={{ fontSize: "14px", color: T.textMuted, marginBottom: "24px", lineHeight: "1.5" }}>
+              Are you sure you want to mark this invoice as fully paid via {confirmModal.method}?
+            </p>
+            <div className="flex gap-3">
+              <button
+                style={{ ...css.btnOutline, flex: 1, justifyContent: "center" }}
+                onClick={() => setConfirmModal(null)}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ ...css.btnPrimary, flex: 1, justifyContent: "center" }}
+                onClick={executeMarkFullyPaid}
+                disabled={submitting}
+              >
+                {submitting ? "Processing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {deleteConfirmModal && (
+        <ModalOverlay onClose={() => !submitting && setDeleteConfirmModal(null)} zIndex={130}>
+          <div style={{ ...css.glassCard, maxWidth: "400px", width: "100%", textAlign: "center", padding: "30px 24px" }}>
+            <div style={{ color: T.red, marginBottom: "16px" }}>
+              <HiOutlineExclamationCircle size={48} style={{ margin: "0 auto" }} />
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: "700", color: T.text, marginBottom: "12px" }}>
+              Delete Invoice
+            </h3>
+            <p style={{ fontSize: "14px", color: T.textMuted, marginBottom: "24px", lineHeight: "1.5" }}>
+              Are you sure you want to delete this invoice? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                style={{ ...css.btnOutline, flex: 1, justifyContent: "center" }}
+                onClick={() => setDeleteConfirmModal(null)}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ ...css.btnPrimary, backgroundColor: T.red, flex: 1, justifyContent: "center" }}
+                onClick={executeDeleteInvoice}
+                disabled={submitting}
+              >
+                {submitting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </ModalOverlay>
       )}

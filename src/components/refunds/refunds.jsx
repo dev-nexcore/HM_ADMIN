@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Filter, X, Calendar, DollarSign, User, Clock, CheckCircle, XCircle, AlertCircle, CreditCard, Loader2, Eye } from "lucide-react";
+import { Search, Filter, X, Calendar, DollarSign, User, Clock, CheckCircle, XCircle, AlertCircle, CreditCard, Loader2, Eye, Check } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import api from "@/lib/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -60,6 +62,22 @@ const Refunds = () => {
   });
   const [processing, setProcessing] = useState(false);
 
+  // Action Modal states
+  const [actionModal, setActionModal] = useState({
+    show: false,
+    type: "", // 'accept', 'reject', 'pay'
+    refund: null,
+    reason: "",
+    paymentMethod: "cheque",
+    chequeNumber: "",
+    bankName: "",
+    deduction: "",
+    deductionReason: "",
+    chequeDate: "",
+    chequeImage: null
+  });
+  const [actionProcessing, setActionProcessing] = useState(false);
+
   const fetchRefunds = async () => {
     try {
       setLoading(true);
@@ -79,6 +97,12 @@ const Refunds = () => {
           securityDeposit: r.securityDeposit || 0,
           deduction: r.deduction || 0,
           deductionReason: r.deductionReason || "",
+          paymentMethod: r.paymentMethod || "",
+          chequeNumber: r.chequeNumber || "",
+          bankName: r.bankName || "",
+          chequeDate: r.chequeDate ? new Date(r.chequeDate).toLocaleDateString("en-IN").replace(/\//g, '-') : "",
+          chequeImage: r.chequeImage || "",
+          adminNotes: r.adminNotes || ""
         }));
         setRefundHistory(mapped);
       }
@@ -109,6 +133,45 @@ const Refunds = () => {
       toast.error(err.response?.data?.message || "Failed to process refund");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleActionConfirm = async () => {
+    try {
+      setActionProcessing(true);
+      let status = "";
+      let payload;
+      let headers = {};
+
+      if (actionModal.type === 'accept') {
+        status = 'approved';
+        payload = { status: 'approved' };
+      } else if (actionModal.type === 'reject') {
+        status = 'rejected';
+        payload = { status: 'rejected', adminNotes: actionModal.reason };
+      } else if (actionModal.type === 'pay') {
+        status = 'completed';
+        payload = new FormData();
+        payload.append('status', 'completed');
+        payload.append('paymentMethod', actionModal.paymentMethod);
+        payload.append('chequeNumber', actionModal.chequeNumber);
+        payload.append('bankName', actionModal.bankName);
+        if (actionModal.chequeDate) payload.append('chequeDate', actionModal.chequeDate);
+        if (actionModal.deduction) payload.append('deduction', actionModal.deduction);
+        if (actionModal.deductionReason) payload.append('deductionReason', actionModal.deductionReason);
+        if (actionModal.chequeImage) payload.append('chequeImage', actionModal.chequeImage);
+        headers = { 'Content-Type': 'multipart/form-data' };
+      }
+
+      await api.put(`/api/adminauth/refunds/${actionModal.refund.id}/status`, payload, { headers });
+      toast.success(`Refund marked as ${status}`);
+      setActionModal({ show: false, type: "", refund: null, reason: "", paymentMethod: "cheque", chequeNumber: "", bankName: "", deduction: "", deductionReason: "", chequeDate: "", chequeImage: null });
+      fetchRefunds();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to process action");
+    } finally {
+      setActionProcessing(false);
     }
   };
 
@@ -307,6 +370,8 @@ icon: <XCircle size={18} />,
     switch (status) {
       case "Completed":
         return "bg-green-100 text-green-800";
+      case "Approved":
+        return "bg-blue-100 text-blue-800";
       case "Pending":
         return "bg-orange-100 text-orange-800";
       case "Rejected":
@@ -320,6 +385,8 @@ icon: <XCircle size={18} />,
     switch (status) {
       case "Completed":
         return <CheckCircle size={14} className="text-green-600" />;
+      case "Approved":
+        return <CheckCircle size={14} className="text-blue-600" />;
       case "Pending":
         return <Clock size={14} className="text-orange-600" />;
       case "Rejected":
@@ -451,169 +518,6 @@ icon: <XCircle size={18} />,
         {/* Alternative Minimal Cards */}
        
 
-        {/* Initiate New Refund Form */}
-        <div className="bg-[#f4f6f0] rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-10 font-sans">
-          {/* Header */}
-          <div className="bg-[#BEC5AD] px-6 py-5">
-            <h2 className="text-xl font-bold text-black flex items-center gap-2">
-              <CreditCard size={22} />
-              Initiate New Refund
-            </h2>
-          </div>
-          
-          <div className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-12 md:gap-y-8">
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">
-                  Student / Resident ID
-                </label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="studentId"
-                    value={formData.studentId}
-                    onChange={handleInputChange}
-                    placeholder="Enter Student ID / Resident ID"
-                    className={`w-full pl-11 pr-4 py-3 rounded-xl bg-white border ${
-                      formErrors.studentId ? "border-red-500" : "border-gray-200"
-                    } shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800`}
-                  />
-                </div>
-                {formErrors.studentId && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{formErrors.studentId}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">
-                  Refund Amount
-                </label>
-                <div className="relative">
-                  <DollarSign size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="refundAmount"
-                    value={formData.refundAmount}
-                    onChange={handleInputChange}
-                    placeholder="Enter Amount"
-                    className={`w-full pl-11 pr-4 py-3 rounded-xl bg-white border ${
-                      formErrors.refundAmount ? "border-red-500" : "border-gray-200"
-                    } shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800`}
-                  />
-                </div>
-                {formErrors.refundAmount && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{formErrors.refundAmount}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">
-                  Reason For Refund
-                </label>
-                <input
-                  type="text"
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleInputChange}
-                  placeholder="Enter Reason"
-                  className={`w-full px-4 py-3 rounded-xl bg-white border ${
-                    formErrors.reason ? "border-red-500" : "border-gray-200"
-                  } shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800`}
-                />
-                {formErrors.reason && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{formErrors.reason}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">
-                  Payment Method
-                </label>
-                <select
-                  name="paymentMethod"
-                  value={formData.paymentMethod}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 rounded-xl bg-white border ${
-                    formErrors.paymentMethod ? "border-red-500" : "border-gray-200"
-                  } shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800`}
-                >
-                  <option value="">Select Method</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="upi">UPI</option>
-                  <option value="cash">Cash</option>
-                  <option value="cheque">Cheque</option>
-                </select>
-                {formErrors.paymentMethod && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{formErrors.paymentMethod}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">Fees</label>
-                <input
-                  type="text"
-                  name="fees"
-                  value={formData.fees}
-                  onChange={handleInputChange}
-                  placeholder="Enter Fees"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">Security Deposit</label>
-                <input
-                  type="text"
-                  name="securityDeposit"
-                  value={formData.securityDeposit}
-                  onChange={handleInputChange}
-                  placeholder="Enter Security Deposit"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">Deduction</label>
-                <input
-                  type="text"
-                  name="deduction"
-                  value={formData.deduction}
-                  onChange={handleInputChange}
-                  placeholder="Enter Deduction"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-[#2C3E50] mb-2 block ml-1">Deduction Reason</label>
-                <input
-                  type="text"
-                  name="deductionReason"
-                  value={formData.deductionReason}
-                  onChange={handleInputChange}
-                  placeholder="Enter Deduction Reason"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BEC5AD] transition-shadow text-sm text-gray-800"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-              <button
-                onClick={handleCancel}
-                className="bg-[#e4e6e0] px-10 py-3 rounded-xl font-bold text-gray-700 hover:bg-[#d5d7d1] transition-all duration-300 shadow-sm min-w-[160px]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleProceedToPay}
-                className="bg-white border border-gray-200 text-black px-10 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 shadow-sm min-w-[160px]"
-              >
-                Proceed To Pay
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Search and Filter Controls */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 font-sans">
@@ -726,9 +630,29 @@ icon: <XCircle size={18} />,
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <button onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="View Details">
-                            <Eye size={18} />
-                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="View Details">
+                              <Eye size={18} />
+                            </button>
+                            {refund.status === 'Pending' && (
+                              <>
+                                <button onClick={() => setActionModal({ show: true, type: 'accept', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors" title="Accept">
+                                  <Check size={18} />
+                                </button>
+                                <button onClick={() => setActionModal({ show: true, type: 'reject', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Reject">
+                                  <X size={18} />
+                                </button>
+                                <button onClick={() => setActionModal({ show: true, type: 'pay', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors" title="Pay">
+                                  <CreditCard size={18} />
+                                </button>
+                              </>
+                            )}
+                            {refund.status === 'Approved' && (
+                               <button onClick={() => setActionModal({ show: true, type: 'pay', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors" title="Pay">
+                                 <CreditCard size={18} />
+                               </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -781,12 +705,32 @@ icon: <XCircle size={18} />,
                     <p className="text-xs text-gray-500">ID: {refund.studentId}</p>
                   </div>
                   
-                  <button 
-                    onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }}
-                    className="w-full mt-2 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex justify-center items-center gap-2 hover:bg-blue-100 transition-colors"
-                  >
-                    <Eye size={16} /> View Details
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      onClick={() => { setSelectedRefund(refund); setShowDetailsModal(true); }}
+                      className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex justify-center items-center gap-2 hover:bg-blue-100 transition-colors"
+                    >
+                      <Eye size={16} /> View Details
+                    </button>
+                    {refund.status === 'Pending' && (
+                      <div className="flex gap-1 flex-1">
+                        <button onClick={() => setActionModal({ show: true, type: 'accept', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="flex-1 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors flex justify-center items-center" title="Accept">
+                          <Check size={16} />
+                        </button>
+                        <button onClick={() => setActionModal({ show: true, type: 'reject', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex justify-center items-center" title="Reject">
+                          <X size={16} />
+                        </button>
+                        <button onClick={() => setActionModal({ show: true, type: 'pay', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="flex-1 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors flex justify-center items-center" title="Pay">
+                          <CreditCard size={16} />
+                        </button>
+                      </div>
+                    )}
+                    {refund.status === 'Approved' && (
+                        <button onClick={() => setActionModal({ show: true, type: 'pay', refund, reason: '', paymentMethod: 'cheque', chequeNumber: '', bankName: '', deduction: '', deductionReason: '', chequeDate: '', chequeImage: null })} className="flex-1 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-bold flex justify-center items-center gap-2 hover:bg-purple-100 transition-colors" title="Pay">
+                          <CreditCard size={16} /> Pay
+                        </button>
+                    )}
+                  </div>
                 </div>
               ))
             ) : (
@@ -1058,6 +1002,53 @@ icon: <XCircle size={18} />,
                 </div>
               </div>
 
+              {/* Payment Details (if completed) */}
+              {selectedRefund.status === 'Completed' && (
+                <div>
+                  <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Payment Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs text-gray-500">Payment Method</span>
+                      <p className="font-medium text-gray-800 capitalize">{selectedRefund.paymentMethod ? selectedRefund.paymentMethod.replace('_', ' ') : "N/A"}</p>
+                    </div>
+                    {selectedRefund.paymentMethod === 'cheque' && (
+                      <>
+                        <div>
+                          <span className="text-xs text-gray-500">Cheque Number</span>
+                          <p className="font-medium text-gray-800">{selectedRefund.chequeNumber || "N/A"}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500">Bank Name</span>
+                          <p className="font-medium text-gray-800">{selectedRefund.bankName || "N/A"}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500">Cheque Date</span>
+                          <p className="font-medium text-gray-800">{selectedRefund.chequeDate || "N/A"}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {selectedRefund.paymentMethod === 'cheque' && selectedRefund.chequeImage && (
+                    <div className="mt-4">
+                      <span className="text-xs text-gray-500 block mb-2">Cheque Image / Screenshot</span>
+                      <a href={`http://localhost:5224${selectedRefund.chequeImage}`} target="_blank" rel="noopener noreferrer">
+                        <img src={`http://localhost:5224${selectedRefund.chequeImage}`} alt="Cheque Screenshot" className="max-h-48 w-auto rounded border border-gray-200 hover:opacity-90 transition-opacity" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Admin Notes */}
+              {selectedRefund.adminNotes && (
+                <div>
+                  <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Admin Notes</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap">{selectedRefund.adminNotes}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Processing Info */}
               <div>
                 <h4 className="text-sm font-bold text-gray-700 border-b pb-2 mb-3">Processing Details</h4>
@@ -1186,6 +1177,213 @@ icon: <XCircle size={18} />,
         draggable
         theme="colored"
       />
+
+      {/* Action Modal */}
+      {actionModal.show && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/30 backdrop-blur-md font-sans">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            <div className={`px-6 py-4 border-b shrink-0 ${actionModal.type === 'accept' ? 'bg-green-50 border-green-100' : actionModal.type === 'reject' ? 'bg-red-50 border-red-100' : 'bg-purple-50 border-purple-100'}`}>
+              <h3 className="text-lg font-bold text-gray-900 capitalize flex items-center gap-2">
+                {actionModal.type === 'accept' && <CheckCircle size={20} className="text-green-600"/>}
+                {actionModal.type === 'reject' && <XCircle size={20} className="text-red-600"/>}
+                {actionModal.type === 'pay' && <CreditCard size={20} className="text-purple-600"/>}
+                {actionModal.type === 'accept' ? 'Accept Refund' : actionModal.type === 'reject' ? 'Reject Refund' : 'Process Payment'}
+              </h3>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {actionModal.type === 'accept' && (
+                <p className="text-gray-700 font-medium">Are you sure you want to accept the refund request for <strong>{actionModal.refund?.recipientName}</strong>?</p>
+              )}
+
+              {actionModal.type === 'reject' && (
+                <div className="space-y-4">
+                  <p className="text-gray-700 font-medium">Are you sure you want to reject this refund?</p>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Reject Reason <span className="text-red-500">*</span></label>
+                    <textarea
+                      value={actionModal.reason}
+                      onChange={(e) => setActionModal({ ...actionModal, reason: e.target.value })}
+                      className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-sm"
+                      rows="3"
+                      placeholder="Please enter the reason for rejection..."
+                    ></textarea>
+                  </div>
+                </div>
+              )}
+
+              {actionModal.type === 'pay' && (
+                <div className="space-y-5">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500 font-semibold mb-1">Process Refund Payment For</p>
+                    <p className="text-xl font-bold text-gray-900">{actionModal.refund?.recipientName}</p>
+                    <p className="text-xs text-gray-500 mt-1 font-mono">{actionModal.refund?.id}</p>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600 font-medium">Original Request Amount</span>
+                      <span className="font-bold text-gray-900">{actionModal.refund?.amount}</span>
+                    </div>
+                    
+                    {Number(actionModal.deduction) > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 font-medium">
+                          Deduction {actionModal.deductionReason ? <span className="text-xs text-gray-400">({actionModal.deductionReason})</span> : ""}
+                        </span>
+                        <span className="font-bold text-red-600">- ₹{actionModal.deduction}</span>
+                      </div>
+                    )}
+                    {(actionModal.refund?.deduction > 0 && !actionModal.deduction) && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 font-medium">
+                          Deduction {actionModal.refund?.deductionReason ? <span className="text-xs text-gray-400">({actionModal.refund?.deductionReason})</span> : ""}
+                        </span>
+                        <span className="font-bold text-red-600">- ₹{actionModal.refund?.deduction}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-800 font-bold">Final Amount to Pay</span>
+                        <span className="text-lg font-black text-green-600">
+                          ₹{Math.max(0, parseInt((actionModal.refund?.amount || '0').replace(/\D/g, '')) - (Number(actionModal.deduction) || parseInt(actionModal.refund?.deduction) || 0)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Payment Details</label>
+                    <div className="flex items-center gap-3 p-4 border-2 border-purple-200 bg-purple-50 rounded-xl cursor-default mb-4">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-purple-100">
+                         <CreditCard size={18} className="text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-purple-900">Cheque Payment</p>
+                        <p className="text-xs text-purple-700 font-medium">Default mode for admin refunds</p>
+                      </div>
+                      <CheckCircle size={20} className="text-purple-600" />
+                    </div>
+                    {/* Hidden input to ensure state is always Cheque */}
+                    <input type="hidden" value="cheque" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Cheque Number <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={actionModal.chequeNumber}
+                          onChange={(e) => setActionModal({ ...actionModal, chequeNumber: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                          placeholder="e.g. 123456"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={actionModal.bankName}
+                          onChange={(e) => setActionModal({ ...actionModal, bankName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                          placeholder="e.g. HDFC Bank"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Cheque Date (DD/MM/YYYY) <span className="text-red-500">*</span></label>
+                        <DatePicker 
+                          selected={actionModal.chequeDate ? new Date(actionModal.chequeDate) : null} 
+                          onChange={date => {
+                            if (date) {
+                              const year = date.getFullYear();
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const day = String(date.getDate()).padStart(2, '0');
+                              setActionModal(prev => ({ ...prev, chequeDate: `${year}-${month}-${day}` }));
+                            } else {
+                              setActionModal(prev => ({ ...prev, chequeDate: "" }));
+                            }
+                          }} 
+                          dateFormat="dd/MM/yyyy"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                          placeholderText="DD/MM/YYYY"
+                          isClearable
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Upload Cheque Photo (Optional)</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setActionModal({ ...actionModal, chequeImage: e.target.files[0] })}
+                          className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                        />
+                        {actionModal.chequeImage && (
+                          <div className="mt-2 relative inline-block">
+                            <img 
+                              src={URL.createObjectURL(actionModal.chequeImage)} 
+                              alt="Cheque Preview" 
+                              className="h-16 w-24 object-cover rounded border border-gray-300"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => setActionModal({...actionModal, chequeImage: null})}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Deduction Amount (₹)</label>
+                        <input
+                          type="number"
+                          value={actionModal.deduction}
+                          onChange={(e) => setActionModal({ ...actionModal, deduction: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                      {Number(actionModal.deduction) > 0 && (
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Deduction Reason <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            value={actionModal.deductionReason}
+                            onChange={(e) => setActionModal({ ...actionModal, deductionReason: e.target.value })}
+                            className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-sm"
+                            placeholder="E.g., Damages, dues..."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t shrink-0">
+              <button
+                onClick={() => setActionModal({ show: false, type: "", refund: null, reason: "", paymentMethod: "cheque", chequeNumber: "", bankName: "", deduction: "", deductionReason: "" })}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-100 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleActionConfirm}
+                disabled={actionProcessing || (actionModal.type === 'reject' && !actionModal.reason.trim()) || (actionModal.type === 'pay' && (!actionModal.chequeNumber.trim() || !actionModal.bankName.trim() || !actionModal.chequeDate || (Number(actionModal.deduction) > 0 && !actionModal.deductionReason.trim())))}
+                className={`px-4 py-2 text-white rounded-lg font-bold transition-colors disabled:opacity-50 text-sm ${actionModal.type === 'accept' ? 'bg-green-600 hover:bg-green-700' : actionModal.type === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'}`}
+              >
+                {actionProcessing ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
