@@ -5,15 +5,40 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Menu, Bell } from "lucide-react";
+import api from "../../lib/api";
 
 export default function Navbar({ subtitle = "- have a great day", onSidebarToggle }) {
   const [showPopup, setShowPopup] = useState(false);
   const popupRef = useRef(null);
   const router = useRouter();
 
-  const adminFullName = "Raheem";
-  const profileImage = "/photos/profile.jpg";
-  const loading = false;
+  const [adminFullName, setAdminFullName] = useState("Admin");
+  const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await api.get("/api/adminauth/profile");
+        if (data.firstName) {
+          setAdminFullName(data.lastName ? `${data.firstName} ${data.lastName}` : data.firstName);
+        }
+        if (data.profileImage) {
+          const imageUrl = data.profileImage.startsWith("http")
+            ? data.profileImage
+            : `${process.env.NEXT_PUBLIC_PROD_API_URL}${data.profileImage}`;
+          setProfileImage(imageUrl);
+        } else {
+          setProfileImage(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch navbar profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

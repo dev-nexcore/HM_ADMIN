@@ -14,36 +14,53 @@ import {
   Briefcase,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import api from "../../lib/api";
 
 export default function AdminProfile() {
   const [adminInfo, setAdminInfo] = useState({
-    firstName: "Raheem",
-    lastName: "Shaikh",
-    email: "admin@example.com",
-    contact: "+91 9876543210",
+    firstName: "",
+    lastName: "",
+    email: "",
+    contactNumber: "",
     role: "Admin",
-    location: "Mumbai, India",
-    department: "Management",
-    joiningDate: "12/04/2023",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editInfo, setEditInfo] = useState(adminInfo);
-  const [profileImage, setProfileImage] = useState("/photos/profile.jpg");
+  const [profileImage, setProfileImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [removeImageFlag, setRemoveImageFlag] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load from localStorage
+  // Load from API
   useEffect(() => {
-    const storedInfo = localStorage.getItem("adminProfileInfo");
-    const storedImage = localStorage.getItem("adminProfileImage");
-
-    if (storedInfo) {
-      const parsedInfo = JSON.parse(storedInfo);
-      setAdminInfo(parsedInfo);
-      setEditInfo(parsedInfo);
-    }
-
-    if (storedImage) {
-      setProfileImage(storedImage);
-    }
+    const fetchProfile = async () => {
+      try {
+        const { data } = await api.get("/api/adminauth/profile");
+        const profileData = {
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+          contactNumber: data.contactNumber || "",
+          role: data.role || "Admin",
+        };
+        setAdminInfo(profileData);
+        setEditInfo(profileData);
+        if (data.profileImage) {
+          const imageUrl = data.profileImage.startsWith("http")
+            ? data.profileImage
+            : `${process.env.NEXT_PUBLIC_PROD_API_URL}${data.profileImage}`;
+          setProfileImage(imageUrl);
+        } else {
+          setProfileImage(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        toast.error("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
   }, []);
 
   // Handle input change
@@ -53,17 +70,56 @@ export default function AdminProfile() {
   };
 
   // Save edits
-  const handleSave = () => {
-    setAdminInfo(editInfo);
-    setIsEditing(false);
-    localStorage.setItem("adminProfileInfo", JSON.stringify(editInfo));
-    toast.success("Profile updated");
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      Object.keys(editInfo).forEach((key) => {
+        formData.append(key, editInfo[key]);
+      });
+      if (selectedFile) {
+        formData.append("profileImage", selectedFile);
+      }
+      if (removeImageFlag && !selectedFile) {
+        formData.append("removeProfileImage", "true");
+      }
+
+      const { data } = await api.put("/api/adminauth/profile", formData);
+
+      setAdminInfo(editInfo);
+      setIsEditing(false);
+
+      if (data.admin?.profileImage) {
+        const imageUrl = data.admin.profileImage.startsWith("http")
+          ? data.admin.profileImage
+          : `${process.env.NEXT_PUBLIC_PROD_API_URL}${data.admin.profileImage}`;
+        setProfileImage(imageUrl);
+      }
+
+      toast.success("Profile updated");
+      setSelectedFile(null); // Reset after save
+      setRemoveImageFlag(false);
+    } catch (error) {
+      console.error("Save profile error:", error);
+      toast.error("Failed to update profile");
+    }
   };
 
   // Cancel edit
   const handleCancel = () => {
     setEditInfo(adminInfo);
     setIsEditing(false);
+    setSelectedFile(null);
+    setRemoveImageFlag(false);
+    
+    // Restore profile image to saved state if cancel is clicked
+    if (adminInfo.profileImage) {
+       const imageUrl = adminInfo.profileImage.startsWith("http")
+         ? adminInfo.profileImage
+         : `${process.env.NEXT_PUBLIC_PROD_API_URL}${adminInfo.profileImage}`;
+       setProfileImage(imageUrl);
+    } else {
+       setProfileImage(null);
+    }
   };
 
   // Handle profile image upload
@@ -71,22 +127,27 @@ export default function AdminProfile() {
     const file = e.target.files[0];
     if (!file) return;
 
+    setSelectedFile(file);
+    setRemoveImageFlag(false);
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      const result = reader.result;
-      setProfileImage(result);
-      localStorage.setItem("adminProfileImage", result);
-      toast.success("Profile picture updated");
+      setProfileImage(reader.result);
     };
     reader.readAsDataURL(file);
   };
 
   // Remove profile image
   const handleRemoveImage = () => {
-    setProfileImage("/photos/profile.jpg");
-    localStorage.removeItem("adminProfileImage");
-    toast.success("Profile picture removed");
+    setProfileImage(null);
+    setSelectedFile(null);
+    setRemoveImageFlag(true);
+    toast.success("Profile picture cleared locally. Don't forget to save.");
   };
+
+  if (loading) {
+    return <div className="text-center mt-10">Loading profile...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-[#BEC5AD] rounded-2xl shadow-xl mt-10">
@@ -98,27 +159,39 @@ export default function AdminProfile() {
       <div className="bg-white rounded-xl p-6 shadow-md flex flex-col sm:flex-row gap-6">
         {/* Profile Picture */}
         <div className="flex-shrink-0 flex flex-col items-center">
-          <img
-            src={profileImage}
-            alt="Profile"
-            className="w-32 h-32 rounded-full object-cover border border-gray-300"
-          />
-          <label className="mt-3 text-sm flex items-center gap-1 cursor-pointer">
-            <Camera className="w-4 h-4" />
-            Upload
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-32 h-32 rounded-full object-cover border border-gray-300"
             />
-          </label>
-          <button
-            onClick={handleRemoveImage}
-            className="text-xs text-red-500 mt-1"
-          >
-            Remove
-          </button>
+          ) : (
+            <div className="w-32 h-32 rounded-full border border-gray-300 flex items-center justify-center bg-gray-100">
+              <User className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          {isEditing && (
+            <>
+              <label className="mt-3 text-sm flex items-center gap-1 cursor-pointer">
+                <Camera className="w-4 h-4" />
+                Upload
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+              {profileImage && (
+                <button
+                  onClick={handleRemoveImage}
+                  className="text-xs text-red-500 mt-1"
+                >
+                  Remove
+                </button>
+              )}
+            </>
+          )}
         </div>
 
         {/* Info Section */}
@@ -178,7 +251,7 @@ export default function AdminProfile() {
               )}
             </div>
 
-            {/* Contact */}
+            {/* Contact Number */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
               <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
                 <Phone className="w-3.5 h-3.5" />
@@ -186,13 +259,13 @@ export default function AdminProfile() {
               </label>
               {isEditing ? (
                 <input
-                  name="contact"
-                  value={editInfo.contact}
+                  name="contactNumber"
+                  value={editInfo.contactNumber}
                   onChange={handleChange}
                   className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
                 />
               ) : (
-                <p className="text-black font-medium text-lg">{adminInfo.contact}</p>
+                <p className="text-black font-medium text-lg">{adminInfo.contactNumber}</p>
               )}
             </div>
 
@@ -211,62 +284,6 @@ export default function AdminProfile() {
                 />
               ) : (
                 <p className="text-black font-medium text-lg">{adminInfo.role}</p>
-              )}
-            </div>
-
-            {/* Department */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
-                <Briefcase className="w-3.5 h-3.5" />
-                Department
-              </label>
-              {isEditing ? (
-                <input
-                  name="department"
-                  value={editInfo.department || ""}
-                  onChange={handleChange}
-                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
-                />
-              ) : (
-                <p className="text-black font-medium text-lg">{adminInfo.department}</p>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
-                <MapPin className="w-3.5 h-3.5" />
-                Location
-              </label>
-              {isEditing ? (
-                <input
-                  name="location"
-                  value={editInfo.location}
-                  onChange={handleChange}
-                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
-                />
-              ) : (
-                <p className="text-black font-medium text-lg">{adminInfo.location}</p>
-              )}
-            </div>
-
-            {/* Joining Date */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-all hover:shadow-sm hover:border-gray-200">
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider flex items-center gap-2 mb-1">
-                <MapPin className="w-3.5 h-3.5" />
-                Joining Date
-              </label>
-              {isEditing ? (
-                <input
-                  name="joiningDate"
-                  type="text"
-                  placeholder="DD/MM/YYYY"
-                  value={editInfo.joiningDate || ""}
-                  onChange={handleChange}
-                  className="w-full mt-1 border-b-2 border-blue-400 bg-transparent outline-none p-1 text-black font-medium"
-                />
-              ) : (
-                <p className="text-black font-medium text-lg">{adminInfo.joiningDate}</p>
               )}
             </div>
           </div>
