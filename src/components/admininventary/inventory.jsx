@@ -429,7 +429,7 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
   };
 
   const handleEditClick = (item) => {
-    setEditData({ ...item });
+    setEditData({ ...item, roomType: item.roomType || "" });
 
     // Check if current values are "others" (not in predefined lists)
     if (item.location && !PREDEFINED_LOCATIONS.includes(item.location)) {
@@ -498,6 +498,11 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
       formDataToSend.append("status", editData.status === '__others__' ? otherEditStatus : editData.status);
       formDataToSend.append("roomNo", editData.roomNo === '__others__' ? otherEditRoomNo : editData.roomNo);
       formDataToSend.append("floor", editData.floor === '__others__' ? otherEditFloor : editData.floor);
+      if (editData.roomType) {
+        formDataToSend.append("roomType", editData.roomType);
+      } else {
+        formDataToSend.append("roomType", "");
+      }
 
       // Receipt file
       if (editReceiptFile) {
@@ -841,7 +846,9 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{item.itemName}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 font-medium whitespace-nowrap">{item.barcodeId}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{item.category}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                      {item.category}{item.roomType ? ` (${item.roomType} Bed)` : ""}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{item.location}</td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       <span
@@ -1300,6 +1307,23 @@ const InventoryList = ({ onAddNewItem, inventory, setInventory, fetchInventory, 
                   )}
                 </div>
 
+                {/* Room Type (Conditional for BEDS) */}
+                {(editData.category === "BEDS" || (editData.category || "").toLowerCase() === "beds") && (
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-gray-700 ml-1">Room Type</label>
+                    <select
+                      value={editData.roomType || ""}
+                      onChange={(e) => setEditData({ ...editData, roomType: e.target.value })}
+                      className="w-full border-gray-300 border px-4 py-2.5 rounded-[10px] focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-sm text-sm bg-white"
+                    >
+                      <option value="">Select Room Type</option>
+                      <option value="5">5 Bed</option>
+                      <option value="4">4 Bed</option>
+                      <option value="3">3 Bed</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Location */}
                 <div className="space-y-1">
                   <label className="text-sm font-bold text-gray-700 ml-1">Location</label>
@@ -1731,6 +1755,7 @@ function AddNewItem({ onBackToInventory, onItemAdded, availableRoomsForInventory
     location: "",
     status: "",
     category: "",
+    roomType: "",
     description: "",
     purchaseDate: "",
     purchaseCost: "",
@@ -1814,6 +1839,12 @@ function AddNewItem({ onBackToInventory, onItemAdded, availableRoomsForInventory
     } else if (!formData.category) {
       newErrors.category = "Category is required.";
     }
+    // roomType (for BEDS)
+    if (formData.category === "BEDS" || (formData.category || "").toLowerCase() === "beds") {
+      if (!formData.roomType) {
+        newErrors.roomType = "Room Type is required for beds.";
+      }
+    }
     // roomNo
     if (formData.roomNo === '__others__') {
       if (!otherRoomNo.trim()) newErrors.roomNo = "Please type a custom room number.";
@@ -1842,6 +1873,7 @@ function AddNewItem({ onBackToInventory, onItemAdded, availableRoomsForInventory
       floor: "",
       status: "",
       category: "",
+      roomType: "",
       description: "",
       purchaseDate: "",
       purchaseCost: "",
@@ -1913,6 +1945,9 @@ function AddNewItem({ onBackToInventory, onItemAdded, availableRoomsForInventory
       }
       formDataToSend.append("roomNo", finalRoomNo);
       formDataToSend.append("floor", finalFloor);
+      if (formData.roomType) {
+        formDataToSend.append("roomType", formData.roomType);
+      }
 
       const { data } = await api.post(
         `/api/adminauth/inventory/add`,
@@ -2223,6 +2258,44 @@ function AddNewItem({ onBackToInventory, onItemAdded, availableRoomsForInventory
               <p className="text-red-500 text-xs mt-1 ml-2">{errors.category}</p>
             )}
           </div>
+
+          {/* Room Type (Conditional for BEDS) */}
+          {(formData.category === "BEDS" || (formData.category || "").toLowerCase() === "beds") && (
+            <div className="w-full px-2">
+              <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px] text-left">
+                Room Type
+              </label>
+              <div className="relative w-full sm:max-w-[530px] h-[40px]">
+                <select
+                  name="roomType"
+                  value={formData.roomType}
+                  onChange={handleInputChange}
+                  className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] leading-[22px] font-semibold font-[Poppins] ${
+                    formData.roomType === "" ? "text-[#0000008A]" : "text-black"
+                  } ${errors.roomType ? "border-2 border-red-500" : ""}`}
+                  style={{
+                    WebkitAppearance: "none",
+                    MozAppearance: "none",
+                    appearance: "none",
+                    boxShadow: "0px 4px 10px 0px #00000040",
+                  }}
+                >
+                  <option value="" disabled hidden>
+                    Select Room Type
+                  </option>
+                  <option value="5">5 Bed</option>
+                  <option value="4">4 Bed</option>
+                  <option value="3">3 Bed</option>
+                </select>
+                <svg className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                </svg>
+              </div>
+              {errors.roomType && (
+                <p className="text-red-500 text-xs mt-1 ml-2">{errors.roomType}</p>
+              )}
+            </div>
+          )}
 
           {/* Purchase Cost */}
           <div className="w-full px-2">

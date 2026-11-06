@@ -2,7 +2,7 @@
 // export default StudentManagement;
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, Check, X, ChevronDown, Info, Pencil } from "lucide-react";
+import { Eye, Check, X, ChevronDown, Info, Pencil, Calendar } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
 import { ToastContainer, toast } from "react-toastify";
@@ -125,6 +125,7 @@ const StudentManagement = () => {
   });
 
   const [editingStudent, setEditingStudent] = useState(null);
+  const [editingCurrentBed, setEditingCurrentBed] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [availableRoomNumbers, setAvailableRoomNumbers] = useState([]);
   const [students, setStudents] = useState([]);
@@ -172,6 +173,7 @@ const StudentManagement = () => {
   const [reqLoading, setReqLoading] = useState(false);
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reasonText, setReasonText] = useState("");
+  const [idSortOrder, setIdSortOrder] = useState("asc");
   const itemsPerPage = 10;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -259,10 +261,11 @@ const StudentManagement = () => {
       const transformed = await Promise.all(raw.map(async (s) => {
         let roomDisplay = "Not Assigned", roomDetails = null;
         if (s.roomBedNumber && typeof s.roomBedNumber === "string" && s.roomBedNumber.length === 24) {
-          roomDetails = await fetchRoomDetailsAPI(s.roomBedNumber);
-          if (roomDetails?.inventory) {
-            const shortBarcode = (roomDetails.inventory.barcodeId || "").split("-").slice(0, 2).join("-");
-            roomDisplay = `${roomDetails.inventory.roomNo}/${shortBarcode}`;
+          const res = await fetchRoomDetailsAPI(s.roomBedNumber);
+          if (res?.inventory) {
+            roomDetails = res.inventory;
+            const shortBarcode = (res.inventory.barcodeId || "").split("-").slice(0, 2).join("-");
+            roomDisplay = `${res.inventory.roomNo}/${shortBarcode}`;
           }
         } else if (s.roomBedNumber && typeof s.roomBedNumber === "object") {
           const shortBarcode = (s.roomBedNumber.barcodeId || "").split("-").slice(0, 2).join("-");
@@ -276,15 +279,16 @@ const StudentManagement = () => {
           "101": 5, "102": 5, "103": 5, "104": 5, "201": 5, "202": 5, "203": 5, "204": 5, "205": 5,
           "301": 4, "302": 4, "303": 4, "304": 4, "305": 4, "401": 3, "402": 3, "403": 3, "404": 3, "405": 3,
         };
-        const actualRoomNo = roomDetails?.inventory?.roomNo || roomDetails?.roomNo || "";
-        const rType = String(s.roomType || (actualRoomNo ? capacityMap[actualRoomNo] : ""));
+        const actualRoomNo = roomDetails?.roomNo || roomDetails?.inventory?.roomNo || "";
+        const rawRoomType = String(s.roomType || (actualRoomNo ? capacityMap[actualRoomNo] : ""));
+        const rType = rawRoomType.startsWith("3") ? "3" : rawRoomType.startsWith("4") ? "4" : rawRoomType.startsWith("5") ? "5" : rawRoomType;
         const monthlyFeeStr = isWorking
           ? (rType === "5" ? "₹ 6,000" : rType === "4" ? "₹ 6,500" : rType === "3" ? "₹ 7,000" : "-")
           : (rType === "5" ? "₹ 4,500" : rType === "4" ? "₹ 5,000" : rType === "3" ? "₹ 5,500" : "-");
 
         let calculatedDues = Number(s.dueAmount || s.dues || 0);
 
-        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${calculatedDues}/-`, dueAmount: calculatedDues, roomType: rType, monthlyFee: monthlyFeeStr, roomDetails, roomObjectId: (s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber, documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
+        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${calculatedDues}/-`, dueAmount: calculatedDues, roomType: rType, monthlyFee: monthlyFeeStr, roomDetails, roomObjectId: roomDetails?._id || ((s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber), documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
       }));
       setStudents(transformed);
     } catch (e) { console.error(e); }
@@ -354,6 +358,9 @@ const StudentManagement = () => {
     }
     if (data.relation && !/^[A-Za-z\s]+$/.test(data.relation)) {
       e.relation = "Relation can only contain letters.";
+    }
+    if (!data.admissionDate) {
+      e.admissionDate = "Admission Date is required.";
     }
     return e;
   };
@@ -427,7 +434,10 @@ const StudentManagement = () => {
   const resetForm = () => {
     setFormData({ firstName: "", lastName: "", contactNumber: "", email: "", roomNumber: "", bedNumber: "", emergencyContactNumber: "", admissionDate: getTodaysDate(), emergencyContactName: "", feeStatus: "", hasCollegeId: true, isWorking: false, roomType: "", relation: "" });
     setStudentDocuments({ aadharCard: null, panCard: null, studentIdCard: null, feesReceipt: null });
-    setEditingStudent(null); setErrors({}); setShowEditModal(false);
+    setEditingStudent(null);
+    setEditingCurrentBed(null);
+    setErrors({});
+    setShowEditModal(false);
   };
 
   const handleSubmit = async () => {
@@ -488,22 +498,45 @@ const StudentManagement = () => {
     setShowReasonModal(true);
   };
 
-  const handleEdit = (studentId) => {
+  const handleEdit = async (studentId) => {
     const s = students.find(s => s.id === studentId); if (!s) return;
+
+    let bedItem = s.roomDetails?.inventory || (s.roomDetails?.barcodeId || s.roomDetails?.roomNo ? s.roomDetails : null) || (s.roomBedNumber && typeof s.roomBedNumber === 'object' ? s.roomBedNumber : null);
+    let bedId = bedItem?._id || s.roomObjectId || (typeof s.roomBedNumber === 'string' ? s.roomBedNumber : "");
+    let roomNo = bedItem?.roomNo || s.roomDetails?.roomNo || "";
+
+    if ((!bedItem || !roomNo) && bedId && typeof bedId === "string" && bedId.length === 24 && bedId !== "Not Assigned") {
+      try {
+        const res = await fetchRoomDetailsAPI(bedId);
+        if (res?.inventory) {
+          bedItem = res.inventory;
+          roomNo = bedItem.roomNo || roomNo;
+          bedId = bedItem._id || bedId;
+        }
+      } catch (e) {
+        console.error("Error fetching bed details on edit:", e);
+      }
+    }
+
+    setEditingCurrentBed(bedItem || null);
+
+    const rawRoomType = String(s.roomType || bedItem?.roomType || "");
+    const normalizedRoomType = rawRoomType.startsWith("3") ? "3" : rawRoomType.startsWith("4") ? "4" : rawRoomType.startsWith("5") ? "5" : rawRoomType;
+
     setFormData({
       firstName: s.firstName || "",
       lastName: s.lastName || "",
       contactNumber: s.contact,
       email: s.email || "",
-      roomNumber: s.roomDetails?.roomNo || "",
-      bedNumber: s.roomObjectId || "",
+      roomNumber: roomNo,
+      bedNumber: bedId,
       emergencyContactNumber: s.emergencyContactNumber || "",
-      admissionDate: s.admissionDate ? new Date(s.admissionDate).toISOString().split("T")[0] : "",
+      admissionDate: s.admissionDate ? (typeof s.admissionDate === "string" && /^\d{4}-\d{2}-\d{2}/.test(s.admissionDate) ? s.admissionDate.substring(0, 10) : new Date(s.admissionDate).toISOString().split("T")[0]) : "",
       emergencyContactName: s.emergencyContactName || "",
       feeStatus: s.feeStatus,
       hasCollegeId: s.hasCollegeId ?? true,
       isWorking: s.isWorking ?? false,
-      roomType: s.roomType || "",
+      roomType: normalizedRoomType,
       relation: s.relation || ""
     });
     setStudentDocuments({ aadharCard: s.documents?.aadharCard || null, panCard: s.documents?.panCard || null, studentIdCard: s.documents?.studentIdCard || null, feesReceipt: s.documents?.feesReceipt || null });
@@ -603,6 +636,9 @@ const StudentManagement = () => {
     if (data.emergencyContactName && !/^[A-Za-z\s]+$/.test(data.emergencyContactName)) {
       e.emergencyContactName = "Emergency Contact Name can only contain letters.";
     }
+    if (!data.admissionDate) {
+      e.admissionDate = "Admission Date is required.";
+    }
     return e;
   };
 
@@ -638,8 +674,20 @@ const StudentManagement = () => {
     if (s) { setStudentDetailsData(s); setShowDetailsModal(true); }
   };
 
-  const getBedsForRoom = (roomNumber) =>
-    roomNumber ? availableRooms.filter(b => b.roomNo === roomNumber) : availableRooms;
+  const getBedsForRoom = (roomNumber, rType) => {
+    if (!roomNumber) return availableRooms;
+    let beds = availableRooms.filter(b =>
+      String(b.roomNo) === String(roomNumber) &&
+      (!rType || !b.roomType || String(b.roomType) === String(rType))
+    );
+    if (editingCurrentBed && String(editingCurrentBed.roomNo) === String(roomNumber)) {
+      const alreadyInList = beds.some(b => String(b._id) === String(editingCurrentBed._id));
+      if (!alreadyInList) {
+        beds = [{ ...editingCurrentBed, isCurrentBed: true }, ...beds];
+      }
+    }
+    return beds;
+  };
 
   const getFeeStatusStyle = (status) => ({
     width: "120px", height: "26px", display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -663,10 +711,19 @@ const StudentManagement = () => {
     return true;
   });
 
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    if (a.isPendingApproval && !b.isPendingApproval) return 1;
+    if (!a.isPendingApproval && b.isPendingApproval) return -1;
+    const idA = String(a.id || a.studentId || "");
+    const idB = String(b.id || b.studentId || "");
+    const cmp = idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+    return idSortOrder === "asc" ? cmp : -cmp;
+  });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentStudents = filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const currentStudents = sortedStudents.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedStudents.length / itemsPerPage);
 
   const paginate = (n) => {
     setCurrentPage(n);
@@ -811,7 +868,22 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Type</label>
           <div className="relative h-[40px]">
-            <select name="roomType" value={formData.roomType} onChange={e => { setFormData(p => ({ ...p, roomType: e.target.value, roomNumber: "", bedNumber: "" })); }} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomType === "" ? "#0000008A" : "#000" }}>
+            <select
+              name="roomType"
+              value={formData.roomType}
+              onChange={e => {
+                const val = e.target.value;
+                const isOrig = editingCurrentBed && (String(editingCurrentBed.roomType || "") === val || (editingCurrentBed.totalBeds && String(editingCurrentBed.totalBeds) === val));
+                setFormData(p => ({
+                  ...p,
+                  roomType: val,
+                  roomNumber: isOrig ? editingCurrentBed.roomNo : "",
+                  bedNumber: isOrig ? editingCurrentBed._id : ""
+                }));
+              }}
+              className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]"
+              style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomType === "" ? "#0000008A" : "#000" }}
+            >
               <option value="" disabled hidden>Select Room Type</option>
               <option value="5">5 Bed (4.5k)</option>
               <option value="4">4 Bed (5k)</option>
@@ -861,11 +933,48 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px]">Room Number</label>
           <div className="relative h-[40px]">
-            <select name="roomNumber" value={formData.roomNumber} onChange={e => { handleInputChange(e); setFormData(p => ({ ...p, bedNumber: "" })); }} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomNumber === "" ? "#0000008A" : "#000" }}>
+            <select
+              name="roomNumber"
+              value={formData.roomNumber}
+              onChange={e => {
+                const val = e.target.value;
+                setFormData(p => ({
+                  ...p,
+                  roomNumber: val,
+                  bedNumber: editingCurrentBed && String(editingCurrentBed.roomNo) === String(val)
+                    ? editingCurrentBed._id
+                    : ""
+                }));
+              }}
+              className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]"
+              style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomNumber === "" ? "#0000008A" : "#000" }}
+            >
               <option value="" disabled hidden>Select Room</option>
-              {availableRoomNumbers
-                .filter(r => !formData.roomType || String(r.totalBeds) === formData.roomType)
-                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.totalBeds} Beds)</option>)}
+              {(() => {
+                let rooms = availableRoomNumbers.filter(
+                  r => !formData.roomType || String(r.roomType || r.totalBeds) === formData.roomType
+                );
+                if (isEditMode && formData.roomNumber) {
+                  const exists = rooms.some(r => String(r._id || r.roomNo) === String(formData.roomNumber));
+                  if (!exists) {
+                    rooms = [
+                      {
+                        _id: formData.roomNumber,
+                        roomNo: formData.roomNumber,
+                        floor: editingCurrentBed?.floor || "",
+                        roomType: formData.roomType || "",
+                        isCurrent: true
+                      },
+                      ...rooms
+                    ];
+                  }
+                }
+                return rooms.map(r => (
+                  <option key={r._id} value={r._id}>
+                    Room {r._id} {r.floor ? `- Floor ${r.floor}` : ""} ({r.roomType || r.totalBeds || formData.roomType} Beds){r.isCurrent ? " (Current)" : ""}
+                  </option>
+                ));
+              })()}
             </select>
             <ChevronDown />
           </div>
@@ -875,11 +984,23 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px]">Bed Number</label>
           <div className="relative h-[40px]">
-            <select name="bedNumber" value={formData.bedNumber} onChange={handleInputChange} disabled={!formData.roomNumber} className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${!formData.roomNumber ? "cursor-not-allowed opacity-60" : ""}`} style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.bedNumber === "" ? "#0000008A" : "#000" }}>
+            <select
+              name="bedNumber"
+              value={formData.bedNumber}
+              onChange={handleInputChange}
+              disabled={!formData.roomNumber}
+              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${!formData.roomNumber ? "cursor-not-allowed opacity-60" : ""}`}
+              style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.bedNumber === "" ? "#0000008A" : "#000" }}
+            >
               <option value="" disabled hidden>{!formData.roomNumber ? "Select Room First" : "Select Bed"}</option>
-              {getBedsForRoom(formData.roomNumber).map(b => {
-                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
-                return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
+              {getBedsForRoom(formData.roomNumber, formData.roomType).map(b => {
+                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-") || b.barcodeId || b.itemName || "Bed";
+                const isCurrent = editingCurrentBed && String(b._id) === String(editingCurrentBed._id);
+                return (
+                  <option key={b._id} value={b._id}>
+                    {shortBarcode} {b.floor ? `- Floor ${b.floor}` : ""} {isCurrent ? "(Current Bed)" : ""}
+                  </option>
+                );
               })}
             </select>
             <ChevronDown />
@@ -895,10 +1016,19 @@ const StudentManagement = () => {
         {/* Admission Date */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>Admission Date</label>
-          <div className="bg-gray-100 rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 shadow-[0px_4px_10px_0px_#00000040] cursor-not-allowed w-fit min-w-[200px]">
-            {formData.admissionDate}
+          <div className="relative">
+            <input
+              type="date"
+              name="admissionDate"
+              value={formData.admissionDate}
+              onChange={handleInputChange}
+              onClick={(e) => e.target.showPicker && e.target.showPicker()}
+              className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins] cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              style={inputStyle}
+            />
+            <Calendar className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
           </div>
-          <p className="text-xs text-gray-600 mt-1 ml-2">Automatically set to today's date</p>
+          {errors.admissionDate && <p className="text-red-500 text-xs mt-1 ml-2">{errors.admissionDate}</p>}
         </div>
 
         {/* Emergency Contact Name */}
@@ -1075,8 +1205,8 @@ const StudentManagement = () => {
             <select name="roomNumber" value={workerFormData.roomNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: workerFormData.roomNumber === "" ? "#0000008A" : "#000" }}>
               <option value="" disabled hidden>Select Room</option>
               {availableRoomNumbers
-                .filter(r => !workerFormData.roomType || String(r.totalBeds) === workerFormData.roomType)
-                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.totalBeds} Beds)</option>)}
+                .filter(r => !workerFormData.roomType || String(r.roomType || r.totalBeds) === workerFormData.roomType)
+                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.roomType || r.totalBeds} Beds)</option>)}
             </select>
             <ChevronDown />
           </div>
@@ -1088,7 +1218,7 @@ const StudentManagement = () => {
           <div className="relative h-[40px]">
             <select name="bedNumber" value={workerFormData.bedNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: workerFormData.bedNumber === "" ? "#0000008A" : "#000" }}>
               <option value="" disabled hidden>{workerFormData.roomNumber ? "Select Bed" : "Select Room First"}</option>
-              {getBedsForRoom(workerFormData.roomNumber).map(b => {
+              {getBedsForRoom(workerFormData.roomNumber, workerFormData.roomType).map(b => {
                 const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
                 return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
               })}
@@ -1118,10 +1248,18 @@ const StudentManagement = () => {
         {/* Admission Date */}
         <div className="w-full px-2">
           <label className="block mb-2 text-black ml-2" style={labelStyle}>Admission Date</label>
-          <div className="bg-gray-100 rounded-[10px] px-4 h-[38px] flex items-center font-[Poppins] font-semibold text-[15px] tracking-widest text-gray-800 shadow-[0px_4px_10px_0px_#00000040] cursor-not-allowed w-fit min-w-[200px]">
-            {workerFormData.admissionDate}
+          <div className="relative">
+            <input
+              type="date"
+              name="admissionDate"
+              value={workerFormData.admissionDate}
+              onChange={handleWorkerInputChange}
+              onClick={(e) => e.target.showPicker && e.target.showPicker()}
+              className="w-full px-4 text-black font-semibold text-[12px] font-[Poppins] cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              style={inputStyle}
+            />
+            <Calendar className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
           </div>
-          <p className="text-xs text-gray-600 mt-1 ml-2">Automatically set to today's date</p>
         </div>
 
 
@@ -1687,8 +1825,20 @@ const StudentManagement = () => {
                   <thead>
                     <tr className="border-b-2 border-gray-200">
                       {["Sr No", "Student ID", "Name", "Room/Bed", "Type", "Fee", "Contact", "Fees Status", "Dues", "Biometric", "Status", "Action"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-sm font-semibold text-gray-700">
-                          {h}
+                        <th
+                          key={h}
+                          onClick={h === "Student ID" ? () => setIdSortOrder(p => p === "asc" ? "desc" : "asc") : undefined}
+                          className={`px-4 py-3 text-sm font-semibold text-gray-700 ${h === "Student ID" ? "cursor-pointer select-none hover:text-[#4F8DCF]" : ""}`}
+                          title={h === "Student ID" ? `Click to sort ${idSortOrder === "asc" ? "Descending" : "Ascending"}` : undefined}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            {h}
+                            {h === "Student ID" && (
+                              <span className="text-xs text-[#4F8DCF] font-bold">
+                                {idSortOrder === "asc" ? "▲" : "▼"}
+                              </span>
+                            )}
+                          </div>
                         </th>
                       ))}
                     </tr>

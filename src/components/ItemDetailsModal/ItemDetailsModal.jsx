@@ -139,6 +139,14 @@ const ItemDetailsModal = ({ item, isOpen, onClose }) => {
               <p className="text-[#5B6978] text-[14px]">{item.category}</p>
             </div>
 
+            {/* Room Type */}
+            {item.roomType && (
+              <div>
+                <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Room Type</p>
+                <p className="text-[#5B6978] text-[14px]">{item.roomType} Bed</p>
+              </div>
+            )}
+
             {/* Location */}
             <div>
               <p className="text-[13px] font-bold text-[#3B4856] mb-0.5">Location</p>
