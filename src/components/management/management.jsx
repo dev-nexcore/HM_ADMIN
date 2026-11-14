@@ -2,7 +2,7 @@
 // export default StudentManagement;
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, Check, X, ChevronDown, Info, Pencil, Calendar } from "lucide-react";
+import { Eye, Check, X, ChevronDown, Info, Pencil, Calendar, Search, Filter, RotateCcw } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
 import { ToastContainer, toast } from "react-toastify";
@@ -174,6 +174,11 @@ const StudentManagement = () => {
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reasonText, setReasonText] = useState("");
   const [idSortOrder, setIdSortOrder] = useState("asc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRoomType, setFilterRoomType] = useState("All");
+  const [filterFeeStatus, setFilterFeeStatus] = useState("All");
+  const [filterBiometric, setFilterBiometric] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
   const itemsPerPage = 10;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -194,7 +199,9 @@ const StudentManagement = () => {
     }
   }, [formData.hasCollegeId]);
 
-  useEffect(() => { setCurrentPage(1); }, [activeFilter]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery, filterRoomType, filterFeeStatus, filterBiometric, filterStatus, activeTab]);
 
   // ── API helpers ────────────────────────────────────────────────────────────
   const registerStudentAPI = async (studentData) => {
@@ -700,6 +707,25 @@ const StudentManagement = () => {
   const labelStyle = { fontFamily: "Poppins", fontWeight: "500", fontSize: "18px", lineHeight: "100%", textAlign: "left" };
 
   // ── Filtered + Paginated ───────────────────────────────────────────────────
+  const isFiltered = Boolean(
+    searchQuery.trim() !== "" ||
+    filterRoomType !== "All" ||
+    filterFeeStatus !== "All" ||
+    filterBiometric !== "All" ||
+    filterStatus !== "All" ||
+    activeFilter !== "All"
+  );
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setFilterRoomType("All");
+    setFilterFeeStatus("All");
+    setFilterBiometric("All");
+    setFilterStatus("All");
+    setActiveFilter("All");
+    setCurrentPage(1);
+  };
+
   const filteredStudents = students.filter(s => {
     if (activeTab === "worker") { if (!s.isWorking) return false; }
     else if (activeTab === "student") { if (s.isWorking) return false; }
@@ -707,7 +733,69 @@ const StudentManagement = () => {
     if (activeFilter === "Total Students") return !s.isWorking;
     if (activeFilter === "Total Workers") return s.isWorking;
     if (activeFilter === "Occupied Beds") return s.room && s.room !== "Not Assigned";
-    // For "Total Parents" and "Available Beds", we don't have a direct student filter, so show all
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = (s.name || "").toLowerCase().includes(q);
+      const matchId = (s.id || "").toLowerCase().includes(q);
+      const matchRoom = (s.room || "").toLowerCase().includes(q);
+      const matchContact = (s.contact || "").toLowerCase().includes(q);
+      const matchEmail = (s.email || "").toLowerCase().includes(q);
+      if (!matchName && !matchId && !matchRoom && !matchContact && !matchEmail) {
+        return false;
+      }
+    }
+
+    // Room Type filter
+    if (filterRoomType !== "All") {
+      const sType = String(s.roomType || "");
+      if (!sType.startsWith(filterRoomType)) return false;
+    }
+
+    // Fee Status filter
+    if (filterFeeStatus !== "All") {
+      if ((s.feeStatus || "").toLowerCase() !== filterFeeStatus.toLowerCase()) return false;
+    }
+
+    // Biometric filter
+    if (filterBiometric === "Added") {
+      if (!s.isAddedToBiometric) return false;
+    } else if (filterBiometric === "Pending") {
+      if (s.isAddedToBiometric) return false;
+    }
+
+    // Status filter
+    if (filterStatus === "Approved") {
+      if (s.isPendingApproval) return false;
+    } else if (filterStatus === "Pending") {
+      if (!s.isPendingApproval || s.reqStatus === "rejected") return false;
+    } else if (filterStatus === "Rejected") {
+      if (!s.isPendingApproval || s.reqStatus !== "rejected") return false;
+    }
+
+    return true;
+  });
+
+  const filteredParents = parents.filter(p => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const fullName = `${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
+      const contact = (p.contactNumber || "").toLowerCase();
+      const sId = (p.studentId || "").toLowerCase();
+      const email = (p.email || "").toLowerCase();
+      const rel = (p.relation || "").toLowerCase();
+      if (!fullName.includes(q) && !contact.includes(q) && !sId.includes(q) && !email.includes(q) && !rel.includes(q)) {
+        return false;
+      }
+    }
+    if (filterStatus === "Approved") {
+      if (p.isPendingApproval) return false;
+    } else if (filterStatus === "Pending") {
+      if (!p.isPendingApproval || p.reqStatus === "rejected") return false;
+    } else if (filterStatus === "Rejected") {
+      if (!p.isPendingApproval || p.reqStatus !== "rejected") return false;
+    }
     return true;
   });
 
@@ -1339,14 +1427,14 @@ const StudentManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {parents.length === 0 && (
+            {filteredParents.length === 0 && (
               <tr>
                 <td colSpan="7" className="text-center py-12 text-gray-500 text-lg">
-                  No parents registered yet.
+                  No parents found.
                 </td>
               </tr>
             )}
-            {parents.map((p, i) => (
+            {filteredParents.map((p, i) => (
               <tr key={p._id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{i + 1}</td>
                 <td className="px-4 py-3 text-sm text-gray-600 font-bold whitespace-nowrap">{p.firstName} {p.lastName}</td>
@@ -1400,10 +1488,10 @@ const StudentManagement = () => {
 
       {/* Mobile view logic */}
       <div className="lg:hidden p-4 space-y-4">
-        {parents.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No parents registered yet.</p>
+        {filteredParents.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">No parents found.</p>
         ) : (
-          parents.map((p, i) => (
+          filteredParents.map((p, i) => (
             <div key={p._id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 relative">
               <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
                 <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${p.isPendingApproval
@@ -1811,7 +1899,129 @@ const StudentManagement = () => {
                   {activeTab === "parent" ? "Parent List" : activeTab === "worker" ? "Worker List" : "Student List"}
                   {activeTab !== "parent" && activeFilter !== "All" && <span className="text-gray-800 text-sm ml-2 font-medium">— {activeFilter}</span>}
                 </h2>
-                <p className="text-sm text-gray-700 mt-1">Total: {activeTab === "parent" ? parents.length : filteredStudents.length} records</p>
+                <p className="text-sm text-gray-700 mt-1">
+                  Total: {activeTab === "parent" ? filteredParents.length : filteredStudents.length} records
+                  {isFiltered && (
+                    <span className="text-xs text-gray-700 ml-1.5 font-medium">
+                      (Filtered from {activeTab === "parent" ? parents.length : students.filter(s => activeTab === "worker" ? s.isWorking : !s.isWorking).length})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* ── Search & Filter Controls ── */}
+            <div className="p-4 bg-white/70 border-b border-[#BEC5AD]/30 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between">
+              {/* Search input */}
+              <div className="relative flex-1 min-w-[260px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={
+                    activeTab === "parent"
+                      ? "Search parent by name, contact, student ID..."
+                      : "Search student by name, ID, room, contact..."
+                  }
+                  className="w-full pl-9 pr-8 py-2 bg-white rounded-xl border border-gray-200 outline-none text-sm text-gray-800 focus:border-[#4F8CCF] focus:ring-1 focus:ring-[#4F8CCF] shadow-sm transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
+                    title="Clear search"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filters & Clear Filter Button */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mr-1">
+                  <Filter size={14} />
+                  <span className="hidden sm:inline">Filters:</span>
+                </div>
+
+                {activeTab !== "parent" ? (
+                  <>
+                    {/* Room Type */}
+                    <select
+                      className="px-3 py-2 bg-white rounded-xl border border-gray-200 outline-none text-xs sm:text-sm font-medium text-gray-700 focus:border-[#4F8CCF] shadow-sm cursor-pointer hover:border-gray-300 transition-colors"
+                      value={filterRoomType}
+                      onChange={(e) => setFilterRoomType(e.target.value)}
+                    >
+                      <option value="All">All Room Types</option>
+                      <option value="3">3 Bed</option>
+                      <option value="4">4 Bed</option>
+                      <option value="5">5 Bed</option>
+                    </select>
+
+                    {/* Fee Status */}
+                    <select
+                      className="px-3 py-2 bg-white rounded-xl border border-gray-200 outline-none text-xs sm:text-sm font-medium text-gray-700 focus:border-[#4F8CCF] shadow-sm cursor-pointer hover:border-gray-300 transition-colors"
+                      value={filterFeeStatus}
+                      onChange={(e) => setFilterFeeStatus(e.target.value)}
+                    >
+                      <option value="All">All Fee Status</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Unpaid">Unpaid</option>
+                      <option value="Partial">Partial</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+
+                    {/* Biometric */}
+                    <select
+                      className="px-3 py-2 bg-white rounded-xl border border-gray-200 outline-none text-xs sm:text-sm font-medium text-gray-700 focus:border-[#4F8CCF] shadow-sm cursor-pointer hover:border-gray-300 transition-colors"
+                      value={filterBiometric}
+                      onChange={(e) => setFilterBiometric(e.target.value)}
+                    >
+                      <option value="All">All Biometric</option>
+                      <option value="Added">✅ Added</option>
+                      <option value="Pending">❌ Pending</option>
+                    </select>
+
+                    {/* Approval Status */}
+                    <select
+                      className="px-3 py-2 bg-white rounded-xl border border-gray-200 outline-none text-xs sm:text-sm font-medium text-gray-700 focus:border-[#4F8CCF] shadow-sm cursor-pointer hover:border-gray-300 transition-colors"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                      <option value="All">All Status</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+                  </>
+                ) : (
+                  /* Parent status filter */
+                  <select
+                    className="px-3 py-2 bg-white rounded-xl border border-gray-200 outline-none text-xs sm:text-sm font-medium text-gray-700 focus:border-[#4F8CCF] shadow-sm cursor-pointer hover:border-gray-300 transition-colors"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                )}
+
+                {/* Clear Filter Button */}
+                <button
+                  onClick={clearAllFilters}
+                  disabled={!isFiltered}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all border shadow-sm ${
+                    isFiltered
+                      ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300 cursor-pointer"
+                      : "bg-white text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                  }`}
+                  title="Clear all filters and search"
+                >
+                  <RotateCcw size={14} className={isFiltered ? "text-red-600" : "text-gray-400"} />
+                  <span>Clear Filter</span>
+                </button>
               </div>
             </div>
 
