@@ -2,11 +2,21 @@
 // export default StudentManagement;
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, Check, X, ChevronDown, Info, Pencil, Calendar, Search, Filter, RotateCcw } from "lucide-react";
+import { Eye, Check, X, ChevronDown, Info, Pencil, Calendar, Search, Filter, RotateCcw, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import api from "@/lib/api";
 import Tesseract from "tesseract.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+const ROOM_CAPACITY_MAP = {
+  "101": "5", "102": "5", "103": "5", "104": "5",
+  "105": "4", "106": "4", "107": "4",
+  "108": "3", "109": "3", "110": "3",
+  "201": "5", "202": "5", "203": "5", "204": "5",
+  "205": "4", "206": "4", "207": "4",
+  "208": "3", "209": "3", "210": "3",
+  "307": "3"
+};
 
 const getDocumentUrl = (studentId, docType) =>
   `${process.env.NEXT_PUBLIC_PROD_API_URL}/api/adminauth/student-document/${studentId}/${docType}`;
@@ -173,6 +183,9 @@ const StudentManagement = () => {
   const [reqLoading, setReqLoading] = useState(false);
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reasonText, setReasonText] = useState("");
+  const [inactiveModalStudent, setInactiveModalStudent] = useState(null);
+  const [reactivateModalStudent, setReactivateModalStudent] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
   const [idSortOrder, setIdSortOrder] = useState("asc");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRoomType, setFilterRoomType] = useState("All");
@@ -252,13 +265,20 @@ const StudentManagement = () => {
     } catch (e) { throw e.response?.data || { message: "Failed to update student" }; }
   };
 
-  const fetchStudentsAPI = async () => { try { return (await api.get(`/api/adminauth/students`)).data; } catch (e) { throw e.response?.data || { message: "Failed to fetch students" }; } };
-  const fetchStudentsWithoutParentsAPI = async () => { try { return (await api.get(`/api/adminauth/students-without-parents`)).data; } catch (e) { throw e.response?.data; } };
-  const fetchAvailableRoomsAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-beds`)).data; } catch (e) { throw e.response?.data; } };
-  const fetchAvailableRoomsNumbersAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-rooms`)).data; } catch (e) { throw e.response?.data; } };
-  const fetchBedOccupancyAPI = async () => { try { return (await api.get(`/api/adminauth/bed-occupancy-status`)).data; } catch (e) { throw e.response?.data; } };
+  const toggleStudentStatusAPI = async (studentId, isActive) => {
+    try {
+      const res = await api.put(`/api/adminauth/toggle-student-status/${studentId}`, { isActive });
+      return res.data;
+    } catch (e) { throw e.response?.data || { message: "Failed to update student status" }; }
+  };
+
+  const fetchStudentsAPI = async () => { try { return (await api.get(`/api/adminauth/students`)).data; } catch (e) { console.warn("Failed to fetch students:", e); return { students: [] }; } };
+  const fetchStudentsWithoutParentsAPI = async () => { try { return (await api.get(`/api/adminauth/students-without-parents`)).data; } catch (e) { console.warn("Failed to fetch students without parents:", e); return { students: [] }; } };
+  const fetchAvailableRoomsAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-beds`)).data; } catch (e) { console.warn("Failed to fetch available beds:", e); return { availableBeds: [] }; } };
+  const fetchAvailableRoomsNumbersAPI = async () => { try { return (await api.get(`/api/adminauth/inventory/available-rooms`)).data; } catch (e) { console.warn("Failed to fetch available rooms:", e); return { availableRooms: [] }; } };
+  const fetchBedOccupancyAPI = async () => { try { return (await api.get(`/api/adminauth/bed-occupancy-status`)).data; } catch (e) { console.warn("Failed to fetch bed occupancy status:", e); return null; } };
   const fetchRoomDetailsAPI = async (id) => { try { return (await api.get(`/api/adminauth/inventory/${id}`)).data; } catch (e) { return null; } };
-  const fetchParentsAPI = async () => { try { return (await api.get(`/api/adminauth/parents`)).data; } catch (e) { throw e.response?.data; } };
+  const fetchParentsAPI = async () => { try { return (await api.get(`/api/adminauth/parents`)).data; } catch (e) { console.warn("Failed to fetch parents:", e); return { parents: [] }; } };
   const deleteParentAPI = async (id) => { try { return (await api.delete(`/api/adminauth/delete-parent/${id}`)).data; } catch (e) { throw e.response?.data; } };
   const updateParentAPI = async (id, data) => { try { return (await api.put(`/api/adminauth/update-parent/${id}`, data)).data; } catch (e) { throw e.response?.data; } };
 
@@ -282,12 +302,8 @@ const StudentManagement = () => {
           roomDisplay = s.roomBedNumber;
         }
         const isWorking = s.isWorking === true;
-        const capacityMap = {
-          "101": 5, "102": 5, "103": 5, "104": 5, "201": 5, "202": 5, "203": 5, "204": 5, "205": 5,
-          "301": 4, "302": 4, "303": 4, "304": 4, "305": 4, "401": 3, "402": 3, "403": 3, "404": 3, "405": 3,
-        };
         const actualRoomNo = roomDetails?.roomNo || roomDetails?.inventory?.roomNo || "";
-        const rawRoomType = String(s.roomType || (actualRoomNo ? capacityMap[actualRoomNo] : ""));
+        const rawRoomType = String(s.roomType || (actualRoomNo ? ROOM_CAPACITY_MAP[actualRoomNo] : ""));
         const rType = rawRoomType.startsWith("3") ? "3" : rawRoomType.startsWith("4") ? "4" : rawRoomType.startsWith("5") ? "5" : rawRoomType;
         const monthlyFeeStr = isWorking
           ? (rType === "5" ? "₹ 6,000" : rType === "4" ? "₹ 6,500" : rType === "3" ? "₹ 7,000" : "-")
@@ -295,17 +311,17 @@ const StudentManagement = () => {
 
         let calculatedDues = Number(s.dueAmount || s.dues || 0);
 
-        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${calculatedDues}/-`, dueAmount: calculatedDues, roomType: rType, monthlyFee: monthlyFeeStr, roomDetails, roomObjectId: roomDetails?._id || ((s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber), documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
+        return { id: s.id || s.studentId, firstName: s.firstName, lastName: s.lastName, name: `${s.firstName} ${s.lastName}`, room: roomDisplay, contact: s.contactNumber, email: s.email, emergencyContactNumber: s.emergencyContactNumber, admissionDate: s.admissionDate, emergencyContactName: s.emergencyContactName, relation: s.relation, feeStatus: s.feeStatus, dues: `₹ ${calculatedDues}/-`, dueAmount: calculatedDues, roomType: rType, monthlyFee: monthlyFeeStr, roomDetails, roomObjectId: roomDetails?._id || ((s.roomBedNumber && typeof s.roomBedNumber === 'object') ? s.roomBedNumber._id : s.roomBedNumber), documents: s.documents || {}, isWorking: s.isWorking, isAddedToBiometric: s.isAddedToBiometric, isActive: s.isActive !== false, status: s.status || (s.isActive === false ? 'Inactive' : 'Active'), isPendingApproval: s.isPendingApproval, requisitionId: s.requisitionId, reqStatus: s.reqStatus, rejectionReason: s.rejectionReason };
       }));
       setStudents(transformed);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.warn("Error loading students:", e); }
   };
 
   const loadParents = async () => {
     try {
       const { parents: raw = [] } = await fetchParentsAPI();
       setParents(raw);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.warn("Error loading parents:", e); }
   };
 
   useEffect(() => {
@@ -313,12 +329,15 @@ const StudentManagement = () => {
       try {
         await loadStudents();
         await loadParents();
-        setAvailableRooms((await fetchAvailableRoomsAPI()).availableBeds || []);
-        setAvailableRoomNumbers((await fetchAvailableRoomsNumbersAPI()).availableRooms || []);
-        setStudentsWithoutParents((await fetchStudentsWithoutParentsAPI()).students || []);
+        const bedsRes = await fetchAvailableRoomsAPI();
+        setAvailableRooms(bedsRes?.availableBeds || []);
+        const roomsRes = await fetchAvailableRoomsNumbersAPI();
+        setAvailableRoomNumbers(roomsRes?.availableRooms || []);
+        const noParentsRes = await fetchStudentsWithoutParentsAPI();
+        setStudentsWithoutParents(noParentsRes?.students || []);
         const occupancy = await fetchBedOccupancyAPI();
         if (occupancy) setBedData(occupancy);
-      } catch (e) { console.error(e); }
+      } catch (e) { console.warn("Error in Admin StudentManagement initial data load:", e); }
     })();
   }, [refreshTrigger, activeTab]);
 
@@ -329,7 +348,7 @@ const StudentManagement = () => {
         try {
           const res = await api.get(`/api/adminauth/invoices/student?studentId=${studentDetailsData._id}&limit=50`);
           setStudentInvoices(res.data.invoices || []);
-        } catch (e) { console.error("Error fetching invoices:", e); }
+        } catch (e) { console.warn("Error fetching invoices:", e); }
         finally { setInvoicesLoading(false); }
       })();
     } else {
@@ -521,7 +540,7 @@ const StudentManagement = () => {
           bedId = bedItem._id || bedId;
         }
       } catch (e) {
-        console.error("Error fetching bed details on edit:", e);
+        console.warn("Error fetching bed details on edit:", e);
       }
     }
 
@@ -564,6 +583,38 @@ const StudentManagement = () => {
       setRefreshTrigger(p => p + 1); resetForm(); toast.success("Student updated successfully!");
     } catch (e) { toast.error(e.message || "Error updating student."); }
     finally { setLoading(false); }
+  };
+
+  const handleConfirmInactive = async () => {
+    if (!inactiveModalStudent) return;
+    setStatusLoading(true);
+    try {
+      const targetId = inactiveModalStudent.id || inactiveModalStudent.studentId || inactiveModalStudent._id;
+      const res = await toggleStudentStatusAPI(targetId, false);
+      toast.success(res.message || "Student marked as inactive and bed made available!");
+      setInactiveModalStudent(null);
+      setRefreshTrigger(p => p + 1);
+    } catch (err) {
+      toast.error(err.message || "Failed to mark student as inactive");
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const handleConfirmReactivate = async () => {
+    if (!reactivateModalStudent) return;
+    setStatusLoading(true);
+    try {
+      const targetId = reactivateModalStudent.id || reactivateModalStudent.studentId || reactivateModalStudent._id;
+      const res = await toggleStudentStatusAPI(targetId, true);
+      toast.success(res.message || "Student reactivated successfully!");
+      setReactivateModalStudent(null);
+      setRefreshTrigger(p => p + 1);
+    } catch (err) {
+      toast.error(err.message || "Failed to reactivate student");
+    } finally {
+      setStatusLoading(false);
+    }
   };
 
   const handleParentInputChange = (e) => {
@@ -684,8 +735,7 @@ const StudentManagement = () => {
   const getBedsForRoom = (roomNumber, rType) => {
     if (!roomNumber) return availableRooms;
     let beds = availableRooms.filter(b =>
-      String(b.roomNo) === String(roomNumber) &&
-      (!rType || !b.roomType || String(b.roomType) === String(rType))
+      String(b.roomNo) === String(roomNumber)
     );
     if (editingCurrentBed && String(editingCurrentBed.roomNo) === String(roomNumber)) {
       const alreadyInList = beds.some(b => String(b._id) === String(editingCurrentBed._id));
@@ -767,11 +817,13 @@ const StudentManagement = () => {
 
     // Status filter
     if (filterStatus === "Approved") {
-      if (s.isPendingApproval) return false;
+      if (s.isPendingApproval || s.isActive === false) return false;
     } else if (filterStatus === "Pending") {
       if (!s.isPendingApproval || s.reqStatus === "rejected") return false;
     } else if (filterStatus === "Rejected") {
       if (!s.isPendingApproval || s.reqStatus !== "rejected") return false;
+    } else if (filterStatus === "Inactive") {
+      if (s.isActive !== false) return false;
     }
 
     return true;
@@ -1021,78 +1073,131 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px]">Room Number</label>
           <div className="relative h-[40px]">
-            <select
-              name="roomNumber"
-              value={formData.roomNumber}
-              onChange={e => {
-                const val = e.target.value;
-                setFormData(p => ({
-                  ...p,
-                  roomNumber: val,
-                  bedNumber: editingCurrentBed && String(editingCurrentBed.roomNo) === String(val)
-                    ? editingCurrentBed._id
-                    : ""
-                }));
-              }}
-              className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]"
-              style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.roomNumber === "" ? "#0000008A" : "#000" }}
-            >
-              <option value="" disabled hidden>Select Room</option>
-              {(() => {
-                let rooms = availableRoomNumbers.filter(
-                  r => !formData.roomType || String(r.roomType || r.totalBeds) === formData.roomType
-                );
-                if (isEditMode && formData.roomNumber) {
-                  const exists = rooms.some(r => String(r._id || r.roomNo) === String(formData.roomNumber));
-                  if (!exists) {
-                    rooms = [
-                      {
-                        _id: formData.roomNumber,
-                        roomNo: formData.roomNumber,
-                        floor: editingCurrentBed?.floor || "",
-                        roomType: formData.roomType || "",
-                        isCurrent: true
-                      },
-                      ...rooms
-                    ];
-                  }
+            {(() => {
+              let rooms = availableRoomNumbers.filter(
+                r => !formData.roomType || String(r.roomType) === String(formData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(formData.roomType)
+              );
+              if (isEditMode && formData.roomNumber) {
+                const exists = rooms.some(r => String(r._id || r.roomNo) === String(formData.roomNumber));
+                if (!exists) {
+                  rooms = [
+                    {
+                      _id: formData.roomNumber,
+                      roomNo: formData.roomNumber,
+                      floor: editingCurrentBed?.floor || (formData.roomNumber.length >= 3 ? formData.roomNumber[0] : "1"),
+                      roomType: formData.roomType || String(ROOM_CAPACITY_MAP[formData.roomNumber] || ""),
+                      isCurrent: true
+                    },
+                    ...rooms
+                  ];
                 }
-                return rooms.map(r => (
-                  <option key={r._id} value={r._id}>
-                    Room {r._id} {r.floor ? `- Floor ${r.floor}` : ""} ({r.roomType || r.totalBeds || formData.roomType} Beds){r.isCurrent ? " (Current)" : ""}
-                  </option>
-                ));
-              })()}
-            </select>
-            <ChevronDown />
+              }
+              const hasNoRooms = rooms.length === 0;
+
+              return (
+                <>
+                  <select
+                    name="roomNumber"
+                    value={formData.roomNumber}
+                    disabled={hasNoRooms}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const rObj = availableRoomNumbers.find(r => String(r._id || r.roomNo) === String(val));
+                      const autoRoomType = rObj?.roomType || (val ? String(ROOM_CAPACITY_MAP[val] || "") : "");
+                      setFormData(p => ({
+                        ...p,
+                        roomNumber: val,
+                        roomType: autoRoomType || p.roomType,
+                        bedNumber: editingCurrentBed && String(editingCurrentBed.roomNo) === String(val)
+                          ? editingCurrentBed._id
+                          : ""
+                      }));
+                    }}
+                    className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${hasNoRooms ? "cursor-not-allowed opacity-70 bg-gray-50" : ""}`}
+                    style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: hasNoRooms ? "#DC2626" : formData.roomNumber === "" ? "#0000008A" : "#000" }}
+                  >
+                    {hasNoRooms ? (
+                      <option value="" disabled>No Room Available</option>
+                    ) : (
+                      <option value="" disabled hidden>Select Room</option>
+                    )}
+                    {rooms.map(r => (
+                      <option key={r._id} value={r._id}>
+                        Room {r._id} {r.floor ? `- Floor ${r.floor}` : ""} ({r.roomType || ROOM_CAPACITY_MAP[r._id] || r.totalBeds || formData.roomType} Beds){r.isCurrent ? " (Current)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </>
+              );
+            })()}
           </div>
+          {(() => {
+            const rooms = availableRoomNumbers.filter(
+              r => !formData.roomType || String(r.roomType) === String(formData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(formData.roomType)
+            );
+            if (formData.roomType && rooms.length === 0) {
+              return <p className="text-red-500 text-[11px] font-medium mt-1 ml-1">⚠️ No rooms or beds available for {formData.roomType} Bed sharing</p>;
+            }
+            return null;
+          })()}
         </div>
 
         {/* Bed Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black font-[500] text-[18px] leading-[22px]">Bed Number</label>
           <div className="relative h-[40px]">
-            <select
-              name="bedNumber"
-              value={formData.bedNumber}
-              onChange={handleInputChange}
-              disabled={!formData.roomNumber}
-              className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${!formData.roomNumber ? "cursor-not-allowed opacity-60" : ""}`}
-              style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: formData.bedNumber === "" ? "#0000008A" : "#000" }}
-            >
-              <option value="" disabled hidden>{!formData.roomNumber ? "Select Room First" : "Select Bed"}</option>
-              {getBedsForRoom(formData.roomNumber, formData.roomType).map(b => {
-                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-") || b.barcodeId || b.itemName || "Bed";
-                const isCurrent = editingCurrentBed && String(b._id) === String(editingCurrentBed._id);
-                return (
-                  <option key={b._id} value={b._id}>
-                    {shortBarcode} {b.floor ? `- Floor ${b.floor}` : ""} {isCurrent ? "(Current Bed)" : ""}
-                  </option>
-                );
-              })}
-            </select>
-            <ChevronDown />
+            {(() => {
+              const roomsForType = availableRoomNumbers.filter(
+                r => !formData.roomType || String(r.roomType) === String(formData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(formData.roomType)
+              );
+              const beds = formData.roomNumber ? getBedsForRoom(formData.roomNumber, formData.roomType) : [];
+              const noBedsForRoomType = formData.roomType && roomsForType.length === 0;
+              const hasNoBeds = (!formData.roomNumber && noBedsForRoomType) || (formData.roomNumber && beds.length === 0);
+
+              return (
+                <>
+                  <select
+                    name="bedNumber"
+                    value={formData.bedNumber}
+                    onChange={handleInputChange}
+                    disabled={!formData.roomNumber || beds.length === 0}
+                    className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${(!formData.roomNumber || beds.length === 0) ? "cursor-not-allowed opacity-70" : ""}`}
+                    style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: hasNoBeds ? "#DC2626" : formData.bedNumber === "" ? "#0000008A" : "#000" }}
+                  >
+                    {!formData.roomNumber ? (
+                      <option value="" disabled>
+                        {noBedsForRoomType ? "No Bed Available" : "Select Room First"}
+                      </option>
+                    ) : beds.length === 0 ? (
+                      <option value="" disabled>No Bed Available</option>
+                    ) : (
+                      <option value="" disabled hidden>Select Bed</option>
+                    )}
+                    {beds.map(b => {
+                      const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-") || b.barcodeId || b.itemName || "Bed";
+                      const isCurrent = editingCurrentBed && String(b._id) === String(editingCurrentBed._id);
+                      return (
+                        <option key={b._id} value={b._id}>
+                          {shortBarcode} {b.floor ? `- Floor ${b.floor}` : ""} {isCurrent ? "(Current Bed)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <ChevronDown />
+                </>
+              );
+            })()}
           </div>
+          {(() => {
+            if (formData.roomNumber) {
+              const beds = getBedsForRoom(formData.roomNumber, formData.roomType);
+              if (beds.length === 0) {
+                return <p className="text-red-500 text-[11px] font-medium mt-1 ml-1">⚠️ No available beds in Room {formData.roomNumber}</p>;
+              }
+            }
+            return null;
+          })()}
         </div>
 
         {/* Emergency Contact Number */}
@@ -1290,29 +1395,107 @@ const StudentManagement = () => {
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>Room Number</label>
           <div className="relative h-[40px]">
-            <select name="roomNumber" value={workerFormData.roomNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: workerFormData.roomNumber === "" ? "#0000008A" : "#000" }}>
-              <option value="" disabled hidden>Select Room</option>
-              {availableRoomNumbers
-                .filter(r => !workerFormData.roomType || String(r.roomType || r.totalBeds) === workerFormData.roomType)
-                .map(r => <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.roomType || r.totalBeds} Beds)</option>)}
-            </select>
-            <ChevronDown />
+            {(() => {
+              const rooms = availableRoomNumbers.filter(
+                r => !workerFormData.roomType || String(r.roomType) === String(workerFormData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(workerFormData.roomType)
+              );
+              const hasNoRooms = rooms.length === 0;
+
+              return (
+                <>
+                  <select
+                    name="roomNumber"
+                    value={workerFormData.roomNumber}
+                    disabled={hasNoRooms}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const rObj = availableRoomNumbers.find(r => String(r._id || r.roomNo) === String(val));
+                      const autoRoomType = rObj?.roomType || (val ? String(ROOM_CAPACITY_MAP[val] || "") : "");
+                      setWorkerFormData(p => ({
+                        ...p,
+                        roomNumber: val,
+                        roomType: autoRoomType || p.roomType,
+                        bedNumber: ""
+                      }));
+                    }}
+                    className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${hasNoRooms ? "cursor-not-allowed opacity-70 bg-gray-50" : ""}`}
+                    style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: hasNoRooms ? "#DC2626" : workerFormData.roomNumber === "" ? "#0000008A" : "#000" }}
+                  >
+                    {hasNoRooms ? (
+                      <option value="" disabled>No Room Available</option>
+                    ) : (
+                      <option value="" disabled hidden>Select Room</option>
+                    )}
+                    {rooms.map(r => (
+                      <option key={r._id} value={r._id}>Room {r._id} - Floor {r.floor} ({r.roomType || ROOM_CAPACITY_MAP[r._id] || r.totalBeds} Beds)</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </>
+              );
+            })()}
           </div>
+          {(() => {
+            const rooms = availableRoomNumbers.filter(
+              r => !workerFormData.roomType || String(r.roomType) === String(workerFormData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(workerFormData.roomType)
+            );
+            if (workerFormData.roomType && rooms.length === 0) {
+              return <p className="text-red-500 text-[11px] font-medium mt-1 ml-1">⚠️ No rooms or beds available for {workerFormData.roomType} Bed sharing</p>;
+            }
+            return null;
+          })()}
         </div>
 
         {/* Bed Number */}
         <div className="w-full px-2">
           <label className="block mb-1 text-black ml-2" style={labelStyle}>Bed Number</label>
           <div className="relative h-[40px]">
-            <select name="bedNumber" value={workerFormData.bedNumber} onChange={handleWorkerInputChange} className="w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins]" style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: workerFormData.bedNumber === "" ? "#0000008A" : "#000" }}>
-              <option value="" disabled hidden>{workerFormData.roomNumber ? "Select Bed" : "Select Room First"}</option>
-              {getBedsForRoom(workerFormData.roomNumber, workerFormData.roomType).map(b => {
-                const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
-                return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
-              })}
-            </select>
-            <ChevronDown />
+            {(() => {
+              const roomsForType = availableRoomNumbers.filter(
+                r => !workerFormData.roomType || String(r.roomType) === String(workerFormData.roomType) || String(ROOM_CAPACITY_MAP[r.roomNo || r._id]) === String(workerFormData.roomType)
+              );
+              const beds = workerFormData.roomNumber ? getBedsForRoom(workerFormData.roomNumber, workerFormData.roomType) : [];
+              const noBedsForRoomType = workerFormData.roomType && roomsForType.length === 0;
+              const hasNoBeds = (!workerFormData.roomNumber && noBedsForRoomType) || (workerFormData.roomNumber && beds.length === 0);
+
+              return (
+                <>
+                  <select
+                    name="bedNumber"
+                    value={workerFormData.bedNumber}
+                    onChange={handleWorkerInputChange}
+                    disabled={!workerFormData.roomNumber || beds.length === 0}
+                    className={`w-full h-full px-4 bg-white rounded-[10px] border-0 outline-none cursor-pointer appearance-none text-[12px] font-semibold font-[Poppins] ${(!workerFormData.roomNumber || beds.length === 0) ? "cursor-not-allowed opacity-70" : ""}`}
+                    style={{ WebkitAppearance: "none", boxShadow: "0px 4px 10px 0px #00000040", color: hasNoBeds ? "#DC2626" : workerFormData.bedNumber === "" ? "#0000008A" : "#000" }}
+                  >
+                    {!workerFormData.roomNumber ? (
+                      <option value="" disabled>
+                        {noBedsForRoomType ? "No Bed Available" : "Select Room First"}
+                      </option>
+                    ) : beds.length === 0 ? (
+                      <option value="" disabled>No Bed Available</option>
+                    ) : (
+                      <option value="" disabled hidden>Select Bed</option>
+                    )}
+                    {beds.map(b => {
+                      const shortBarcode = (b.barcodeId || "").split("-").slice(0, 2).join("-");
+                      return <option key={b._id} value={b._id}>{shortBarcode} - Floor {b.floor}</option>;
+                    })}
+                  </select>
+                  <ChevronDown />
+                </>
+              );
+            })()}
           </div>
+          {(() => {
+            if (workerFormData.roomNumber) {
+              const beds = getBedsForRoom(workerFormData.roomNumber, workerFormData.roomType);
+              if (beds.length === 0) {
+                return <p className="text-red-500 text-[11px] font-medium mt-1 ml-1">⚠️ No available beds in Room {workerFormData.roomNumber}</p>;
+              }
+            }
+            return null;
+          })()}
         </div>
 
         {/* Emergency Contact Number */}
@@ -1992,6 +2175,7 @@ const StudentManagement = () => {
                       <option value="Approved">Approved</option>
                       <option value="Pending">Pending</option>
                       <option value="Rejected">Rejected</option>
+                      <option value="Inactive">Inactive</option>
                     </select>
                   </>
                 ) : (
@@ -2087,9 +2271,9 @@ const StudentManagement = () => {
                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.isPendingApproval
                               ? (s.reqStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800')
-                              : 'bg-green-100 text-green-800'
+                              : s.isActive === false ? 'bg-gray-100 text-gray-700 border border-gray-300' : 'bg-green-100 text-green-800'
                             }`}>
-                            {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : "Approved"}
+                            {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : s.isActive === false ? "Inactive" : "Approved"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm whitespace-nowrap">
@@ -2114,8 +2298,13 @@ const StudentManagement = () => {
                               </>
                             ) : (
                               <>
-                                <button onClick={() => handleViewDetails(s.id)} title="View Details" className="text-blue-600 hover:text-blue-800 transition-colors"><Eye size={18} /></button>
-                                <button onClick={() => handleEdit(s.id)} title="Edit Student" className="text-blue-600 hover:text-blue-800 transition-colors"><Pencil size={18} /></button>
+                                <button onClick={() => handleViewDetails(s.id)} title="View Details" className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"><Eye size={18} /></button>
+                                <button onClick={() => handleEdit(s.id)} title="Edit Student" className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"><Pencil size={18} /></button>
+                                {s.isActive === false ? (
+                                  <button onClick={() => setReactivateModalStudent(s)} title="Reactivate Student" className="text-green-600 hover:text-green-800 transition-colors cursor-pointer"><UserCheck size={18} /></button>
+                                ) : (
+                                  <button onClick={() => setInactiveModalStudent(s)} title="Mark Inactive" className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"><UserX size={18} /></button>
+                                )}
                               </>
                             )}
                           </div>
@@ -2134,9 +2323,9 @@ const StudentManagement = () => {
                     <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${s.isPendingApproval
                           ? (s.reqStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800')
-                          : 'bg-green-100 text-green-800'
+                          : s.isActive === false ? 'bg-gray-100 text-gray-700 border border-gray-300' : 'bg-green-100 text-green-800'
                         }`}>
-                        {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : "Approved"}
+                        {s.isPendingApproval ? (s.reqStatus === 'rejected' ? "Rejected" : "Pending") : s.isActive === false ? "Inactive" : "Approved"}
                       </span>
                       <span className="text-[10px] font-medium text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200 shadow-sm">
                         {s.isAddedToBiometric ? "✅ Bio" : "❌ Bio"}
@@ -2180,8 +2369,13 @@ const StudentManagement = () => {
                         </>
                       ) : (
                         <>
-                          <button onClick={() => handleViewDetails(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"><Eye size={16} /> View</button>
-                          <button onClick={() => handleEdit(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"><Pencil size={16} /> Edit</button>
+                          <button onClick={() => handleViewDetails(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm cursor-pointer"><Eye size={16} /> View</button>
+                          <button onClick={() => handleEdit(s.id)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-sm cursor-pointer"><Pencil size={16} /> Edit</button>
+                          {s.isActive === false ? (
+                            <button onClick={() => setReactivateModalStudent(s)} className="flex items-center gap-1 text-green-600 hover:text-green-800 transition-colors text-sm cursor-pointer"><UserCheck size={16} /> Activate</button>
+                          ) : (
+                            <button onClick={() => setInactiveModalStudent(s)} className="flex items-center gap-1 text-red-500 hover:text-red-700 transition-colors text-sm cursor-pointer"><UserX size={16} /> Inactive</button>
+                          )}
                         </>
                       )}
                     </div>
@@ -2271,6 +2465,87 @@ const StudentManagement = () => {
           </div>
         )}
       </div>
+
+      {/* ── Inactive Confirmation Modal ── */}
+      {inactiveModalStudent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] p-6 w-full max-w-md shadow-xl flex flex-col items-center animate-in fade-in zoom-in duration-200">
+            <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle size={32} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-xl font-bold text-black mb-2 text-center" style={{ fontFamily: "Inter" }}>
+              Confirm Deactivation
+            </h3>
+            <p className="text-sm font-medium text-gray-600 text-center mb-4 px-2">
+              Are you sure you want to mark <span className="font-bold text-gray-900">{inactiveModalStudent.name}</span> (ID: <span className="font-semibold text-gray-900">{inactiveModalStudent.id}</span>) as <span className="font-bold text-red-600">Inactive</span>?
+            </p>
+
+            <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 text-xs text-amber-900">
+              <p className="font-semibold mb-1 flex items-center gap-1.5">
+                <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                Bed Release Notice:
+              </p>
+              <p>
+                Allocated bed <span className="font-bold text-gray-900">({inactiveModalStudent.room || "Not Assigned"})</span> will be removed from this student and made <span className="font-bold text-green-700">Available</span> in inventory.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setInactiveModalStudent(null)}
+                disabled={statusLoading}
+                className="flex-1 py-2.5 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition-colors text-sm cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmInactive}
+                disabled={statusLoading}
+                className={`flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-md text-sm cursor-pointer ${statusLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {statusLoading ? "Deactivating..." : "Yes, Mark Inactive"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reactivate Confirmation Modal ── */}
+      {reactivateModalStudent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] p-6 w-full max-w-md shadow-xl flex flex-col items-center animate-in fade-in zoom-in duration-200">
+            <div className="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+              <UserCheck size={32} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-xl font-bold text-black mb-2 text-center" style={{ fontFamily: "Inter" }}>
+              Reactivate Student
+            </h3>
+            <p className="text-sm font-medium text-gray-600 text-center mb-6 px-2">
+              Do you want to reactivate <span className="font-bold text-gray-900">{reactivateModalStudent.name}</span> (ID: <span className="font-semibold text-gray-900">{reactivateModalStudent.id}</span>)? You can allot a bed to them anytime via Edit.
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setReactivateModalStudent(null)}
+                disabled={statusLoading}
+                className="flex-1 py-2.5 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition-colors text-sm cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReactivate}
+                disabled={statusLoading}
+                className={`flex-1 py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-colors shadow-md text-sm cursor-pointer ${statusLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {statusLoading ? "Activating..." : "Yes, Reactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Reason Modal ── */}
       {showReasonModal && (

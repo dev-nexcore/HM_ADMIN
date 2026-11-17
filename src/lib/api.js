@@ -7,9 +7,22 @@ const api = axios.create({
 
 // attach token per request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("accessToken");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
+
+// handle 401 / 403 gracefully
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.warn("Admin session unauthorized or expired:", error.response?.data?.message || error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
