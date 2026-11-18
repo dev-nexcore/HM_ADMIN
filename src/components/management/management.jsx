@@ -31,7 +31,20 @@ const hasDocument = (docObj) => {
 
 const getDocumentName = (docObj) => {
   if (!docObj) return null;
-  return docObj.filename || docObj.name || docObj.path || null;
+  return docObj.originalname || docObj.filename || docObj.name || (typeof docObj.path === 'string' ? docObj.path.split(/[/\\]/).pop() : null);
+};
+
+const isPdfDoc = (docObj) => {
+  if (!docObj) return false;
+  if (docObj instanceof File) {
+    return docObj.type === "application/pdf" || docObj.name?.toLowerCase().endsWith(".pdf");
+  }
+  if (typeof docObj === "string") {
+    return docObj.toLowerCase().includes(".pdf");
+  }
+  if (docObj.mimetype === "application/pdf") return true;
+  const name = docObj.originalname || docObj.filename || docObj.name || docObj.path || "";
+  return typeof name === "string" && name.toLowerCase().split("?")[0].endsWith(".pdf");
 };
 
 // ─── Stat Card Component ───────────────────────────────────────────────────────
@@ -154,6 +167,7 @@ const StudentManagement = () => {
   const [parents, setParents] = useState([]);
   const [parentDetailsData, setParentDetailsData] = useState(null);
   const [showParentDetailsModal, setShowParentDetailsModal] = useState(false);
+  const [previewDocModal, setPreviewDocModal] = useState({ open: false, url: '', title: '', isPdf: false });
   const [editingParent, setEditingParent] = useState(null);
   const [showParentEditModal, setShowParentEditModal] = useState(false);
 
@@ -887,26 +901,61 @@ const StudentManagement = () => {
         ? `${getParentDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`
         : `${getDocumentUrl(objectId, docKey)}?token=${localStorage.getItem('adminToken') || ''}`);
     const name = isFile ? fileData.name : getDocumentName(fileData);
+    const isPdf = isFile
+      ? (fileData.type === 'application/pdf' || fileData.name.toLowerCase().endsWith('.pdf'))
+      : isPdfDoc(fileData);
 
     return (
-      <div className="mt-2 flex items-start gap-3 bg-white/50 p-2 rounded-lg border border-gray-100 shadow-sm">
+      <div className="mt-2 flex items-start gap-3 bg-white/70 p-2.5 rounded-xl border border-gray-200 shadow-sm">
         <div
-          className="w-16 h-12 bg-white rounded border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors flex-shrink-0"
-          onClick={() => window.open(url, "_blank")}
+          className="w-16 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] hover:shadow transition-all flex-shrink-0 relative group"
+          onClick={() => setPreviewDocModal({ open: true, url, title: `${label} - ${name}`, isPdf })}
+          title="Click to preview"
         >
-          <img
-            src={url}
-            alt={`${label} Preview`}
-            className="w-full h-full object-contain"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-auto text-gray-400 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[9px] text-gray-500 font-medium leading-tight block">File</span></div>';
-            }}
-          />
+          {isPdf ? (
+            <div className="text-center flex flex-col items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9l-6-6H7zm6 7V4.5L17.5 10H13z" />
+              </svg>
+              <span className="text-[9px] font-bold text-red-600">PDF</span>
+            </div>
+          ) : (
+            <img
+              src={url}
+              alt={`${label} Preview`}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-auto text-gray-400 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-[9px] text-gray-500 font-medium leading-tight block">File</span></div>';
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
         </div>
-        <div className="flex flex-col justify-center h-12 min-w-0">
+        <div className="flex flex-col justify-center h-14 min-w-0 flex-1">
           <span className="text-[11px] text-green-700 font-medium truncate w-full" title={name}>✓ {name}</span>
-          <button type="button" onClick={() => window.open(url, "_blank")} className="text-[11px] text-[#4F8CCF] hover:text-blue-700 font-bold underline text-left mt-1">Open Full</button>
+          <div className="flex items-center gap-3 mt-1.5">
+            <button
+              type="button"
+              onClick={() => setPreviewDocModal({ open: true, url, title: `${label} - ${name}`, isPdf })}
+              className="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 cursor-pointer"
+            >
+              Preview
+            </button>
+            <span className="text-gray-300">•</span>
+            <button
+              type="button"
+              onClick={() => window.open(url, "_blank")}
+              className="text-[11px] text-[#4F8CCF] hover:text-blue-700 font-bold underline cursor-pointer"
+            >
+              Open Full
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1885,43 +1934,110 @@ const StudentManagement = () => {
                 {/* Documents */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <h3 className="text-base font-bold text-gray-800 mb-4" style={{ fontFamily: "Inter" }}>Uploaded Documents</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[["Aadhar Card", "aadharCard"], ["PAN Card", "panCard"], ["Student ID Card", "studentIdCard"], ["Fees Receipt", "feesReceipt"]]
                       .filter(([_, key]) => !(studentDetailsData.id?.startsWith("STUW") && (key === "studentIdCard" || key === "feesReceipt")))
-                      .map(([label, key]) => (
-                      <div key={key} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                        <p className="font-semibold text-gray-800 text-sm mb-3">{label}</p>
-                        {hasDocument(studentDetailsData.documents?.[key]) ? (
-                          <div className="flex flex-col gap-3">
-                            <div
-                              className="w-full h-28 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors"
-                              onClick={() => {
-                                const token = localStorage.getItem('adminToken');
-                                window.open(`${getDocumentUrl(studentDetailsData.id, key)}?token=${token}`, '_blank');
-                              }}
-                            >
-                              <img
-                                src={`${getDocumentUrl(studentDetailsData.id, key)}?token=${localStorage.getItem('adminToken')}`}
-                                alt={label}
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-xs text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>';
-                                }}
-                              />
-                            </div>
-                            <button onClick={() => {
-                              const token = localStorage.getItem('adminToken');
-                              window.open(`${getDocumentUrl(studentDetailsData.id, key)}?token=${token}`, '_blank');
-                            }} className="w-full py-2 bg-[#4F8CCF] text-white rounded-lg hover:bg-blue-600 transition-colors text-[11px] font-bold tracking-wide uppercase">Open Document</button>
+                      .map(([label, key]) => {
+                        const docData = studentDetailsData.documents?.[key];
+                        const hasDoc = hasDocument(docData);
+                        const docName = getDocumentName(docData) || label;
+                        const docUrl = `${getDocumentUrl(studentDetailsData.id, key)}?token=${localStorage.getItem('adminToken') || ''}`;
+                        const isPdf = isPdfDoc(docData);
+
+                        return (
+                          <div key={key} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between">
+                            <p className="font-semibold text-gray-800 text-sm mb-2.5">{label}</p>
+                            {hasDoc ? (
+                              <div className="flex flex-col gap-2.5">
+                                {/* Document Preview Box */}
+                                <div
+                                  className="relative w-full h-36 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group cursor-pointer hover:border-[#4F8CCF] hover:shadow-md transition-all flex items-center justify-center"
+                                  onClick={() => setPreviewDocModal({ open: true, url: docUrl, title: `${label} - ${studentDetailsData.name || studentDetailsData.id}`, isPdf })}
+                                  title="Click to view preview"
+                                >
+                                  {isPdf ? (
+                                    <>
+                                      <iframe
+                                        src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                        title={label}
+                                        className="w-full h-full border-0 pointer-events-none bg-white scale-[1.01]"
+                                      />
+                                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9l-6-6H7zm6 7V4.5L17.5 10H13z" />
+                                        </svg>
+                                        PDF
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <img
+                                      src={docUrl}
+                                      alt={label}
+                                      className="w-full h-full object-contain bg-white"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  )}
+                                  <div style={{ display: 'none' }} className="flex-col items-center justify-center text-center p-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-xs text-gray-500 font-medium">{label}</span>
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <span className="bg-white/95 text-gray-900 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-sm">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-[#4F8CCF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      Click to Preview
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* File name */}
+                                <p className="text-[11px] text-gray-600 truncate font-medium flex items-center gap-1" title={docName}>
+                                  <span className="text-green-600 font-bold">✓</span> {docName}
+                                </p>
+
+                                {/* Buttons */}
+                                <div className="grid grid-cols-2 gap-2 mt-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewDocModal({ open: true, url: docUrl, title: `${label} - ${studentDetailsData.name || studentDetailsData.id}`, isPdf })}
+                                    className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Preview
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(docUrl, '_blank')}
+                                    className="py-1.5 px-2 bg-[#4F8CCF] hover:bg-blue-600 text-white rounded-lg transition-colors text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    Open Full
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="h-36 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300 gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p className="text-xs text-gray-400 font-medium">Not uploaded</p>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="h-28 flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            <p className="text-xs text-gray-400 font-medium">Not uploaded</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 </div>
 
@@ -1967,41 +2083,108 @@ const StudentManagement = () => {
                 {/* Documents */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <h3 className="text-base font-bold text-gray-800 mb-4" style={{ fontFamily: "Inter" }}>Uploaded Documents</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[["Aadhar Card", "aadharCard"], ["PAN Card", "panCard"]].map(([label, key]) => (
-                      <div key={key} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                        <p className="font-semibold text-gray-800 text-sm mb-3">{label}</p>
-                        {hasDocument(parentDetailsData.documents?.[key]) ? (
-                          <div className="flex flex-col gap-3">
-                            <div
-                              className="w-full h-28 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-[#4F8CCF] transition-colors"
-                              onClick={() => {
-                                const token = localStorage.getItem('adminToken');
-                                window.open(`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${token}`, '_blank');
-                              }}
-                            >
-                              <img
-                                src={`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${localStorage.getItem('adminToken')}`}
-                                alt={label}
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.parentElement.innerHTML = '<div class="text-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-xs text-gray-500 font-medium leading-tight block">Document<br/>Click to view</span></div>';
-                                }}
-                              />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[["Aadhar Card", "aadharCard"], ["PAN Card", "panCard"]].map(([label, key]) => {
+                      const docData = parentDetailsData.documents?.[key];
+                      const hasDoc = hasDocument(docData);
+                      const docName = getDocumentName(docData) || label;
+                      const docUrl = `${getParentDocumentUrl(parentDetailsData._id, key)}?token=${localStorage.getItem('adminToken') || ''}`;
+                      const isPdf = isPdfDoc(docData);
+
+                      return (
+                        <div key={key} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between">
+                          <p className="font-semibold text-gray-800 text-sm mb-2.5">{label}</p>
+                          {hasDoc ? (
+                            <div className="flex flex-col gap-2.5">
+                              {/* Document Preview Box */}
+                              <div
+                                className="relative w-full h-36 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group cursor-pointer hover:border-[#4F8CCF] hover:shadow-md transition-all flex items-center justify-center"
+                                onClick={() => setPreviewDocModal({ open: true, url: docUrl, title: `${label} - ${parentDetailsData.firstName} ${parentDetailsData.lastName}`, isPdf })}
+                                title="Click to view preview"
+                              >
+                                {isPdf ? (
+                                  <>
+                                    <iframe
+                                      src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                      title={label}
+                                      className="w-full h-full border-0 pointer-events-none bg-white scale-[1.01]"
+                                    />
+                                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9l-6-6H7zm6 7V4.5L17.5 10H13z" />
+                                      </svg>
+                                      PDF
+                                    </div>
+                                  </>
+                                ) : (
+                                  <img
+                                    src={docUrl}
+                                    alt={label}
+                                    className="w-full h-full object-contain bg-white"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                )}
+                                <div style={{ display: 'none' }} className="flex-col items-center justify-center text-center p-3">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  </svg>
+                                  <span className="text-xs text-gray-500 font-medium">{label}</span>
+                                </div>
+                                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                  <span className="bg-white/95 text-gray-900 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-[#4F8CCF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Click to Preview
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* File name */}
+                              <p className="text-[11px] text-gray-600 truncate font-medium flex items-center gap-1" title={docName}>
+                                <span className="text-green-600 font-bold">✓</span> {docName}
+                              </p>
+
+                              {/* Buttons */}
+                              <div className="grid grid-cols-2 gap-2 mt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewDocModal({ open: true, url: docUrl, title: `${label} - ${parentDetailsData.firstName} ${parentDetailsData.lastName}`, isPdf })}
+                                  className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  Preview
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => window.open(docUrl, '_blank')}
+                                  className="py-1.5 px-2 bg-[#4F8CCF] hover:bg-blue-600 text-white rounded-lg transition-colors text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                  Open Full
+                                </button>
+                              </div>
                             </div>
-                            <button onClick={() => {
-                              const token = localStorage.getItem('adminToken');
-                              window.open(`${getParentDocumentUrl(parentDetailsData._id, key)}?token=${token}`, '_blank');
-                            }} className="w-full py-2 bg-[#4F8CCF] text-white rounded-lg hover:bg-blue-600 transition-colors text-[11px] font-bold tracking-wide uppercase">Open Document</button>
-                          </div>
-                        ) : (
-                          <div className="h-28 flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            <p className="text-xs text-gray-400 font-medium">Not uploaded</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          ) : (
+                            <div className="h-36 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300 gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <p className="text-xs text-gray-400 font-medium">Not uploaded</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -2564,6 +2747,65 @@ const StudentManagement = () => {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Document Full Preview Modal ── */}
+      {previewDocModal.open && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-4xl max-h-[92vh] flex flex-col border border-gray-200">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] flex items-center justify-between border-b border-gray-200 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 pr-4">
+                {previewDocModal.isPdf ? (
+                  <span className="bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow shrink-0">PDF</span>
+                ) : (
+                  <span className="bg-[#4F8CCF] text-white text-[11px] font-bold px-2 py-0.5 rounded shadow shrink-0">IMAGE</span>
+                )}
+                <h3 className="text-base font-bold text-gray-900 truncate" title={previewDocModal.title}>
+                  {previewDocModal.title}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.open(previewDocModal.url, '_blank')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-gray-800 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Open in New Tab
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal({ open: false, url: '', title: '', isPdf: false })}
+                  className="p-1.5 text-gray-700 hover:text-black hover:bg-black/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content Viewer */}
+            <div className="flex-1 bg-gray-100 p-2 sm:p-4 overflow-auto flex items-center justify-center min-h-[60vh] max-h-[78vh]">
+              {previewDocModal.isPdf ? (
+                <iframe
+                  src={`${previewDocModal.url}#toolbar=1`}
+                  title={previewDocModal.title}
+                  className="w-full h-[74vh] rounded-xl border border-gray-300 bg-white shadow-inner"
+                />
+              ) : (
+                <img
+                  src={previewDocModal.url}
+                  alt={previewDocModal.title}
+                  className="max-h-[74vh] max-w-full object-contain rounded-xl shadow-md bg-white"
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
