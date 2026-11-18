@@ -47,6 +47,135 @@ const isPdfDoc = (docObj) => {
   return typeof name === "string" && name.toLowerCase().split("?")[0].endsWith(".pdf");
 };
 
+// ─── Full Document Viewer Modal Component (Blob-based to bypass X-Frame-Options) ───
+const DocumentViewerModal = ({ isOpen, onClose, url, title, isPdf }) => {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !url) {
+      setBlobUrl(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    setError(null);
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (!active) return;
+        const finalBlob = isPdf && blob.type !== "application/pdf"
+          ? new Blob([blob], { type: "application/pdf" })
+          : blob;
+        const objectUrl = URL.createObjectURL(finalBlob);
+        setBlobUrl(objectUrl);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("Failed to load document blob:", err);
+        setError("Unable to load in-app preview directly. Please click 'Open in New Tab' to view.");
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [isOpen, url, isPdf]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-4xl max-h-[92vh] flex flex-col border border-gray-200">
+        {/* Header */}
+        <div className="px-5 py-3.5 bg-gradient-to-r from-[#BEC5AD] to-[#a8b096] flex items-center justify-between border-b border-gray-200 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 pr-3">
+            {isPdf ? (
+              <span className="bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow shrink-0">PDF</span>
+            ) : (
+              <span className="bg-[#4F8CCF] text-white text-[11px] font-bold px-2 py-0.5 rounded shadow shrink-0">IMAGE</span>
+            )}
+            <h3 className="text-base font-bold text-gray-900 truncate" title={title}>
+              {title}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => window.open(blobUrl || url, "_blank")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-gray-800 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Open in New Tab
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-gray-700 hover:text-black hover:bg-black/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div className="flex-1 bg-gray-100 p-2 sm:p-4 overflow-hidden flex items-center justify-center min-h-[60vh] max-h-[78vh]">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center gap-3 text-gray-600 p-8">
+              <div className="w-10 h-10 border-4 border-[#4F8CCF] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-semibold">Loading document preview...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center gap-3 text-center p-8 max-w-md">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-700">{error}</p>
+              <button
+                type="button"
+                onClick={() => window.open(url, "_blank")}
+                className="mt-2 px-4 py-2 bg-[#4F8CCF] hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors shadow cursor-pointer"
+              >
+                Open in New Tab
+              </button>
+            </div>
+          ) : isPdf && blobUrl ? (
+            <iframe
+              src={`${blobUrl}#toolbar=1`}
+              title={title}
+              className="w-full h-[74vh] rounded-xl border border-gray-300 bg-white shadow-inner"
+            />
+          ) : (
+            <img
+              src={blobUrl || url}
+              alt={title}
+              className="max-h-[74vh] max-w-full object-contain rounded-xl shadow-md bg-white"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Stat Card Component ───────────────────────────────────────────────────────
 const StatCard = ({ icon, label, value, accent, isActive, onClick, total }) => {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
@@ -1956,19 +2085,19 @@ const StudentManagement = () => {
                                   title="Click to view preview"
                                 >
                                   {isPdf ? (
-                                    <>
-                                      <iframe
-                                        src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                                        title={label}
-                                        className="w-full h-full border-0 pointer-events-none bg-white scale-[1.01]"
-                                      />
-                                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-red-50/70 to-gray-50 p-3 text-center border-b border-gray-100">
+                                      <div className="w-11 h-11 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition-transform">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                                           <path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9l-6-6H7zm6 7V4.5L17.5 10H13z" />
                                         </svg>
-                                        PDF
                                       </div>
-                                    </>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full mb-1">
+                                        PDF Document
+                                      </span>
+                                      <span className="text-[11px] font-semibold text-gray-700 max-w-[160px] truncate" title={docName}>
+                                        {docName}
+                                      </span>
+                                    </div>
                                   ) : (
                                     <img
                                       src={docUrl}
@@ -2103,19 +2232,19 @@ const StudentManagement = () => {
                                 title="Click to view preview"
                               >
                                 {isPdf ? (
-                                  <>
-                                    <iframe
-                                      src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                                      title={label}
-                                      className="w-full h-full border-0 pointer-events-none bg-white scale-[1.01]"
-                                    />
-                                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-red-50/70 to-gray-50 p-3 text-center border-b border-gray-100">
+                                    <div className="w-11 h-11 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition-transform">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9l-6-6H7zm6 7V4.5L17.5 10H13z" />
                                       </svg>
-                                      PDF
                                     </div>
-                                  </>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full mb-1">
+                                      PDF Document
+                                    </span>
+                                    <span className="text-[11px] font-semibold text-gray-700 max-w-[160px] truncate" title={docName}>
+                                      {docName}
+                                    </span>
+                                  </div>
                                 ) : (
                                   <img
                                     src={docUrl}
